@@ -1,11 +1,11 @@
 export const INITIAL_SCHOOL_DATA = {
-    name: "SMA PGRI 268 JAKARTA",
-    address: "Jl. Contoh No. 123, Jakarta",
+    name: "SD Negeri 2 Palapi",
+    address: "Jl. Pendidikan Cerdas No. 1, Jakarta Selatan",
     term: "Ganjil 2025/2026",
     adminName: "Bapak Guru Admin, S.Kom",
     adminUsername: "admin",
     adminPassword: "123",
-    logo: "https://cdn-icons-png.flaticon.com/512/2995/2995459.png"
+    logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhkZZ6nl3Pq7mFou917u9D1yJnyd4AmsDSQI4VyCjaktVQOk6Yj0teuLBiiyBeiyyKhhbBRC5SJW9Ml6QZZ5vlH-ZlR1lrrKO6auMpiFZrs_DC-VINjninMxAh57pj7yVza53Z2qgyUKiGw8RWviLJ8_Cvl_DamdXJG_OVk_CYc8iwVa4BReULUElQxinWK/s16000/logo%20e-quest.png"
 };
 
 export const INITIAL_CLASSES = [

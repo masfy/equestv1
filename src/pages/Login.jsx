@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
-import { GraduationCap, UserCog, BadgeCheck } from 'lucide-react';
-import TiltCard from '../components/layout/TiltCard';
-import TiltLogo from '../components/layout/TiltLogo';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import { GraduationCap, UserCog, User, Lock, ChevronRight, BadgeCheck } from 'lucide-react';
 import { INITIAL_SCHOOL_DATA } from '../data/initialData';
 
 const Login = ({ onLogin }) => {
-    const [activeTab, setActiveTab] = useState('student'); // 'student' or 'admin'
+    const [loginTab, setLoginTab] = useState('student'); // 'student' or 'admin'
     const [formData, setFormData] = useState({ username: '', password: '' });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onLogin(activeTab, formData);
+        onLogin(loginTab, formData);
     };
 
     const handleChange = (e) => {
@@ -20,93 +16,74 @@ const Login = ({ onLogin }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col p-4 font-sans relative overflow-hidden">
-            {/* Background Blobs */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-300/30 rounded-full blur-3xl" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-300/30 rounded-full blur-3xl" />
+        <div className="min-h-screen bg-slate-900 relative overflow-hidden flex flex-col justify-center items-center p-4 sm:p-8 font-sans no-scrollbar">
 
-            <div className="flex-1 flex items-center justify-center z-10">
-                <TiltCard>
-                    {/* Left Side - Branding */}
-                    <div className="md:w-1/2 bg-indigo-600 p-8 flex flex-col justify-center items-center text-center relative overflow-hidden">
-                        <div className="absolute top-[-50px] left-[-50px] w-40 h-40 bg-yellow-300 rounded-full blur-3xl opacity-30"></div>
-                        <div className="absolute bottom-[-50px] right-[-50px] w-40 h-40 bg-pink-300 rounded-full blur-3xl opacity-30"></div>
+            {/* Elegant Architectural Background */}
+            <div className="absolute inset-0 z-0 opacity-20 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+            <div className="absolute left-0 right-0 top-[-10%] -z-10 m-auto h-[400px] w-[400px] rounded-full bg-blue-600 opacity-20 blur-[120px] pointer-events-none"></div>
 
-                        <TiltLogo logoUrl={INITIAL_SCHOOL_DATA.logo} />
+            <div className="w-full max-w-[440px] bg-white rounded-[1.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border border-slate-200 p-8 sm:p-10 z-10 flex flex-col relative overflow-hidden">
+                {/* Subtle top line for premium feel */}
+                <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-800"></div>
 
-                        <h1 className="text-2xl font-bold text-white mb-2 relative z-10">
-                            {INITIAL_SCHOOL_DATA.name}
-                        </h1>
-                        <p className="text-indigo-100 font-medium relative z-10">
-                            Computer Based Test (CBT)
-                        </p>
+                <div className="flex justify-center mb-6 mt-2">
+                    <div className="w-20 h-20 bg-slate-50 p-3 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-center">
+                        <img src={INITIAL_SCHOOL_DATA.logo} alt="Logo" className="w-full h-full object-contain drop-shadow-sm" />
                     </div>
+                </div>
 
-                    {/* Right Side - Form */}
-                    <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white">
-                        <h2 className="text-3xl font-bold text-gray-800 mb-2">Selamat Datang</h2>
-                        <p className="text-gray-400 mb-8 text-sm">
-                            Silakan masuk untuk memulai sesi ujian.
-                        </p>
+                <div className="text-center mb-8">
+                    <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">e-QUEST {INITIAL_SCHOOL_DATA.name}</h1>
+                    <p className="text-slate-500 text-[10px] font-bold tracking-widest uppercase">
+                        Smart Assessment System)
+                    </p>
+                </div>
 
-                        {/* Tab Switcher */}
-                        <div className="flex bg-indigo-50 p-1.5 rounded-2xl mb-8">
-                            <button
-                                onClick={() => setActiveTab('student')}
-                                className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'student'
-                                        ? 'bg-white shadow-sm text-indigo-600'
-                                        : 'text-gray-500 hover:text-gray-700'
-                                    }`}
-                            >
-                                <GraduationCap size={18} /> MURID
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('admin')}
-                                className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'admin'
-                                        ? 'bg-white shadow-sm text-indigo-600'
-                                        : 'text-gray-500 hover:text-gray-700'
-                                    }`}
-                            >
-                                <UserCog size={18} /> GURU
-                            </button>
+                <div className="flex p-1 bg-slate-100 rounded-lg mb-8 w-full border border-slate-200/60 shadow-inner">
+                    <button onClick={() => setLoginTab('student')} className={`flex-1 py-2.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${loginTab === 'student' ? 'bg-white text-blue-700 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}> <GraduationCap size={16} /> Peserta </button>
+                    <button onClick={() => setLoginTab('admin')} className={`flex-1 py-2.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${loginTab === 'admin' ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}> <UserCog size={16} /> Edukator </button>
+                </div>
+
+                {loginTab === 'student' ? (
+                    <form onSubmit={handleSubmit} className="space-y-5 animate-fade-in w-full">
+                        <div className="space-y-1.5 text-left">
+                            <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Nomor Induk Siswa</label>
+                            <div className="relative group">
+                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
+                                <input name="username" value={formData.username} onChange={handleChange} required placeholder="Masukkan NIS" className="w-full pl-10 pr-4 py-3 rounded-lg bg-white border border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 text-sm shadow-sm" />
+                            </div>
                         </div>
-
-                        {/* Login Form */}
-                        <form onSubmit={handleSubmit} className="space-y-5 animate-fade-in">
-                            <Input
-                                label={activeTab === 'student' ? 'NIS / Username' : 'Username Guru'}
-                                name="username"
-                                placeholder={activeTab === 'student' ? 'Contoh: 12345' : 'admin'}
-                                value={formData.username}
-                                onChange={handleChange}
-                                required
-                            />
-                            <Input
-                                label="Password"
-                                name="password"
-                                type="password"
-                                placeholder="••••••••"
-                                value={formData.password}
-                                onChange={handleChange}
-                                required
-                            />
-
-                            <Button
-                                type="submit"
-                                className="w-full py-4 rounded-2xl text-base shadow-lg mt-4"
-                                variant={activeTab === 'student' ? 'primary' : 'primary'} // Can differentiate if needed
-                            >
-                                {activeTab === 'student' ? 'MASUK UJIAN' : 'AKSES DASHBOARD'}
-                            </Button>
-                        </form>
-                    </div>
-                </TiltCard>
+                        <div className="space-y-1.5 text-left">
+                            <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Kata Sandi</label>
+                            <div className="relative group">
+                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
+                                <input name="password" type="password" value={formData.password} onChange={handleChange} required placeholder="••••••••" className="w-full pl-10 pr-4 py-3 rounded-lg bg-white border border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 text-sm shadow-sm" />
+                            </div>
+                        </div>
+                        <button type="submit" className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all mt-6 text-sm flex justify-center items-center gap-2 uppercase tracking-widest">Akses Ujian <ChevronRight size={16} /></button>
+                    </form>
+                ) : (
+                    <form onSubmit={handleSubmit} className="space-y-5 animate-fade-in w-full">
+                        <div className="space-y-1.5 text-left">
+                            <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Username Pengawas</label>
+                            <div className="relative group">
+                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-800 transition-colors" size={18} />
+                                <input name="username" value={formData.username} onChange={handleChange} required placeholder="Masukkan username" className="w-full pl-10 pr-4 py-3 rounded-lg bg-white border border-slate-300 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 text-sm shadow-sm" />
+                            </div>
+                        </div>
+                        <div className="space-y-1.5 text-left">
+                            <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Kata Sandi</label>
+                            <div className="relative group">
+                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-800 transition-colors" size={18} />
+                                <input name="password" type="password" value={formData.password} onChange={handleChange} required placeholder="••••••••" className="w-full pl-10 pr-4 py-3 rounded-lg bg-white border border-slate-300 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 text-sm shadow-sm" />
+                            </div>
+                        </div>
+                        <button type="submit" className="w-full bg-slate-900 hover:bg-slate-950 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all mt-6 text-sm flex justify-center items-center gap-2 uppercase tracking-widest">Masuk Panel <ChevronRight size={16} /></button>
+                    </form>
+                )}
             </div>
-
-            {/* Footer */}
-            <div className="text-center text-xs flex items-center justify-center gap-1.5 py-4 shrink-0 z-40 text-gray-500">
-                <span>&copy; {new Date().getFullYear()} | CBT System by Mas Alfy</span>
-                <BadgeCheck className="w-4 h-4 text-blue-500" />
+            <div className="w-full text-center mt-8 text-[10px] font-bold tracking-widest uppercase text-slate-400 z-10 opacity-70">
+                e-Quest Premium CBT &copy; {new Date().getFullYear()} • Secure Access<br>By Mas Alfy | SD Negeri 2 Palapi</br>
             </div>
         </div>
     );

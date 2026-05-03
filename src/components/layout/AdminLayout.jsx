@@ -99,7 +99,7 @@ const AdminLayout = ({ children, activeMenu, onMenuChange, onLogout }) => {
 
                 {/* Footer */}
                 <div className="text-center text-xs flex items-center justify-center gap-1.5 py-4 shrink-0 z-40 border-t border-gray-200 bg-white text-gray-600">
-                    <span>&copy; {new Date().getFullYear()} | CBT System by Mas Alfy</span>
+                    <span>&copy; {new Date().getFullYear()} | e-Quest System</span>
                 </div>
             </main>
         </div>
