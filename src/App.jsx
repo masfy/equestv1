@@ -15,6 +15,8 @@ import {
 
 // --- INITIAL DATA & MOCKUP DATABASE ---
 
+const EQUEST_LOGO = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhkZZ6nl3Pq7mFou917u9D1yJnyd4AmsDSQI4VyCjaktVQOk6Yj0teuLBiiyBeiyyKhhbBRC5SJW9Ml6QZZ5vlH-ZlR1lrrKO6auMpiFZrs_DC-VINjninMxAh57pj7yVza53Z2qgyUKiGw8RWviLJ8_Cvl_DamdXJG_OVk_CYc8iwVa4BReULUElQxinWK/s16000/logo%20e-quest.png";
+
 const INITIAL_SCHOOL_DATA = {
     name: "SD Negeri 2 Palapi",
     address: "Jl. Pendidikan Cerdas No. 1, Jakarta Selatan",
@@ -27,7 +29,8 @@ const INITIAL_SCHOOL_DATA = {
     adminEmail: "alfyarnaim@gmail.com",
     adminUsername: "admin",
     adminPassword: "masfy",
-    logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhkZZ6nl3Pq7mFou917u9D1yJnyd4AmsDSQI4VyCjaktVQOk6Yj0teuLBiiyBeiyyKhhbBRC5SJW9Ml6QZZ5vlH-ZlR1lrrKO6auMpiFZrs_DC-VINjninMxAh57pj7yVza53Z2qgyUKiGw8RWviLJ8_Cvl_DamdXJG_OVk_CYc8iwVa4BReULUElQxinWK/s16000/logo%20e-quest.png",
+    logo: EQUEST_LOGO,
+    schoolLogo: "",
     apiKey: "",
     aiModel: "gemini-1.5-flash-latest",
     optionCount: 5
@@ -930,8 +933,7 @@ export default function App() {
         showToast("AI sedang mengkalkulasi dan membuat visual...");
         setTimeout(() => {
             const imgUrl = "https://images.unsplash.com/photo-1596495578065-6e0763fa1178?auto=format&fit=crop&q=80&w=600";
-            const input = document.getElementsByName('image')[0];
-            if (input) input.value = imgUrl;
+            setEditingItem(prev => ({ ...prev, image: imgUrl }));
             showToast("Visual berhasil disisipkan!");
         }, 2500);
     };
@@ -1125,7 +1127,9 @@ Perhatian:
     };
 
     const handleLogoUpload = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => setTempLogo(reader.result); reader.readAsDataURL(file); } };
-    const handleSaveSchool = (e) => { e.preventDefault(); const d = Object.fromEntries(new FormData(e.target).entries()); setSchoolData(p => { const next = { ...p, ...d, logo: tempLogo || p.logo }; updateGlobalState({ schoolData: next }); return next; }); showToast("Pengaturan Tersimpan!", "success"); };
+    const [tempSchoolLogo, setTempSchoolLogo] = useState(null);
+    const handleSchoolLogoUpload = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => setTempSchoolLogo(reader.result); reader.readAsDataURL(file); } };
+    const handleSaveSchool = (e) => { e.preventDefault(); const d = Object.fromEntries(new FormData(e.target).entries()); setSchoolData(p => { const next = { ...p, ...d, logo: EQUEST_LOGO, schoolLogo: tempSchoolLogo || p.schoolLogo || '' }; updateGlobalState({ schoolData: next }); return next; }); showToast("Pengaturan Tersimpan!", "success"); };
 
     const processImport = async (type, useAI, fileName, parsedRows, rawFile) => {
         if (type === 'Data Murid' && parsedRows) {
@@ -1399,96 +1403,139 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                             <div className="flex items-center gap-3"><div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600"><User size={20} /></div><div><div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Siswa Aktif</div><div className="font-bold text-slate-800 text-sm">{currentUser.name}</div></div></div>
                             <div className="flex gap-2"><div className={`px-4 py-2 rounded-lg font-bold text-sm flex gap-2 items-center ${examTimeLeft < 300 ? 'bg-rose-50 text-rose-600 animate-pulse' : 'bg-indigo-50 text-indigo-600'}`}><Clock size={16} /> {Math.floor(examTimeLeft / 3600).toString().padStart(2, '0')}:{Math.floor((examTimeLeft % 3600) / 60).toString().padStart(2, '0')}:{(examTimeLeft % 60).toString().padStart(2, '0')}</div></div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 relative scroll-smooth flex justify-center items-start no-scrollbar">
-                            {stdQuestions.length > 0 ? (
-                                <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 max-w-3xl w-full">
-                                    <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-                                        <h2 className="text-lg font-bold text-slate-800">Soal {currentQIndex + 1} dari {stdQuestions.length}</h2>
-                                        <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg font-bold text-sm">Bobot: {stdQuestions[currentQIndex].weight}</div>
-                                    </div>
+                        <div className="flex-1 flex overflow-hidden bg-slate-50">
+                            <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col lg:flex-row items-center lg:items-start gap-6 no-scrollbar">
+                                {stdQuestions.length > 0 ? (
+                                    <>
+                                        <div className="w-full max-w-3xl flex-1 flex flex-col gap-6">
+                                            <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 w-full">
+                                                <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                                                    <h2 className="text-lg font-bold text-slate-800">Soal {currentQIndex + 1} dari {stdQuestions.length}</h2>
+                                                    <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg font-bold text-sm">Bobot: {stdQuestions[currentQIndex].weight}</div>
+                                                </div>
 
-                                    {stdQuestions[currentQIndex].image && <img src={stdQuestions[currentQIndex].image} className="max-h-64 object-contain rounded-xl mb-6 border border-slate-200 mx-auto" />}
-                                    <p className="text-slate-800 text-base font-medium mb-8 leading-relaxed whitespace-pre-wrap">{stdQuestions[currentQIndex].text}</p>
+                                                {stdQuestions[currentQIndex].image && <img src={stdQuestions[currentQIndex].image} alt="Ilustrasi" className="max-h-64 object-contain rounded-xl mb-6 border border-slate-200 mx-auto" />}
+                                                <p className="text-slate-800 text-base font-medium mb-8 leading-relaxed whitespace-pre-wrap">{stdQuestions[currentQIndex].text}</p>
 
-                                    <div className="space-y-3 mb-8">
-                                        {(stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'single' || stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'boolean') ? (
-                                            (stdQuestions[currentQIndex].options || []).map((opt, i) => (
-                                                <label key={i} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${examAnswers[currentQIndex] === String(i) ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-bold shadow-sm' : 'border-slate-200 hover:bg-slate-50'}`}>
-                                                    <input type="radio" name={`q_${currentQIndex}`} className="hidden" checked={examAnswers[currentQIndex] === String(i)} onChange={() => setExamAnswers(p => ({ ...p, [currentQIndex]: String(i) }))} />
-                                                    <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs shrink-0 ${examAnswers[currentQIndex] === String(i) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300'}`}>{stdQuestions[currentQIndex].type === 'boolean' ? (i === 0 ? 'B' : 'S') : String.fromCharCode(65 + i)}</span>
-                                                    <span className="text-sm font-medium">{opt}</span>
-                                                </label>
-                                            ))
-                                        ) : stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'multiple' ? (
-                                            (stdQuestions[currentQIndex].options || []).map((opt, i) => {
-                                                const currentAns = examAnswers[currentQIndex] ? String(examAnswers[currentQIndex]).split(',') : [];
-                                                const isChecked = currentAns.includes(String(i));
-                                                return (
-                                                    <label key={i} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${isChecked ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-bold shadow-sm' : 'border-slate-200 hover:bg-slate-50'}`}>
-                                                        <input type="checkbox" className="hidden" checked={isChecked} onChange={(e) => {
-                                                            let newAns = [...currentAns];
-                                                            if (e.target.checked) newAns.push(String(i)); else newAns = newAns.filter(a => a !== String(i));
-                                                            setExamAnswers(p => ({ ...p, [currentQIndex]: newAns.join(',') }));
-                                                        }} />
-                                                        <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300'}`}>{isChecked && <Check size={14} />}</div>
-                                                        <span className="text-sm font-medium">{opt}</span>
-                                                    </label>
-                                                )
-                                            })
-                                        ) : stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'matching' ? (
-                                            <div className="space-y-4">
-                                                {String(stdQuestions[currentQIndex].correct).split('\n').filter(Boolean).map((line, idx) => {
-                                                    const leftItem = line.split('|')[0]?.trim();
-                                                    if (!leftItem) return null;
-                                                    let currentAns = {};
-                                                    try { currentAns = JSON.parse(examAnswers[currentQIndex] || "{}"); } catch (e) { }
-                                                    return (
-                                                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-indigo-300 transition-colors">
-                                                            <div className="flex-1 font-medium text-slate-700">{leftItem}</div>
-                                                            <select
-                                                                className="w-full sm:w-1/2 p-3 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:border-indigo-500 font-medium text-slate-700 cursor-pointer"
-                                                                value={currentAns[leftItem] || ""}
-                                                                onChange={(e) => {
-                                                                    const selectedVal = e.target.value;
-                                                                    if (selectedVal !== "" && Object.values(currentAns).includes(selectedVal)) {
-                                                                        showToast("Jawaban ini sudah digunakan di pernyataan lain!", "error");
-                                                                        return;
-                                                                    }
-                                                                    const newAns = { ...currentAns, [leftItem]: selectedVal };
-                                                                    setExamAnswers(p => ({ ...p, [currentQIndex]: JSON.stringify(newAns) }));
-                                                                }}
-                                                            >
-                                                                <option value="">-- Pilih Pasangan --</option>
-                                                                {(stdQuestions[currentQIndex].options || []).map((opt, oIdx) => (
-                                                                    <option key={oIdx} value={opt}>{opt}</option>
-                                                                ))}
-                                                            </select>
+                                                <div className="space-y-3 mb-8">
+                                                    {(stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'single' || stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'boolean') ? (
+                                                        (stdQuestions[currentQIndex].options || []).map((opt, i) => (
+                                                            <label key={i} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${examAnswers[currentQIndex] === String(i) ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-bold shadow-sm' : 'border-slate-200 hover:bg-slate-50'}`}>
+                                                                <input type="radio" name={`q_${currentQIndex}`} className="hidden" checked={examAnswers[currentQIndex] === String(i)} onChange={() => setExamAnswers(p => ({ ...p, [currentQIndex]: String(i) }))} />
+                                                                <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs shrink-0 ${examAnswers[currentQIndex] === String(i) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300'}`}>{stdQuestions[currentQIndex].type === 'boolean' ? (i === 0 ? 'B' : 'S') : String.fromCharCode(65 + i)}</span>
+                                                                <span className="text-sm font-medium">{opt}</span>
+                                                            </label>
+                                                        ))
+                                                    ) : stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'multiple' ? (
+                                                        (stdQuestions[currentQIndex].options || []).map((opt, i) => {
+                                                            const currentAns = examAnswers[currentQIndex] ? String(examAnswers[currentQIndex]).split(',') : [];
+                                                            const isChecked = currentAns.includes(String(i));
+                                                            return (
+                                                                <label key={i} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${isChecked ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-bold shadow-sm' : 'border-slate-200 hover:bg-slate-50'}`}>
+                                                                    <input type="checkbox" className="hidden" checked={isChecked} onChange={(e) => {
+                                                                        let newAns = [...currentAns];
+                                                                        if (e.target.checked) newAns.push(String(i)); else newAns = newAns.filter(a => a !== String(i));
+                                                                        setExamAnswers(p => ({ ...p, [currentQIndex]: newAns.join(',') }));
+                                                                    }} />
+                                                                    <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300'}`}>{isChecked && <Check size={14} />}</div>
+                                                                    <span className="text-sm font-medium">{opt}</span>
+                                                                </label>
+                                                            )
+                                                        })
+                                                    ) : stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'matching' ? (
+                                                        <div className="space-y-4">
+                                                            {String(stdQuestions[currentQIndex].correct).split('\n').filter(Boolean).map((line, idx) => {
+                                                                const leftItem = line.split('|')[0]?.trim();
+                                                                if (!leftItem) return null;
+                                                                let currentAns = {};
+                                                                try { currentAns = JSON.parse(examAnswers[currentQIndex] || "{}"); } catch (e) { }
+                                                                return (
+                                                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-indigo-300 transition-colors">
+                                                                        <div className="flex-1 font-medium text-slate-700">{leftItem}</div>
+                                                                        <select
+                                                                            className="w-full sm:w-1/2 p-3 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:border-indigo-500 font-medium text-slate-700 cursor-pointer"
+                                                                            value={currentAns[leftItem] || ""}
+                                                                            onChange={(e) => {
+                                                                                const selectedVal = e.target.value;
+                                                                                if (selectedVal !== "" && Object.values(currentAns).includes(selectedVal)) {
+                                                                                    showToast("Jawaban ini sudah digunakan di pernyataan lain!", "error");
+                                                                                    return;
+                                                                                }
+                                                                                const newAns = { ...currentAns, [leftItem]: selectedVal };
+                                                                                setExamAnswers(p => ({ ...p, [currentQIndex]: JSON.stringify(newAns) }));
+                                                                            }}
+                                                                        >
+                                                                            <option value="">-- Pilih Pasangan --</option>
+                                                                            {(stdQuestions[currentQIndex].options || []).map((opt, oIdx) => (
+                                                                                <option key={oIdx} value={opt}>{opt}</option>
+                                                                            ))}
+                                                                        </select>
+                                                                    </div>
+                                                                )
+                                                            })}
                                                         </div>
+                                                    ) : (
+                                                        <textarea rows="4" className="w-full p-4 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none font-medium text-slate-700 transition-all" placeholder="Ketik jawaban Anda di sini..." value={examAnswers[currentQIndex] || ''} onChange={e => setExamAnswers(p => ({ ...p, [currentQIndex]: e.target.value }))}></textarea>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex justify-between mt-8 pt-6 border-t border-slate-100">
+                                                    <button onClick={() => setCurrentQIndex(Math.max(0, currentQIndex - 1))} disabled={currentQIndex === 0} className="px-6 py-3 rounded-xl font-bold bg-slate-100 text-slate-600 disabled:opacity-50 hover:bg-slate-200 transition-all flex items-center gap-2"><ChevronLeft size={18} /> Sebelumnya</button>
+                                                    {currentQIndex === stdQuestions.length - 1 ? (
+                                                        <button onClick={() => handleStudentFinish(examAnswers)} className="px-8 py-3 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md transition-all flex items-center gap-2">Selesai & Kirim <CheckCircle size={18} /></button>
+                                                    ) : (
+                                                        <button onClick={() => setCurrentQIndex(currentQIndex + 1)} className="px-8 py-3 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md transition-all flex items-center gap-2">Selanjutnya <ChevronRight size={18} /></button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="w-full lg:w-72 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 shrink-0">
+                                            <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Grid size={18} /> Navigasi Soal</h3>
+                                            <div className="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-5 gap-2">
+                                                {stdQuestions.map((q, idx) => {
+                                                    let isAnswered = false;
+                                                    const ans = examAnswers[idx];
+                                                    if (ans !== undefined && ans !== null && ans !== "") {
+                                                        if (q.type === 'matching') {
+                                                            try {
+                                                                const parsed = JSON.parse(ans);
+                                                                isAnswered = Object.keys(parsed).length > 0;
+                                                            } catch (e) { }
+                                                        } else {
+                                                            isAnswered = true;
+                                                        }
+                                                    }
+                                                    const isCurrent = currentQIndex === idx;
+                                                    return (
+                                                        <button key={idx} onClick={() => setCurrentQIndex(idx)}
+                                                            className={`w-10 h-10 flex items-center justify-center rounded-lg text-sm font-bold border transition-colors ${
+                                                                isCurrent ? 'ring-2 ring-indigo-500 border-indigo-500 ' : ''
+                                                            } ${
+                                                                isAnswered ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                                                            }`}>
+                                                            {idx + 1}
+                                                        </button>
                                                     )
                                                 })}
                                             </div>
-                                        ) : (
-                                            <textarea rows="4" className="w-full p-4 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none font-medium text-slate-700 transition-all" placeholder="Ketik jawaban Anda di sini..." value={examAnswers[currentQIndex] || ''} onChange={e => setExamAnswers(p => ({ ...p, [currentQIndex]: e.target.value }))}></textarea>
-                                        )}
-                                    </div>
 
-                                    <div className="flex justify-between mt-8 pt-6 border-t border-slate-100">
-                                        <button onClick={() => setCurrentQIndex(Math.max(0, currentQIndex - 1))} disabled={currentQIndex === 0} className="px-6 py-3 rounded-xl font-bold bg-slate-100 text-slate-600 disabled:opacity-50 hover:bg-slate-200 transition-all flex items-center gap-2"><ChevronLeft size={18} /> Sebelumnya</button>
-                                        {currentQIndex === stdQuestions.length - 1 ? (
-                                            <button onClick={() => handleStudentFinish(examAnswers)} className="px-8 py-3 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md transition-all flex items-center gap-2">Selesai & Kirim <CheckCircle size={18} /></button>
-                                        ) : (
-                                            <button onClick={() => setCurrentQIndex(currentQIndex + 1)} className="px-8 py-3 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md transition-all flex items-center gap-2">Selanjutnya <ChevronRight size={18} /></button>
-                                        )}
+                                            <div className="mt-6 flex flex-col gap-2 border-t border-slate-100 pt-4">
+                                                <div className="flex items-center gap-2 text-xs font-medium text-slate-600"><div className="w-4 h-4 rounded bg-indigo-600"></div> Sudah Dijawab</div>
+                                                <div className="flex items-center gap-2 text-xs font-medium text-slate-600"><div className="w-4 h-4 rounded bg-white border border-slate-300"></div> Belum Dijawab</div>
+                                                <div className="flex items-center gap-2 text-xs font-medium text-slate-600"><div className="w-4 h-4 rounded border-2 border-indigo-500"></div> Posisi Saat Ini</div>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center mt-10 w-full max-w-3xl mx-auto">
+                                        <AlertTriangle size={48} className="mx-auto text-rose-500 mb-4" />
+                                        <h2 className="text-lg font-bold text-slate-800 mb-2">Soal Belum Tersedia</h2>
+                                        <p className="text-slate-500 text-sm">Belum ada soal untuk mata pelajaran ini. Silakan lapor ke pengawas.</p>
+                                        <button onClick={() => setRole(null)} className="mt-6 px-6 py-3 bg-slate-100 rounded-xl font-bold text-slate-600 hover:bg-slate-200">Kembali ke Login</button>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center mt-10">
-                                    <AlertTriangle size={48} className="mx-auto text-rose-500 mb-4" />
-                                    <h2 className="text-lg font-bold text-slate-800 mb-2">Soal Belum Tersedia</h2>
-                                    <p className="text-slate-500 text-sm">Belum ada soal untuk mata pelajaran ini. Silakan lapor ke pengawas.</p>
-                                    <button onClick={() => setRole(null)} className="mt-6 px-6 py-3 bg-slate-100 rounded-xl font-bold text-slate-600 hover:bg-slate-200">Kembali ke Login</button>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
                 ) : (
@@ -1741,7 +1788,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
             <div className={`glass-panel border-r border-slate-200/60 h-screen fixed left-0 top-0 flex flex-col z-40 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-all duration-300 ${sidebarExpanded ? 'w-64' : 'w-20'}`}>
                 <div className="p-5 border-b border-slate-200/50 h-20 flex items-center gap-3 overflow-hidden shrink-0">
                     <div className="w-10 h-10 shrink-0 bg-white rounded-xl flex items-center justify-center shadow-md border border-slate-200 overflow-hidden">
-                        <img src={schoolData.logo} alt="Profile" className="w-full h-full object-contain p-1" />
+                        <img src={EQUEST_LOGO} alt="e-Quest" className="w-full h-full object-contain p-1" />
                     </div>
                     {sidebarExpanded && <div className="flex-1 min-w-0"><h2 className="font-bold text-slate-800 leading-tight text-sm truncate">{currentUser.name}</h2><p className="text-[10px] text-indigo-500 uppercase font-bold tracking-wider mt-0.5">{role}</p></div>}
                 </div>
@@ -1839,21 +1886,21 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                     {/* TEACHERS DATA (ADMIN) */}
                     {adminMenu === 'teachers' && role === 'admin' && (
                         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-fade-in max-w-6xl mx-auto">
-                            <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-5"><h3 className="font-bold text-2xl text-slate-800">Manajemen Akun Guru</h3><button onClick={() => { setEditingItem(null); openModal('teacher'); }} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex gap-2 hover:bg-indigo-700 shadow-sm transition-all"><Plus size={18} /> Tambah Guru Baru</button></div>
+                            <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-5"><h3 className="font-bold text-2xl text-slate-800">Manajemen Akun Guru</h3><button onClick={() => openModal('teacher')} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex gap-2 hover:bg-indigo-700 shadow-sm transition-all"><Plus size={18} /> Tambah Guru Baru</button></div>
                             <div className="overflow-hidden rounded-xl border border-slate-200">
-                                <table className="w-full text-left bg-white"><thead className="bg-slate-50 border-b border-slate-200"><tr><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">Nama Lengkap & Gelar</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">Username Akses</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">Password</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider text-center">Aksi</th></tr></thead><tbody className="divide-y divide-slate-100">{teachers.map(t => <tr key={t.id} className="hover:bg-slate-50 transition-colors"><td className="p-4 font-semibold text-slate-800 text-sm flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-bold">{t.name.charAt(0)}</div>{t.name}</td><td className="p-4 font-mono font-medium text-indigo-600 text-sm">{t.username}</td><td className="p-4 font-mono text-slate-400 text-sm">{t.password}</td><td className="p-4 flex gap-2 justify-center"><button onClick={() => { setEditingItem(t); openModal('teacher'); }} className="bg-white border border-slate-200 text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-colors shadow-sm"><Edit size={16} /></button><button onClick={() => initiateDelete('teacher', t.id)} className="bg-white border border-slate-200 text-rose-500 p-2 rounded-lg hover:bg-rose-50 transition-colors shadow-sm"><Trash2 size={16} /></button></td></tr>)}</tbody></table>
+                                <table className="w-full text-left bg-white"><thead className="bg-slate-50 border-b border-slate-200"><tr><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">Nama Lengkap & Gelar</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">Username Akses</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">Password</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider text-center">Aksi</th></tr></thead><tbody className="divide-y divide-slate-100">{teachers.map(t => <tr key={t.id} className="hover:bg-slate-50 transition-colors"><td className="p-4 font-semibold text-slate-800 text-sm flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-bold">{t.name.charAt(0)}</div>{t.name}</td><td className="p-4 font-mono font-medium text-indigo-600 text-sm">{t.username}</td><td className="p-4 font-mono text-slate-400 text-sm">{t.password}</td><td className="p-4 flex gap-2 justify-center"><button onClick={() => openModal('teacher', t)} className="bg-white border border-slate-200 text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-colors shadow-sm"><Edit size={16} /></button><button onClick={() => initiateDelete('teacher', t.id)} className="bg-white border border-slate-200 text-rose-500 p-2 rounded-lg hover:bg-rose-50 transition-colors shadow-sm"><Trash2 size={16} /></button></td></tr>)}</tbody></table>
                             </div>
                         </div>
                     )}
 
                     {/* CLASSES DATA (ADMIN) */}
                     {adminMenu === 'classes' && role === 'admin' && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-fade-in max-w-6xl mx-auto"><div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-slate-100 pb-5"><h3 className="font-bold text-2xl text-slate-800">Data Master Kelas</h3><div className="flex gap-2 w-full md:w-auto"><div className="relative flex-1 md:w-56"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} /><input value={classSearch} onChange={e => setClassSearch(e.target.value)} placeholder="Cari Kelas..." className="w-full pl-10 pr-3 py-2.5 border border-slate-200 focus:border-indigo-400 rounded-xl text-sm outline-none bg-slate-50 font-medium text-slate-700" /></div><button onClick={() => setImportModalConfig({ isOpen: true, type: 'Data Kelas' })} className="bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-semibold text-sm flex gap-2 hover:bg-slate-50 shadow-sm"><FileBox size={18} /> Import</button><button onClick={() => { setEditingItem(null); openModal('class') }} className="bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm flex gap-2 shadow-sm hover:bg-indigo-700"><Plus size={18} /> Baru</button></div></div><div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-5">{filteredClassesList.map(i => <div key={i.id} className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow group relative"><div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => { setEditingItem(i); openModal('class') }} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"><Edit size={14} /></button><button onClick={() => initiateDelete('class', i.id)} className="p-1.5 bg-rose-50 text-rose-500 rounded-lg hover:bg-rose-100"><Trash2 size={14} /></button></div><div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3"><Layers size={24} /></div><h4 className="font-bold text-lg text-slate-800 mb-0.5">{i.name}</h4><p className="font-semibold text-slate-400 text-[10px] uppercase tracking-wider">Tingkat {i.level}</p></div>)}</div></div>
+                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-fade-in max-w-6xl mx-auto"><div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-slate-100 pb-5"><h3 className="font-bold text-2xl text-slate-800">Data Master Kelas</h3><div className="flex gap-2 w-full md:w-auto"><div className="relative flex-1 md:w-56"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} /><input value={classSearch} onChange={e => setClassSearch(e.target.value)} placeholder="Cari Kelas..." className="w-full pl-10 pr-3 py-2.5 border border-slate-200 focus:border-indigo-400 rounded-xl text-sm outline-none bg-slate-50 font-medium text-slate-700" /></div><button onClick={() => setImportModalConfig({ isOpen: true, type: 'Data Kelas' })} className="bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-semibold text-sm flex gap-2 hover:bg-slate-50 shadow-sm"><FileBox size={18} /> Import</button><button onClick={() => openModal('class')} className="bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm flex gap-2 shadow-sm hover:bg-indigo-700"><Plus size={18} /> Baru</button></div></div><div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-5">{filteredClassesList.map(i => <div key={i.id} className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow group relative"><div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => openModal('class', i)} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"><Edit size={14} /></button><button onClick={() => initiateDelete('class', i.id)} className="p-1.5 bg-rose-50 text-rose-500 rounded-lg hover:bg-rose-100"><Trash2 size={14} /></button></div><div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3"><Layers size={24} /></div><h4 className="font-bold text-lg text-slate-800 mb-0.5">{i.name}</h4><p className="font-semibold text-slate-400 text-[10px] uppercase tracking-wider">Tingkat {i.level}</p></div>)}</div></div>
                     )}
 
                     {/* STUDENTS DATA (ADMIN) */}
                     {adminMenu === 'students' && role === 'admin' && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-fade-in max-w-6xl mx-auto"><div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-slate-100 pb-5"><h3 className="font-bold text-2xl text-slate-800">Database Murid</h3><div className="flex flex-wrap gap-2 w-full md:w-auto"><select className="p-2.5 border border-slate-200 bg-slate-50 focus:border-indigo-400 rounded-xl text-sm font-medium text-slate-600 outline-none" value={studentFilterClass} onChange={e => setStudentFilterClass(e.target.value)}><option value="">Semua Kelas</option>{classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select><div className="relative flex-1 md:w-56"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} /><input value={studentSearch} onChange={e => setStudentSearch(e.target.value)} placeholder="Cari Nama/NIS..." className="pl-10 pr-3 py-2.5 border border-slate-200 bg-slate-50 focus:border-indigo-400 rounded-xl text-sm outline-none font-medium text-slate-700" /></div><button onClick={() => setImportModalConfig({ isOpen: true, type: 'Data Murid' })} className="bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-semibold text-sm flex gap-2 hover:bg-slate-50 shadow-sm"><FileBox size={18} /> Import</button><button onClick={() => { setEditingItem(null); openModal('student') }} className="bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm flex gap-2 shadow-sm hover:bg-indigo-700"><Plus size={18} /> Baru</button></div></div><div className="overflow-hidden rounded-xl border border-slate-200"><table className="w-full text-left bg-white"><thead className="bg-slate-50 border-b border-slate-200"><tr><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">Nama</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">Kelas</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">NIS</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">Pass</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider text-center">Aksi</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredStudentsList.map(i => <tr key={i.id} className="hover:bg-slate-50 transition-colors"><td className="p-4 font-semibold text-slate-800 text-sm">{i.name}</td><td className="p-4"><span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase border border-slate-200">{i.class}</span></td><td className="p-4 font-mono font-medium text-indigo-600 text-sm">{i.nis}</td><td className="p-4 font-mono text-slate-400 text-sm">{i.password}</td><td className="p-4 flex gap-2 justify-center"><button onClick={() => { setEditingItem(i); openModal('student') }} className="bg-white border border-slate-200 text-blue-600 p-2 rounded-lg hover:bg-blue-50 shadow-sm"><Edit size={16} /></button><button onClick={() => initiateDelete('student', i.id)} className="bg-white border border-slate-200 text-rose-500 p-2 rounded-lg hover:bg-rose-50 shadow-sm"><Trash2 size={16} /></button></td></tr>)}</tbody></table></div></div>
+                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-fade-in max-w-6xl mx-auto"><div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-slate-100 pb-5"><h3 className="font-bold text-2xl text-slate-800">Database Murid</h3><div className="flex flex-wrap gap-2 w-full md:w-auto"><select className="p-2.5 border border-slate-200 bg-slate-50 focus:border-indigo-400 rounded-xl text-sm font-medium text-slate-600 outline-none" value={studentFilterClass} onChange={e => setStudentFilterClass(e.target.value)}><option value="">Semua Kelas</option>{classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select><div className="relative flex-1 md:w-56"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} /><input value={studentSearch} onChange={e => setStudentSearch(e.target.value)} placeholder="Cari Nama/NIS..." className="pl-10 pr-3 py-2.5 border border-slate-200 bg-slate-50 focus:border-indigo-400 rounded-xl text-sm outline-none font-medium text-slate-700" /></div><button onClick={() => setImportModalConfig({ isOpen: true, type: 'Data Murid' })} className="bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-semibold text-sm flex gap-2 hover:bg-slate-50 shadow-sm"><FileBox size={18} /> Import</button><button onClick={() => openModal('student')} className="bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm flex gap-2 shadow-sm hover:bg-indigo-700"><Plus size={18} /> Baru</button></div></div><div className="overflow-hidden rounded-xl border border-slate-200"><table className="w-full text-left bg-white"><thead className="bg-slate-50 border-b border-slate-200"><tr><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">Nama</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">Kelas</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">NIS</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider">Pass</th><th className="p-4 text-[11px] uppercase font-bold text-slate-500 tracking-wider text-center">Aksi</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredStudentsList.map(i => <tr key={i.id} className="hover:bg-slate-50 transition-colors"><td className="p-4 font-semibold text-slate-800 text-sm">{i.name}</td><td className="p-4"><span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase border border-slate-200">{i.class}</span></td><td className="p-4 font-mono font-medium text-indigo-600 text-sm">{i.nis}</td><td className="p-4 font-mono text-slate-400 text-sm">{i.password}</td><td className="p-4 flex gap-2 justify-center"><button onClick={() => openModal('student', i)} className="bg-white border border-slate-200 text-blue-600 p-2 rounded-lg hover:bg-blue-50 shadow-sm"><Edit size={16} /></button><button onClick={() => initiateDelete('student', i.id)} className="bg-white border border-slate-200 text-rose-500 p-2 rounded-lg hover:bg-rose-50 shadow-sm"><Trash2 size={16} /></button></td></tr>)}</tbody></table></div></div>
                     )}
 
                     {/* SUBJECTS DATA */}
@@ -1861,12 +1908,12 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-fade-in max-w-6xl mx-auto">
                             <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-5">
                                 <h3 className="font-bold text-2xl text-slate-800">{role === 'admin' ? 'Semua Mata Pelajaran' : 'Mata Pelajaran Anda'}</h3>
-                                {role === 'admin' && <button onClick={() => { setEditingItem(null); openModal('subject') }} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex gap-2 shadow-sm hover:bg-indigo-700"><Plus size={18} /> Mapel Baru</button>}
+                                {role === 'admin' && <button onClick={() => openModal('subject')} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex gap-2 shadow-sm hover:bg-indigo-700"><Plus size={18} /> Mapel Baru</button>}
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                                 {getMySubjects().map(i => (
                                     <div key={i.id} className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all relative group flex flex-col">
-                                        {role === 'admin' && <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => { setEditingItem(i); openModal('subject') }} className="p-1.5 bg-white border border-slate-100 text-blue-600 rounded-lg hover:bg-blue-50 shadow-sm"><Edit size={14} /></button><button onClick={() => initiateDelete('subject', i.id)} className="p-1.5 bg-white border border-slate-100 text-rose-500 rounded-lg hover:bg-rose-50 shadow-sm"><Trash2 size={14} /></button></div>}
+                                        {role === 'admin' && <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => openModal('subject', i)} className="p-1.5 bg-white border border-slate-100 text-blue-600 rounded-lg hover:bg-blue-50 shadow-sm"><Edit size={14} /></button><button onClick={() => initiateDelete('subject', i.id)} className="p-1.5 bg-white border border-slate-100 text-rose-500 rounded-lg hover:bg-rose-50 shadow-sm"><Trash2 size={14} /></button></div>}
                                         <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 border border-indigo-100"><BookOpen size={24} /></div>
                                         <h4 className="font-bold text-lg text-slate-800 mb-1">{i.name}</h4>
                                         <div className="flex gap-2 mb-4">
@@ -1934,7 +1981,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             <button onClick={() => initiateDelete('clear_subject', selectedSubjectForQuestions.id)} className="bg-rose-50 border border-rose-200 text-rose-600 px-4 py-2 rounded-xl font-semibold text-sm flex gap-2 items-center hover:bg-rose-100 shadow-sm transition-colors"><Trash2 size={16} /> Kosongkan</button>
                                         )}
                                         <button onClick={() => { setImportModalConfig({ isOpen: true, type: 'Bank Soal' }) }} className="bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold text-sm flex gap-2 items-center hover:bg-emerald-600 shadow-sm"><FileWord size={16} /> Import Berkas</button>
-                                        <button onClick={() => { setEditingItem({ subjectId: selectedSubjectForQuestions.id }); openModal('question'); }} className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-semibold text-sm flex gap-2 items-center shadow-sm hover:bg-indigo-700"><Plus size={16} /> Soal Manual</button>
+                                        <button onClick={() => openModal('question', { subjectId: selectedSubjectForQuestions.id })} className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-semibold text-sm flex gap-2 items-center shadow-sm hover:bg-indigo-700"><Plus size={16} /> Soal Manual</button>
                                     </div>
                                 </div>
 
@@ -1987,7 +2034,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100">
-                                                        <button onClick={() => { setEditingItem(q); openModal('question') }} className="flex-1 bg-white border border-slate-200 text-blue-600 py-2 rounded-lg hover:bg-blue-50 transition-colors font-semibold text-xs flex items-center justify-center gap-1.5"><Edit size={14} /> Edit</button>
+                                                        <button onClick={() => openModal('question', q)} className="flex-1 bg-white border border-slate-200 text-blue-600 py-2 rounded-lg hover:bg-blue-50 transition-colors font-semibold text-xs flex items-center justify-center gap-1.5"><Edit size={14} /> Edit</button>
                                                         <button onClick={() => initiateDelete('question', q.id)} className="flex-1 bg-white border border-slate-200 text-rose-500 py-2 rounded-lg hover:bg-rose-50 transition-colors font-semibold text-xs flex items-center justify-center gap-1.5"><Trash2 size={14} /> Hapus</button>
                                                     </div>
                                                 </div>
@@ -2193,7 +2240,38 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                     {/* PENGATURAN SEKOLAH (ADMIN ONLY) */}
                     {adminMenu === 'school' && role === 'admin' && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 max-w-3xl mx-auto animate-fade-in"><div className="flex items-center gap-4 mb-6 border-b border-slate-100 pb-5"><div className="bg-slate-100 p-3.5 rounded-xl text-slate-600 shadow-sm"><Settings size={28} /></div><div><h3 className="font-bold text-2xl text-slate-800 tracking-tight">Pengaturan Sistem</h3><p className="text-slate-500 font-medium text-sm mt-0.5">Identitas Institusi & Akun Admin</p></div></div><form onSubmit={handleSaveSchool} className="space-y-6"><div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start bg-slate-50 p-6 rounded-2xl border border-slate-200"><div className="shrink-0 text-center"><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Logo Aktif</label><div className="w-24 h-24 border-2 border-dashed border-indigo-200 rounded-xl flex items-center justify-center overflow-hidden bg-white shadow-sm"><img src={tempLogo || schoolData.logo} className="w-full h-full object-contain p-2" /></div></div><div className="flex-1 w-full"><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Upload Logo Baru</label><input type="file" accept="image/*" onChange={handleLogoUpload} className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white shadow-sm font-medium text-slate-700 text-sm" /><p className="text-[10px] text-slate-400 mt-2 font-semibold">Format: PNG, JPG. Ukuran Maks: 2MB.</p></div></div><div className="space-y-4 pt-2"><label className="block text-[10px] font-bold text-indigo-500 uppercase tracking-wider border-b border-slate-200 pb-1">Informasi Instansi</label><div><input name="dinasPendidikan" defaultValue={schoolData.dinasPendidikan} placeholder="Dinas Pendidikan (Kop Surat)" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div><div className="grid grid-cols-2 gap-4"><div><input name="name" defaultValue={schoolData.name} placeholder="Nama Sekolah" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div><div><input name="kabupaten" defaultValue={schoolData.kabupaten} placeholder="Nama Kabupaten/Kota" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div></div><div><input name="address" defaultValue={schoolData.address} placeholder="Alamat Sekolah Lengkap" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-medium text-slate-800 outline-none text-sm" /></div><div><input name="term" defaultValue={schoolData.term} placeholder="Tahun Ajaran (Misal: Ganjil 2025/2026)" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-medium text-slate-800 outline-none text-sm" /></div></div><div className="space-y-4 pt-4"><label className="block text-[10px] font-bold text-amber-500 uppercase tracking-wider border-b border-slate-200 pb-1">Data Kepala Sekolah</label><div><input name="kepsekName" defaultValue={schoolData.kepsekName} placeholder="Nama Kepala Sekolah beserta Gelar" className="w-full p-3.5 border border-slate-200 focus:border-amber-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div><div><input name="kepsekNip" defaultValue={schoolData.kepsekNip} placeholder="NIP Kepala Sekolah" className="w-full p-3.5 border border-slate-200 focus:border-amber-400 rounded-xl bg-slate-50 font-medium text-slate-800 outline-none text-sm" /></div></div><div className="space-y-4 pt-4"><label className="block text-[10px] font-bold text-rose-500 uppercase tracking-wider border-b border-slate-200 pb-1">Kredensial Admin Utama</label><div><input name="adminName" defaultValue={schoolData.adminName} placeholder="Nama Lengkap Admin" className="w-full p-3.5 border border-slate-200 focus:border-rose-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><input name="adminUsername" defaultValue={schoolData.adminUsername} placeholder="Username Akses" className="w-full p-3.5 border border-slate-200 focus:border-rose-400 rounded-xl bg-slate-50 font-mono font-bold text-indigo-600 outline-none text-sm" /></div><div><input name="adminPassword" type="password" defaultValue={schoolData.adminPassword} placeholder="Password Baru" className="w-full p-3.5 border border-slate-200 focus:border-rose-400 rounded-xl bg-slate-50 font-mono font-medium text-slate-500 outline-none text-sm" /></div></div></div>
+                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 max-w-3xl mx-auto animate-fade-in"><div className="flex items-center gap-4 mb-6 border-b border-slate-100 pb-5"><div className="bg-slate-100 p-3.5 rounded-xl text-slate-600 shadow-sm"><Settings size={28} /></div><div><h3 className="font-bold text-2xl text-slate-800 tracking-tight">Pengaturan Sistem</h3><p className="text-slate-500 font-medium text-sm mt-0.5">Identitas Institusi & Akun Admin</p></div></div><form onSubmit={handleSaveSchool} className="space-y-6">
+
+                        {/* BRANDING LOGO — hanya info, tidak bisa diubah */}
+                        <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+                          <div className="shrink-0 text-center">
+                            <label className="block text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-2">Logo Aplikasi (Branding)</label>
+                            <div className="w-24 h-24 border-2 border-indigo-200 rounded-xl flex items-center justify-center overflow-hidden bg-white shadow-sm">
+                              <img src={EQUEST_LOGO} className="w-full h-full object-contain p-2" alt="e-Quest" />
+                            </div>
+                          </div>
+                          <div className="flex-1 w-full">
+                            <p className="text-xs font-bold text-indigo-700 mb-1">Logo e-Quest (Tetap)</p>
+                            <p className="text-[11px] text-indigo-500 font-medium leading-relaxed">Logo branding e-Quest digunakan pada tampilan aplikasi, sidebar, dan halaman login. Logo ini tidak dapat diubah dan merupakan identitas resmi platform.</p>
+                          </div>
+                        </div>
+
+                        {/* SCHOOL LOGO — untuk dokumen cetak */}
+                        <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                          <div className="shrink-0 text-center">
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Logo Sekolah (Cetak)</label>
+                            <div className="w-24 h-24 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center overflow-hidden bg-white shadow-sm">
+                              {(tempSchoolLogo || schoolData.schoolLogo) ? <img src={tempSchoolLogo || schoolData.schoolLogo} className="w-full h-full object-contain p-2" alt="Logo Sekolah" /> : <School size={32} className="text-slate-300" />}
+                            </div>
+                          </div>
+                          <div className="flex-1 w-full">
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Upload Logo Sekolah</label>
+                            <input type="file" accept="image/*" onChange={handleSchoolLogoUpload} className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white shadow-sm font-medium text-slate-700 text-sm" />
+                            <p className="text-[10px] text-slate-400 mt-2 font-semibold">Digunakan pada Kop Surat, Daftar Hadir, dan Berita Acara. Format: PNG/JPG, Maks 2MB.</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4 pt-2"><label className="block text-[10px] font-bold text-indigo-500 uppercase tracking-wider border-b border-slate-200 pb-1">Informasi Instansi</label><div><input name="dinasPendidikan" defaultValue={schoolData.dinasPendidikan} placeholder="Dinas Pendidikan (Kop Surat)" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div><div className="grid grid-cols-2 gap-4"><div><input name="name" defaultValue={schoolData.name} placeholder="Nama Sekolah" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div><div><input name="kabupaten" defaultValue={schoolData.kabupaten} placeholder="Nama Kabupaten/Kota" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div></div><div><input name="address" defaultValue={schoolData.address} placeholder="Alamat Sekolah Lengkap" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-medium text-slate-800 outline-none text-sm" /></div><div><input name="term" defaultValue={schoolData.term} placeholder="Tahun Ajaran (Misal: Ganjil 2025/2026)" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-medium text-slate-800 outline-none text-sm" /></div></div><div className="space-y-4 pt-4"><label className="block text-[10px] font-bold text-amber-500 uppercase tracking-wider border-b border-slate-200 pb-1">Data Kepala Sekolah</label><div><input name="kepsekName" defaultValue={schoolData.kepsekName} placeholder="Nama Kepala Sekolah beserta Gelar" className="w-full p-3.5 border border-slate-200 focus:border-amber-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div><div><input name="kepsekNip" defaultValue={schoolData.kepsekNip} placeholder="NIP Kepala Sekolah" className="w-full p-3.5 border border-slate-200 focus:border-amber-400 rounded-xl bg-slate-50 font-medium text-slate-800 outline-none text-sm" /></div></div><div className="space-y-4 pt-4"><label className="block text-[10px] font-bold text-rose-500 uppercase tracking-wider border-b border-slate-200 pb-1">Kredensial Admin Utama</label><div><input name="adminName" defaultValue={schoolData.adminName} placeholder="Nama Lengkap Admin" className="w-full p-3.5 border border-slate-200 focus:border-rose-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><input name="adminUsername" defaultValue={schoolData.adminUsername} placeholder="Username Akses" className="w-full p-3.5 border border-slate-200 focus:border-rose-400 rounded-xl bg-slate-50 font-mono font-bold text-indigo-600 outline-none text-sm" /></div><div><input name="adminPassword" type="password" defaultValue={schoolData.adminPassword} placeholder="Password Baru" className="w-full p-3.5 border border-slate-200 focus:border-rose-400 rounded-xl bg-slate-50 font-mono font-medium text-slate-500 outline-none text-sm" /></div></div></div>
                             <div className="space-y-4 pt-4"><label className="block text-[10px] font-bold text-indigo-500 uppercase tracking-wider border-b border-slate-200 pb-1">Pengaturan Ujian</label><div><label className="block text-xs font-semibold text-slate-600 mb-1.5">Jumlah Opsi Pilihan Ganda</label><select name="optionCount" defaultValue={schoolData.optionCount || 5} className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-medium text-slate-600 outline-none text-sm"><option value="4">4 Opsi (A, B, C, D)</option><option value="5">5 Opsi (A, B, C, D, E)</option></select></div><p className="text-[10px] text-slate-500 font-medium mt-1">Menentukan jumlah opsi jawaban maksimal pada pembuatan soal.</p></div>
                             <div className="space-y-4 pt-4"><label className="block text-[10px] font-bold text-fuchsia-500 uppercase tracking-wider border-b border-slate-200 pb-1">Integrasi AI (Opsional)</label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2295,7 +2373,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                     <button type="button" onClick={handleGenerateVisual} className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-100 px-3 py-1.5 rounded-lg font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-indigo-100 transition-all"><Wand2 size={12} /> Generate Visual AI</button>
                                                 </div>
                                             </div>
-                                            <input type="hidden" name="image" defaultValue={editingItem?.image} />
+                                            <input type="hidden" name="image" value={editingItem?.image || ''} />
                                             {editingItem?.image && <div className="mb-3 rounded-lg overflow-hidden border border-slate-200 max-w-[200px]"><img src={editingItem.image} alt="Preview" className="w-full h-auto object-cover" /></div>}
                                             <textarea name="text" defaultValue={editingItem?.text} placeholder="Ketik narasi kasus atau pertanyaan secara lengkap di sini..." rows={4} className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-indigo-400 focus:bg-white font-medium text-slate-800 text-sm leading-relaxed transition-colors" required />
                                         </div>
@@ -2363,18 +2441,46 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             <p className="text-xs font-bold text-slate-500 uppercase mt-1">Mapel: <span className="text-indigo-600">{editingItem.subject}</span></p>
                                         </div>
                                         <div className="space-y-6">
-                                            {questions.filter(q => subjects.find(s => s.name === editingItem.subject)?.id === q.subjectId).map((q, i) => (
+                                            {questions.filter(q => subjects.find(s => s.name === editingItem.subject)?.id === q.subjectId).map((q, i) => {
+                                                const formatAnswer = (type, ans, options) => {
+                                                    if (ans === undefined || ans === null || ans === '') return 'Tidak dijawab';
+                                                    if (type === 'single') {
+                                                        const idx = parseInt(ans);
+                                                        return !isNaN(idx) && options && options[idx] ? `${String.fromCharCode(65 + idx)}. ${options[idx]}` : ans;
+                                                    }
+                                                    if (type === 'multiple') {
+                                                        const indices = String(ans).split(',');
+                                                        return indices.map(i => {
+                                                            const idx = parseInt(i);
+                                                            return !isNaN(idx) && options && options[idx] ? `${String.fromCharCode(65 + idx)}. ${options[idx]}` : i;
+                                                        }).join(' | ');
+                                                    }
+                                                    if (type === 'boolean') {
+                                                        return String(ans) === "0" ? "Pernyataan BENAR" : "Pernyataan SALAH";
+                                                    }
+                                                    if (type === 'matching') {
+                                                        try {
+                                                            const parsed = typeof ans === 'string' ? JSON.parse(ans) : ans;
+                                                            return Object.entries(parsed).map(([k, v]) => `${k} -> ${v}`).join('\n');
+                                                        } catch (e) {
+                                                            return String(ans);
+                                                        }
+                                                    }
+                                                    return String(ans);
+                                                };
+
+                                                return (
                                                 <div key={q.id} className="p-4 border border-slate-200 rounded-xl space-y-3">
                                                     <p className="font-semibold text-slate-800 text-sm whitespace-pre-wrap">{q.text}</p>
                                                     <div className="bg-slate-50 p-3 rounded-lg text-sm">
                                                         <p className="font-bold text-slate-600 mb-1">Kunci Jawaban Benar:</p>
-                                                        <p className="text-slate-800">{q.correct}</p>
+                                                        <p className="text-slate-800 whitespace-pre-wrap">{formatAnswer(q.type, q.correct, q.options)}</p>
                                                     </div>
                                                     <div className="bg-indigo-50 p-3 rounded-lg text-sm border border-indigo-100">
                                                         <p className="font-bold text-indigo-700 mb-1">Jawaban Siswa:</p>
-                                                        <p className="text-indigo-900 font-medium">
-                                                            {editingItem.rawAnswersMap?.[q.id] ?
-                                                                (typeof editingItem.rawAnswersMap[q.id] === 'object' ? JSON.stringify(editingItem.rawAnswersMap[q.id]) : String(editingItem.rawAnswersMap[q.id]))
+                                                        <p className="text-indigo-900 font-medium whitespace-pre-wrap">
+                                                            {editingItem.rawAnswersMap?.[q.id] !== undefined ?
+                                                                formatAnswer(q.type, editingItem.rawAnswersMap[q.id], q.options)
                                                                 : <span className="text-slate-400 italic">Tidak dijawab</span>}
                                                         </p>
                                                     </div>
@@ -2383,7 +2489,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                         <input type="number" name={`score_${q.id}`} defaultValue={editingItem.earnedScores?.[q.id] || 0} max={q.weight || 10} min="0" className="w-20 p-2 border border-slate-300 rounded-lg outline-none focus:border-indigo-500 font-bold text-center text-indigo-600 text-sm bg-white" />
                                                     </div>
                                                 </div>
-                                            ))}
+                                            )})}
                                         </div>
                                     </div>
                                 )}
