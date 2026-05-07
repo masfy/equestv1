@@ -1,377 +1,438 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Clock, User, Key, ChevronLeft, ChevronRight, CheckCircle, LogOut, 
-  LayoutDashboard, Lock, Eye, EyeOff, BadgeCheck, CheckSquare, 
-  Image as ImageIcon, Users, BookOpen, BarChart2, Settings, Plus, 
-  Trash2, Edit, Printer, Download, RefreshCw, Menu, X, Save, FileText,
-  ArrowLeft, FolderOpen, GraduationCap, UserCog, School, ClipboardList,
-  Info, Layers, Grid, Sparkles, Loader2, Upload, AlertTriangle, Power, 
-  Bell, Check, AlertCircle, Filter, Search, MonitorPlay, Calendar, 
-  FileSpreadsheet, BrainCircuit, Play, ChevronDown, ChevronUp, FileUp, 
-  FileBox, FileText as FileWord, Wand2, ImagePlus, FileCheck
+import {
+Clock, User, Key, ChevronLeft, ChevronRight, CheckCircle, LogOut,
+LayoutDashboard, Lock, Eye, EyeOff, BadgeCheck, CheckSquare,
+Image as ImageIcon, Users, BookOpen, BarChart2, Settings, Plus,
+Trash2, Edit, Printer, Download, RefreshCw, Menu, X, Save, FileText,
+ArrowLeft, FolderOpen, GraduationCap, UserCog, School, ClipboardList,
+Info, Layers, Grid, Sparkles, Loader2, Upload, AlertTriangle, Power,
+Bell, Check, AlertCircle, Filter, Search, MonitorPlay, Calendar,
+FileSpreadsheet, BrainCircuit, Play, ChevronDown, ChevronUp, FileUp,
+FileBox, FileText as FileWord, Wand2, ImagePlus, FileCheck
 } from 'lucide-react';
 
 // --- INITIAL DATA & MOCKUP DATABASE ---
 
 const INITIAL_SCHOOL_DATA = {
-  name: "SD Negeri 2 Palapi",
-  address: "Jl. Pendidikan Cerdas No. 1, Jakarta Selatan",
-  term: "Ganjil 2025/2026",
-  adminName: "Administrator Pusat",
-  adminUsername: "admin",
-  adminPassword: "123",
-  logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhkZZ6nl3Pq7mFou917u9D1yJnyd4AmsDSQI4VyCjaktVQOk6Yj0teuLBiiyBeiyyKhhbBRC5SJW9Ml6QZZ5vlH-ZlR1lrrKO6auMpiFZrs_DC-VINjninMxAh57pj7yVza53Z2qgyUKiGw8RWviLJ8_Cvl_DamdXJG_OVk_CYc8iwVa4BReULUElQxinWK/s16000/logo%20e-quest.png",
-  apiKey: "" 
+name: "SD Negeri 2 Palapi",
+address: "Jl. Pendidikan Cerdas No. 1, Jakarta Selatan",
+term: "Ganjil 2025/2026",
+adminName: "Administrator Pusat",
+adminUsername: "admin",
+adminPassword: "123",
+logo:
+"https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhkZZ6nl3Pq7mFou917u9D1yJnyd4AmsDSQI4VyCjaktVQOk6Yj0teuLBiiyBeiyyKhhbBRC5SJW9Ml6QZZ5vlH-ZlR1lrrKO6auMpiFZrs_DC-VINjninMxAh57pj7yVza53Z2qgyUKiGw8RWviLJ8_Cvl_DamdXJG_OVk_CYc8iwVa4BReULUElQxinWK/s16000/logo%20e-quest.png",
+apiKey: ""
 };
 
 const INITIAL_TEACHERS = [
-  { id: 101, name: "Budi Santoso, S.Pd", username: "guru1", password: "123" },
-  { id: 102, name: "Siti Aminah, M.Pd", username: "guru2", password: "123" }
+{ id: 101, name: "Budi Santoso, S.Pd", username: "guru1", password: "123" },
+{ id: 102, name: "Siti Aminah, M.Pd", username: "guru2", password: "123" }
 ];
 
 const INITIAL_CLASSES = [
-  { id: 1, name: "Kelas 6A", level: "6" },
-  { id: 2, name: "Kelas 6B", level: "6" },
-  { id: 3, name: "Kelas 5A", level: "5" },
+{ id: 1, name: "Kelas 6A", level: "6" },
+{ id: 2, name: "Kelas 6B", level: "6" },
+{ id: 3, name: "Kelas 5A", level: "5" },
 ];
 
 const INITIAL_SUBJECTS = [
-  { id: 1, name: "Matematika", code: "MTK-6A", class: "Kelas 6A", teacherId: 101 },
-  { id: 2, name: "Ilmu Pengetahuan Alam", code: "IPA-6A", class: "Kelas 6A", teacherId: 102 },
-  { id: 3, name: "Pendidikan Jasmani", code: "PJOK-5A", class: "Kelas 5A", teacherId: 101 },
+{ id: 1, name: "Matematika", code: "MTK-6A", class: "Kelas 6A", teacherId: 101 },
+{ id: 2, name: "Ilmu Pengetahuan Alam", code: "IPA-6A", class: "Kelas 6A", teacherId: 102 },
+{ id: 3, name: "Pendidikan Jasmani", code: "PJOK-5A", class: "Kelas 5A", teacherId: 101 },
 ];
 
 const INITIAL_STUDENTS = [
-  { id: 1, nis: '12345', name: 'Ahmad Dahlan', class: 'Kelas 6A', password: '123' }, 
-  { id: 2, nis: '12346', name: 'Citra Kirana', class: 'Kelas 6A', password: '123' },
-  { id: 3, nis: '12347', name: 'Raden Ajeng', class: 'Kelas 6B', password: '123' },
+{ id: 1, nis: '12345', name: 'Ahmad Dahlan', class: 'Kelas 6A', password: '123' },
+{ id: 2, nis: '12346', name: 'Citra Kirana', class: 'Kelas 6A', password: '123' },
+{ id: 3, nis: '12347', name: 'Raden Ajeng', class: 'Kelas 6B', password: '123' },
 ];
 
 const INITIAL_QUESTIONS = [
-  {
-    id: 1, subjectId: 1, type: 'single', 
-    text: "Hasil dari 25 x 4 adalah ....",
-    options: ["75", "100", "125", "150", "200"],
-    correct: "1", difficulty: "LOTS", weight: 20, indicator: "Siswa dapat menghitung perkalian dasar"
-  },
-  {
-    id: 2, subjectId: 1, type: 'multiple', 
-    text: "Pilihlah bangun datar yang memiliki 4 sisi sama panjang.",
-    options: ["Persegi", "Persegi Panjang", "Belah Ketupat", "Layang-layang", "Trapesium"],
-    correct: "0,2", difficulty: "MOTS", weight: 30, indicator: "Siswa dapat mengidentifikasi ciri bangun datar"
-  },
-  {
-    id: 3, subjectId: 1, type: 'boolean', 
-    text: "Semua bilangan genap dapat dibagi 2 tanpa sisa.",
-    options: ["Benar", "Salah"],
-    correct: "0", difficulty: "LOTS", weight: 10, indicator: "Siswa memahami sifat bilangan genap"
-  }
+{
+id: 1, subjectId: 1, type: 'single',
+text: "Hasil dari 25 x 4 adalah ....",
+options: ["75", "100", "125", "150", "200"],
+correct: "1", difficulty: "LOTS", weight: 20, indicator: "Siswa dapat menghitung perkalian dasar"
+},
+{
+id: 2, subjectId: 1, type: 'multiple',
+text: "Pilihlah bangun datar yang memiliki 4 sisi sama panjang.",
+options: ["Persegi", "Persegi Panjang", "Belah Ketupat", "Layang-layang", "Trapesium"],
+correct: "0,2", difficulty: "MOTS", weight: 30, indicator: "Siswa dapat mengidentifikasi ciri bangun datar"
+},
+{
+id: 3, subjectId: 1, type: 'boolean',
+text: "Semua bilangan genap dapat dibagi 2 tanpa sisa.",
+options: ["Benar", "Salah"],
+correct: "0", difficulty: "LOTS", weight: 10, indicator: "Siswa memahami sifat bilangan genap"
+}
 ];
 
 const INITIAL_RESULTS = [];
 
 const QUOTES = [
-    "Pendidikan adalah senjata paling mematikan di dunia. - Nelson Mandela",
-    "Belajarlah seolah engkau hidup selamanya. - Mahatma Gandhi",
-    "Tujuan pendidikan itu untuk mempertajam kecerdasan. - Tan Malaka",
-    "Ing ngarsa sung tulada, ing madya mangun karsa, tut wuri handayani."
+"Pendidikan adalah senjata paling mematikan di dunia. - Nelson Mandela",
+"Belajarlah seolah engkau hidup selamanya. - Mahatma Gandhi",
+"Tujuan pendidikan itu untuk mempertajam kecerdasan. - Tan Malaka",
+"Ing ngarsa sung tulada, ing madya mangun karsa, tut wuri handayani."
 ];
 
 // --- UTILITY COMPONENTS & SHEETJS LOADER ---
 
 const loadSheetJS = () => {
-    return new Promise((resolve, reject) => {
-        if (window.XLSX) return resolve(window.XLSX);
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-        script.onload = () => resolve(window.XLSX);
-        script.onerror = reject;
-        document.head.appendChild(script);
-    });
+return new Promise((resolve, reject) => {
+if (window.XLSX) return resolve(window.XLSX);
+const script = document.createElement('script');
+script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+script.onload = () => resolve(window.XLSX);
+script.onerror = reject;
+document.head.appendChild(script);
+});
 };
 
 const Toast = ({ message, type, onClose }) => {
-    useEffect(() => { 
-        const t = setTimeout(onClose, 3000); 
-        return () => clearTimeout(t); 
-    }, [onClose]);
-    
-    const bgClass = type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800';
-    
-    return (
-        <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg mb-3 animate-slide-in-right ${bgClass} min-w-[300px] z-[9999]`}>
-            {type === 'success' ? <CheckCircle size={18} className="text-emerald-500"/> : <AlertCircle size={18} className="text-rose-500"/>}
-            <span className="font-semibold text-sm flex-1">{String(message)}</span>
-            <button onClick={onClose} className="ml-auto opacity-50 hover:opacity-100 transition-opacity"><X size={16}/></button>
-        </div>
-    );
+useEffect(() => {
+const t = setTimeout(onClose, 3000);
+return () => clearTimeout(t);
+}, [onClose]);
+
+const bgClass = type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200
+text-rose-800';
+
+return (
+<div className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg mb-3 animate-slide-in-right ${bgClass}
+    min-w-[300px] z-[9999]`}>
+    {type === 'success' ?
+    <CheckCircle size={18} className="text-emerald-500" /> :
+    <AlertCircle size={18} className="text-rose-500" />}
+    <span className="font-semibold text-sm flex-1">{String(message)}</span>
+    <button onClick={onClose} className="ml-auto opacity-50 hover:opacity-100 transition-opacity">
+        <X size={16} />
+    </button>
+</div>
+);
 };
 
 const TiltLogo = ({ logoUrl }) => {
-    const cardRef = useRef(null);
-    const [rotate, setRotate] = useState({ x: 0, y: 0 });
-    
-    const handleMouseMove = (e) => {
-        if(!cardRef.current) return;
-        const rect = cardRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left; 
-        const y = e.clientY - rect.top;
-        const centerX = rect.width / 2; 
-        const centerY = rect.height / 2;
-        setRotate({ x: ((y - centerY) / centerY) * -15, y: ((x - centerX) / centerX) * 15 });
-    };
+const cardRef = useRef(null);
+const [rotate, setRotate] = useState({ x: 0, y: 0 });
 
-    return (
-        <div 
-            ref={cardRef} 
-            onMouseMove={handleMouseMove} 
-            onMouseLeave={() => setRotate({x:0,y:0})} 
-            style={{transform: `perspective(500px) rotateX(${rotate.x}deg) rotateY(${rotate.y}deg)`, transition: 'transform 0.1s ease-out'}} 
-            className="w-28 h-28 md:w-32 md:h-32 bg-white/10 backdrop-blur-md p-4 rounded-2xl shadow-xl mb-6 flex items-center justify-center cursor-pointer hover:shadow-indigo-500/20 transition-all border border-white/20 z-20"
-        >
-            <img src={logoUrl} alt="Logo" className="w-full h-full object-contain drop-shadow-md" />
-        </div>
-    );
+const handleMouseMove = (e) => {
+if(!cardRef.current) return;
+const rect = cardRef.current.getBoundingClientRect();
+const x = e.clientX - rect.left;
+const y = e.clientY - rect.top;
+const centerX = rect.width / 2;
+const centerY = rect.height / 2;
+setRotate({ x: ((y - centerY) / centerY) * -15, y: ((x - centerX) / centerX) * 15 });
+};
+
+return (
+<div ref={cardRef} onMouseMove={handleMouseMove} onMouseLeave={()=> setRotate({x:0,y:0})}
+    style={{transform: `perspective(500px) rotateX(${rotate.x}deg) rotateY(${rotate.y}deg)`, transition: 'transform 0.1s
+    ease-out'}}
+    className="w-28 h-28 md:w-32 md:h-32 bg-white/10 backdrop-blur-md p-4 rounded-2xl shadow-xl mb-6 flex items-center
+    justify-center cursor-pointer hover:shadow-indigo-500/20 transition-all border border-white/20 z-20"
+    >
+    <img src={logoUrl} alt="Logo" className="w-full h-full object-contain drop-shadow-md" />
+</div>
+);
 };
 
 const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message }) => {
-    if (!isOpen) return null;
-    return (
-        <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center border border-slate-100">
-                <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4"><AlertTriangle size={32} /></div>
-                <h3 className="text-xl font-bold text-slate-800 mb-2">{title}</h3>
-                <p className="text-slate-500 text-sm mb-6">{message}</p>
-                <div className="flex gap-3">
-                    <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors text-sm">Batal</button>
-                    <button type="button" onClick={onConfirm} className="flex-1 py-2.5 rounded-xl font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-200 transition-all text-sm">Lanjutkan</button>
-                </div>
-            </div>
+if (!isOpen) return null;
+return (
+<div
+    className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm">
+    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center border border-slate-100">
+        <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle size={32} />
         </div>
-    );
+        <h3 className="text-xl font-bold text-slate-800 mb-2">{title}</h3>
+        <p className="text-slate-500 text-sm mb-6">{message}</p>
+        <div className="flex gap-3">
+            <button type="button" onClick={onClose}
+                className="flex-1 py-2.5 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors text-sm">Batal</button>
+            <button type="button" onClick={onConfirm}
+                className="flex-1 py-2.5 rounded-xl font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-200 transition-all text-sm">Lanjutkan</button>
+        </div>
+    </div>
+</div>
+);
 };
 
 const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey }) => {
-    const [loading, setLoading] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [statusText, setStatusText] = useState("");
-    const [useAI, setUseAI] = useState(false);
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [isSuccess, setIsSuccess] = useState(false);
-    const [summaryMessage, setSummaryMessage] = useState("");
+const [loading, setLoading] = useState(false);
+const [progress, setProgress] = useState(0);
+const [statusText, setStatusText] = useState("");
+const [useAI, setUseAI] = useState(false);
+const [selectedFile, setSelectedFile] = useState(null);
+const [isSuccess, setIsSuccess] = useState(false);
+const [summaryMessage, setSummaryMessage] = useState("");
 
-    if (!isOpen) return null;
+if (!isOpen) return null;
 
-    const handleFileChange = (e) => {
-        if (e.target.files && e.target.files.length > 0) {
-            setSelectedFile(e.target.files[0]);
-            showToast(`File ${e.target.files[0].name} dipilih.`, "success");
+const handleFileChange = (e) => {
+if (e.target.files && e.target.files.length > 0) {
+setSelectedFile(e.target.files[0]);
+showToast(`File ${e.target.files[0].name} dipilih.`, "success");
+}
+};
+
+const downloadTemplate = async () => {
+try {
+const XLSX = await loadSheetJS();
+let data = [];
+if (type === 'Bank Soal') {
+data = [
+["Tipe Soal", "Level Kognitif", "Bobot", "Indikator", "Teks Soal", "Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E",
+"Kunci Jawaban"],
+["single", "LOTS", 10, "Menghitung dasar", "Berapakah 1+1?", "1", "2", "3", "4", "5", "1"],
+["multiple", "MOTS", 20, "Ciri makhluk hidup", "Pilih ciri makhluk hidup:", "Bernapas", "Mati", "Tumbuh", "Diam",
+"Makan", "0,2,4"],
+["boolean", "LOTS", 10, "Fakta tata surya", "Matahari mengelilingi bumi.", "", "", "", "", "", "1"],
+["matching", "MOTS", 20, "Ibukota negara", "Jodohkan negara berikut!", "", "", "", "", "", "Indonesia | Jakarta\nJepang
+| Tokyo"],
+["short", "LOTS", 15, "Pengetahuan Umum", "Ibukota Indonesia adalah...", "", "", "", "", "", "Jakarta"],
+["essay", "HOTS", 30, "Proses alam", "Jelaskan proses hujan!", "", "", "", "", "", "Air menguap menjadi awan dan turun
+hujan."]
+];
+} else if (type === 'Data Murid') {
+data = [
+["Nama Lengkap", "Kelas", "NIS", "Password"],
+["Budi Santoso", "Kelas 6A", "1001", "123"],
+["Siti Aminah", "Kelas 6A", "1002", "123"]
+];
+} else if (type === 'Data Kelas') {
+data = [
+["Nama Kelas", "Tingkat"],
+["Kelas 6A", "6"],
+["Kelas 7A", "7"]
+];
+}
+
+const ws = XLSX.utils.aoa_to_sheet(data);
+const wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, ws, "Template");
+XLSX.writeFile(wb, `Template_${type.replace(/\s+/g, '_')}.xlsx`);
+showToast("Template .xlsx berhasil diunduh!", "success");
+} catch (e) {
+showToast("Gagal memuat modul Excel. Pastikan koneksi internet aktif.", "error");
+}
+};
+
+const handleMockImport = async () => {
+if (!selectedFile) return showToast("Pilih file terlebih dahulu!", "error");
+
+if (useAI && (!apiKey || apiKey.trim() === '')) {
+return showToast("API Key belum disetting! Buka Pengaturan Sistem untuk mengintegrasikan AI.", "error");
+}
+
+setLoading(true);
+setProgress(0);
+setStatusText(useAI ? "Menghubungkan ke Engine AI..." : "Mempersiapkan file...");
+
+let currentProgress = 0;
+const interval = setInterval(() => {
+currentProgress += Math.floor(Math.random() * 15) + 5;
+if (currentProgress > 90) currentProgress = 90;
+setProgress(currentProgress);
+
+if (currentProgress > 20 && currentProgress <= 50) { setStatusText(useAI ? "AI Menganalisis Teks Dokumen..."
+    : "Membaca data baris per baris..." ); } else if (currentProgress> 50 && currentProgress <= 80) {
+        setStatusText(useAI ? "Memisahkan Soal & Kunci Jawaban..." : "Memvalidasi format data..." ); } else if
+        (currentProgress> 80) {
+        setStatusText(useAI ? "Membangun struktur data..." : "Menyimpan ke database...");
         }
-    };
-
-    const downloadTemplate = async () => {
-        try {
-            const XLSX = await loadSheetJS();
-            let data = [];
-            if (type === 'Bank Soal') {
-                data = [
-                    ["Tipe Soal", "Level Kognitif", "Bobot", "Indikator", "Teks Soal", "Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E", "Kunci Jawaban"],
-                    ["single", "LOTS", 10, "Menghitung dasar", "Berapakah 1+1?", "1", "2", "3", "4", "5", "1"],
-                    ["multiple", "MOTS", 20, "Ciri makhluk hidup", "Pilih ciri makhluk hidup:", "Bernapas", "Mati", "Tumbuh", "Diam", "Makan", "0,2,4"],
-                    ["boolean", "LOTS", 10, "Fakta tata surya", "Matahari mengelilingi bumi.", "", "", "", "", "", "1"],
-                    ["matching", "MOTS", 20, "Ibukota negara", "Jodohkan negara berikut!", "", "", "", "", "", "Indonesia | Jakarta\nJepang | Tokyo"],
-                    ["short", "LOTS", 15, "Pengetahuan Umum", "Ibukota Indonesia adalah...", "", "", "", "", "", "Jakarta"],
-                    ["essay", "HOTS", 30, "Proses alam", "Jelaskan proses hujan!", "", "", "", "", "", "Air menguap menjadi awan dan turun hujan."]
-                ];
-            } else if (type === 'Data Murid') {
-                data = [
-                    ["Nama Lengkap", "Kelas", "NIS", "Password"],
-                    ["Budi Santoso", "Kelas 6A", "1001", "123"],
-                    ["Siti Aminah", "Kelas 6A", "1002", "123"]
-                ];
-            } else if (type === 'Data Kelas') {
-                data = [
-                    ["Nama Kelas", "Tingkat"],
-                    ["Kelas 6A", "6"],
-                    ["Kelas 7A", "7"]
-                ];
-            }
-            
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Template");
-            XLSX.writeFile(wb, `Template_${type.replace(/\s+/g, '_')}.xlsx`);
-            showToast("Template .xlsx berhasil diunduh!", "success");
-        } catch (e) {
-            showToast("Gagal memuat modul Excel. Pastikan koneksi internet aktif.", "error");
-        }
-    };
-
-    const handleMockImport = async () => {
-        if (!selectedFile) return showToast("Pilih file terlebih dahulu!", "error");
-        
-        if (useAI && (!apiKey || apiKey.trim() === '')) {
-            return showToast("API Key belum disetting! Buka Pengaturan Sistem untuk mengintegrasikan AI.", "error");
-        }
-
-        setLoading(true);
-        setProgress(0);
-        setStatusText(useAI ? "Menghubungkan ke Engine AI..." : "Mempersiapkan file...");
-
-        let currentProgress = 0;
-        const interval = setInterval(() => {
-            currentProgress += Math.floor(Math.random() * 15) + 5;
-            if (currentProgress > 90) currentProgress = 90;
-            setProgress(currentProgress);
-            
-            if (currentProgress > 20 && currentProgress <= 50) {
-                setStatusText(useAI ? "AI Menganalisis Teks Dokumen..." : "Membaca data baris per baris...");
-            } else if (currentProgress > 50 && currentProgress <= 80) {
-                setStatusText(useAI ? "Memisahkan Soal & Kunci Jawaban..." : "Memvalidasi format data...");
-            } else if (currentProgress > 80) {
-                setStatusText(useAI ? "Membangun struktur data..." : "Menyimpan ke database...");
-            }
         }, 500);
 
         const finishImport = (parsedRows = null, resultCount = 0) => {
-            clearInterval(interval);
-            setProgress(100);
-            setStatusText("Selesai!");
-            
-            setTimeout(() => {
-                setLoading(false);
-                setIsSuccess(true);
-                setSummaryMessage(`Berhasil memproses ${resultCount || 'beberapa'} data dari file ${selectedFile.name}`);
-                onImport(type, useAI, selectedFile.name, parsedRows);
-            }, 800);
+        clearInterval(interval);
+        setProgress(100);
+        setStatusText("Selesai!");
+
+        setTimeout(() => {
+        setLoading(false);
+        setIsSuccess(true);
+        setSummaryMessage(`Berhasil memproses ${resultCount || 'beberapa'} data dari file ${selectedFile.name}`);
+        onImport(type, useAI, selectedFile.name, parsedRows);
+        }, 800);
         };
 
         if ((selectedFile.name.endsWith('.xlsx') || selectedFile.name.endsWith('.xls')) && !useAI) {
-            try {
-                const XLSX = await loadSheetJS();
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-                    
-                    const validCount = json.filter(row => row && row.length > 0).length - 1;
-                    finishImport(json, validCount > 0 ? validCount : 0);
-                };
-                reader.readAsArrayBuffer(selectedFile);
-            } catch(e) {
-                clearInterval(interval);
-                setLoading(false);
-                showToast("Gagal membaca file Excel. Pastikan file tidak rusak.", "error");
-            }
-        } else {
-            setTimeout(() => {
-                finishImport(null, 5); 
-            }, useAI ? 4000 : 2000);
+        try {
+        const XLSX = await loadSheetJS();
+        const reader = new FileReader();
+        reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+        const validCount = json.filter(row => row && row.length > 0).length - 1;
+        finishImport(json, validCount > 0 ? validCount : 0);
+        };
+        reader.readAsArrayBuffer(selectedFile);
+        } catch(e) {
+        clearInterval(interval);
+        setLoading(false);
+        showToast("Gagal membaca file Excel. Pastikan file tidak rusak.", "error");
         }
-    };
+        } else {
+        setTimeout(() => {
+        finishImport(null, 5);
+        }, useAI ? 4000 : 2000);
+        }
+        };
 
-    if (isSuccess) {
+        if (isSuccess) {
         return (
-            <div className="fixed inset-0 bg-slate-900/60 z-[9999] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
-                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center border border-slate-100 transform transition-all scale-100">
-                    <div className="w-24 h-24 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-                        <CheckSquare size={48} />
-                    </div>
-                    <h3 className="text-2xl font-black text-slate-800 mb-2">Import Selesai!</h3>
-                    <p className="text-slate-500 font-medium mb-8 leading-relaxed">{summaryMessage}</p>
-                    <button 
-                        onClick={() => {
-                            setIsSuccess(false);
-                            setSelectedFile(null);
-                            onClose();
-                        }} 
-                        className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-200 transition-all hover:-translate-y-1"
-                    >
-                        Tutup Jendela
-                    </button>
+        <div
+            className="fixed inset-0 bg-slate-900/60 z-[9999] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
+            <div
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center border border-slate-100 transform transition-all scale-100">
+                <div
+                    className="w-24 h-24 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                    <CheckSquare size={48} />
                 </div>
+                <h3 className="text-2xl font-black text-slate-800 mb-2">Import Selesai!</h3>
+                <p className="text-slate-500 font-medium mb-8 leading-relaxed">{summaryMessage}</p>
+                <button onClick={()=> {
+                    setIsSuccess(false);
+                    setSelectedFile(null);
+                    onClose();
+                    }}
+                    className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-xl
+                    shadow-slate-200 transition-all hover:-translate-y-1"
+                    >
+                    Tutup Jendela
+                </button>
             </div>
+        </div>
         );
-    }
+        }
 
-    return (
-        <div className="fixed inset-0 bg-slate-900/60 z-[9999] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
+        return (
+        <div
+            className="fixed inset-0 bg-slate-900/60 z-[9999] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
             <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8 border border-slate-100">
                 <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-                    <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2"><Upload size={22} className="text-indigo-500"/> Import {type}</h3>
-                    <button onClick={onClose} disabled={loading} className="text-slate-400 hover:bg-rose-50 hover:text-rose-500 p-2 rounded-xl transition-colors disabled:opacity-50"><X size={20}/></button>
+                    <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <Upload size={22} className="text-indigo-500" /> Import {type}
+                    </h3>
+                    <button onClick={onClose} disabled={loading}
+                        className="text-slate-400 hover:bg-rose-50 hover:text-rose-500 p-2 rounded-xl transition-colors disabled:opacity-50">
+                        <X size={20} />
+                    </button>
                 </div>
-                
+
                 <div className="space-y-6">
-                    <div className="flex justify-between items-center bg-indigo-50/80 p-5 rounded-2xl border border-indigo-100/50">
+                    <div
+                        className="flex justify-between items-center bg-indigo-50/80 p-5 rounded-2xl border border-indigo-100/50">
                         <div>
                             <p className="font-bold text-indigo-900 text-sm">Unduh Format Template</p>
-                            <p className="text-[11px] text-indigo-600/80 mt-1 font-medium">Buka & edit langsung di Excel.</p>
+                            <p className="text-[11px] text-indigo-600/80 mt-1 font-medium">Buka & edit langsung di
+                                Excel.</p>
                         </div>
-                        <button type="button" onClick={downloadTemplate} disabled={loading} className="bg-white text-indigo-600 border border-indigo-100 px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:shadow transition-all flex items-center gap-2 disabled:opacity-50 hover:-translate-y-0.5"><Download size={16}/> Template.xlsx</button>
+                        <button type="button" onClick={downloadTemplate} disabled={loading}
+                            className="bg-white text-indigo-600 border border-indigo-100 px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:shadow transition-all flex items-center gap-2 disabled:opacity-50 hover:-translate-y-0.5">
+                            <Download size={16} /> Template.xlsx
+                        </button>
                     </div>
 
-                    <div className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all relative group ${selectedFile ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-300'} ${loading ? 'opacity-70 pointer-events-none' : 'cursor-pointer'}`}>
-                        <input type="file" onChange={handleFileChange} disabled={loading} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed" accept=".xlsx,.xls,.doc,.docx,.pdf" />
+                    <div className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all relative group
+                        ${selectedFile ? 'border-emerald-300 bg-emerald-50'
+                        : 'border-slate-200 bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-300' } ${loading
+                        ? 'opacity-70 pointer-events-none' : 'cursor-pointer' }`}>
+                        <input type="file" onChange={handleFileChange} disabled={loading}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
+                            accept=".xlsx,.xls,.doc,.docx,.pdf" />
                         {selectedFile ? (
-                            <div className="animate-fade-in">
-                                <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-emerald-500"><FileCheck size={28} /></div>
-                                <p className="font-bold text-emerald-700 text-sm truncate px-4">{selectedFile.name}</p>
-                                <p className="text-xs text-emerald-600/70 mt-1.5 font-medium">Siap diproses</p>
+                        <div className="animate-fade-in">
+                            <div
+                                className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-emerald-500">
+                                <FileCheck size={28} />
                             </div>
+                            <p className="font-bold text-emerald-700 text-sm truncate px-4">{selectedFile.name}</p>
+                            <p className="text-xs text-emerald-600/70 mt-1.5 font-medium">Siap diproses</p>
+                        </div>
                         ) : (
-                            <div>
-                                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm group-hover:scale-110 transition-transform text-indigo-500"><FileUp size={28} /></div>
-                                <p className="font-bold text-slate-700 text-sm">Drag & Drop file Anda</p>
-                                <p className="text-[11px] text-slate-500 mt-1.5 font-medium">Mendukung .xlsx, atau PDF/Word (via AI)</p>
+                        <div>
+                            <div
+                                className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm group-hover:scale-110 transition-transform text-indigo-500">
+                                <FileUp size={28} />
                             </div>
+                            <p className="font-bold text-slate-700 text-sm">Drag & Drop file Anda</p>
+                            <p className="text-[11px] text-slate-500 mt-1.5 font-medium">Mendukung .xlsx, atau PDF/Word
+                                (via AI)</p>
+                        </div>
                         )}
                     </div>
 
                     {type === 'Bank Soal' && (
-                        <div className="bg-gradient-to-r from-purple-50 to-fuchsia-50 p-5 rounded-2xl border border-purple-100 flex items-start gap-4 shadow-sm">
-                            <input type="checkbox" id="useAI" checked={useAI} onChange={()=>setUseAI(!useAI)} disabled={loading} className="mt-1 w-5 h-5 accent-purple-600 rounded cursor-pointer disabled:opacity-50" />
-                            <div>
-                                <label htmlFor="useAI" className={`font-bold text-purple-900 text-sm flex items-center gap-1.5 ${loading ? '' : 'cursor-pointer'}`}><BrainCircuit size={16}/> AI Document Parser</label>
-                                <p className="text-xs text-purple-700/80 mt-1.5 leading-relaxed font-medium">Pilih ini jika mengunggah file Word/PDF. AI akan mengekstrak narasi soal & opsi secara otomatis.</p>
-                                {!apiKey && useAI && <p className="text-[10px] text-rose-500 font-bold mt-2 flex items-center gap-1"><AlertCircle size={12}/> Mohon isi API Key di Pengaturan Sistem terlebih dahulu.</p>}
-                            </div>
+                    <div
+                        className="bg-gradient-to-r from-purple-50 to-fuchsia-50 p-5 rounded-2xl border border-purple-100 flex items-start gap-4 shadow-sm">
+                        <input type="checkbox" id="useAI" checked={useAI} onChange={()=>setUseAI(!useAI)}
+                        disabled={loading} className="mt-1 w-5 h-5 accent-purple-600 rounded cursor-pointer
+                        disabled:opacity-50" />
+                        <div>
+                            <label htmlFor="useAI" className={`font-bold text-purple-900 text-sm flex items-center
+                                gap-1.5 ${loading ? '' : 'cursor-pointer' }`}>
+                                <BrainCircuit size={16} /> AI Document Parser
+                            </label>
+                            <p className="text-xs text-purple-700/80 mt-1.5 leading-relaxed font-medium">Pilih ini jika
+                                mengunggah file Word/PDF. AI akan mengekstrak narasi soal & opsi secara otomatis.</p>
+                            {!apiKey && useAI && <p
+                                className="text-[10px] text-rose-500 font-bold mt-2 flex items-center gap-1">
+                                <AlertCircle size={12} /> Mohon isi API Key di Pengaturan Sistem terlebih dahulu.
+                            </p>}
                         </div>
+                    </div>
                     )}
 
                     {loading ? (
-                        <div className="animate-fade-in bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                            <div className="flex justify-between text-xs font-bold text-indigo-600 mb-3">
-                                <span className="animate-pulse">{statusText}</span>
-                                <span>{progress}%</span>
-                            </div>
-                            <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
-                                <div className="bg-gradient-to-r from-indigo-500 to-fuchsia-500 h-3 rounded-full transition-all duration-300 ease-out" style={{ width: `${progress}%` }}></div>
-                            </div>
+                    <div className="animate-fade-in bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                        <div className="flex justify-between text-xs font-bold text-indigo-600 mb-3">
+                            <span className="animate-pulse">{statusText}</span>
+                            <span>{progress}%</span>
                         </div>
+                        <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+                            <div className="bg-gradient-to-r from-indigo-500 to-fuchsia-500 h-3 rounded-full transition-all duration-300 ease-out"
+                                style={{ width: `${progress}%` }}></div>
+                        </div>
+                    </div>
                     ) : (
-                        <button onClick={handleMockImport} disabled={!selectedFile} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-base shadow-lg hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:hover:translate-y-0 flex justify-center items-center gap-2 hover:-translate-y-1">
-                            Mulai Import Data
-                        </button>
+                    <button onClick={handleMockImport} disabled={!selectedFile}
+                        className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-base shadow-lg hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:hover:translate-y-0 flex justify-center items-center gap-2 hover:-translate-y-1">
+                        Mulai Import Data
+                    </button>
                     )}
                 </div>
             </div>
         </div>
-    );
-};
+        );
+        };
 
-const PrintLayout = ({ type, data, schoolData, onBack }) => {
-    const formatDate = (ds) => ds ? new Date(ds).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "-";
-    const getDayName = (ds) => ds ? new Date(ds).toLocaleDateString('id-ID', { weekday: 'long' }) : "-";
+        const PrintLayout = ({ type, data, schoolData, onBack }) => {
+        const formatDate = (ds) => ds ? new Date(ds).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year:
+        'numeric' }) : "-";
+        const getDayName = (ds) => ds ? new Date(ds).toLocaleDateString('id-ID', { weekday: 'long' }) : "-";
 
-    return (
-        <div className="min-h-screen bg-white text-black p-8 font-serif max-w-5xl mx-auto print:p-0 print:max-w-full z-[1000] relative">
-            <div className="mb-8 flex justify-between items-center print:hidden bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <button onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold text-sm"><ArrowLeft size={16}/> Kembali</button>
-                <button onClick={() => window.print()} className="bg-indigo-600 text-white px-5 py-2 rounded-lg flex items-center gap-2 font-semibold text-sm hover:bg-indigo-700 shadow-sm"><Printer size={16}/> Cetak Dokumen</button>
+        return (
+        <div
+            className="min-h-screen bg-white text-black p-8 font-serif max-w-5xl mx-auto print:p-0 print:max-w-full z-[1000] relative">
+            <div
+                className="mb-8 flex justify-between items-center print:hidden bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <button onClick={onBack}
+                    className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold text-sm">
+                    <ArrowLeft size={16} /> Kembali
+                </button>
+                <button onClick={()=> window.print()} className="bg-indigo-600 text-white px-5 py-2 rounded-lg flex
+                    items-center gap-2 font-semibold text-sm hover:bg-indigo-700 shadow-sm">
+                    <Printer size={16} /> Cetak Dokumen
+                </button>
             </div>
 
             <div className="border-b-[3px] border-black pb-4 mb-6 flex items-center gap-6">
@@ -384,682 +445,1006 @@ const PrintLayout = ({ type, data, schoolData, onBack }) => {
             </div>
 
             {type === 'kisi-kisi' && (
-                <div>
-                    <h3 className="text-center text-lg font-bold underline mb-6 uppercase">KISI-KISI PENULISAN SOAL UJIAN</h3>
-                    <div className="grid grid-cols-2 gap-4 mb-6 text-sm font-medium">
-                        <div><p><span className="inline-block w-32">Mata Pelajaran</span>: {data.subjectName}</p><p><span className="inline-block w-32">Kelas</span>: {data.class}</p></div>
-                        <div><p><span className="inline-block w-32">Guru Pengampu</span>: {data.teacherName}</p><p><span className="inline-block w-32">Tahun Ajaran</span>: {schoolData.term}</p></div>
+            <div>
+                <h3 className="text-center text-lg font-bold underline mb-6 uppercase">KISI-KISI PENULISAN SOAL UJIAN
+                </h3>
+                <div className="grid grid-cols-2 gap-4 mb-6 text-sm font-medium">
+                    <div>
+                        <p><span className="inline-block w-32">Mata Pelajaran</span>: {data.subjectName}</p>
+                        <p><span className="inline-block w-32">Kelas</span>: {data.class}</p>
                     </div>
-                    <table className="w-full border-collapse border border-black text-sm text-left">
-                        <thead><tr className="bg-slate-100"><th className="border border-black p-2 text-center w-10">No</th><th className="border border-black p-2">Indikator Soal</th><th className="border border-black p-2 text-center w-24">Level Kognitif</th><th className="border border-black p-2 text-center w-24">Bentuk Soal</th><th className="border border-black p-2 text-center w-16">Bobot</th><th className="border border-black p-2 text-center w-16">Kunci</th></tr></thead>
-                        <tbody>
-                            {data.questions.map((q, i) => (
-                                <tr key={q.id}>
-                                    <td className="border border-black p-2 text-center">{i + 1}</td>
-                                    <td className="border border-black p-2">{q.indicator || "-"}</td>
-                                    <td className="border border-black p-2 text-center font-bold">{q.difficulty || "MOTS"}</td>
-                                    <td className="border border-black p-2 text-center uppercase">{q.type}</td>
-                                    <td className="border border-black p-2 text-center">{q.weight || 10}</td>
-                                    <td className="border border-black p-2 text-center font-bold text-indigo-600">{q.type==='single' && !isNaN(q.correct) ? String.fromCharCode(65+Number(q.correct)) : "Simulasi"}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <div>
+                        <p><span className="inline-block w-32">Guru Pengampu</span>: {data.teacherName}</p>
+                        <p><span className="inline-block w-32">Tahun Ajaran</span>: {schoolData.term}</p>
+                    </div>
                 </div>
+                <table className="w-full border-collapse border border-black text-sm text-left">
+                    <thead>
+                        <tr className="bg-slate-100">
+                            <th className="border border-black p-2 text-center w-10">No</th>
+                            <th className="border border-black p-2">Indikator Soal</th>
+                            <th className="border border-black p-2 text-center w-24">Level Kognitif</th>
+                            <th className="border border-black p-2 text-center w-24">Bentuk Soal</th>
+                            <th className="border border-black p-2 text-center w-16">Bobot</th>
+                            <th className="border border-black p-2 text-center w-16">Kunci</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.questions.map((q, i) => (
+                        <tr key={q.id}>
+                            <td className="border border-black p-2 text-center">{i + 1}</td>
+                            <td className="border border-black p-2">{q.indicator || "-"}</td>
+                            <td className="border border-black p-2 text-center font-bold">{q.difficulty || "MOTS"}</td>
+                            <td className="border border-black p-2 text-center uppercase">{q.type}</td>
+                            <td className="border border-black p-2 text-center">{q.weight || 10}</td>
+                            <td className="border border-black p-2 text-center font-bold text-indigo-600">
+                                {q.type==='single' && !isNaN(q.correct) ? String.fromCharCode(65+Number(q.correct)) :
+                                "Simulasi"}</td>
+                        </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
             )}
 
             {type === 'attendance' && (
-                <div>
-                    <h3 className="text-center text-lg font-bold underline mb-6 uppercase">DAFTAR HADIR PESERTA UJIAN</h3>
-                    <div className="grid grid-cols-2 gap-4 mb-6 text-sm font-medium">
-                        <div><p><span className="inline-block w-32">Mata Pelajaran</span>: {data.subjectName}</p><p><span className="inline-block w-32">Kelas</span>: {data.class}</p></div>
-                        <div><p><span className="inline-block w-32">Hari / Tanggal</span>: {getDayName(data.date)}, {formatDate(data.date)}</p></div>
+            <div>
+                <h3 className="text-center text-lg font-bold underline mb-6 uppercase">DAFTAR HADIR PESERTA UJIAN</h3>
+                <div className="grid grid-cols-2 gap-4 mb-6 text-sm font-medium">
+                    <div>
+                        <p><span className="inline-block w-32">Mata Pelajaran</span>: {data.subjectName}</p>
+                        <p><span className="inline-block w-32">Kelas</span>: {data.class}</p>
                     </div>
-                    <table className="w-full border-collapse border border-black text-sm">
-                        <thead><tr className="bg-slate-100"><th className="border border-black p-2 w-12">NO</th><th className="border border-black p-2 w-32">NIS</th><th className="border border-black p-2">NAMA PESERTA</th><th className="border border-black p-2 w-48">TANDA TANGAN</th><th className="border border-black p-2 w-24">KET</th></tr></thead>
-                        <tbody>
-                            {data.students.map((s, idx) => (
-                                <tr key={s.id}><td className="border border-black p-3 text-center">{idx + 1}</td><td className="border border-black p-3 text-center">{s.nis}</td><td className="border border-black p-3 font-bold">{s.name}</td><td className="border border-black p-3"><div className={`text-xs text-slate-500 ${idx % 2 === 0 ? 'text-left pl-2' : 'text-center pl-8'}`}>{idx + 1}. ...........</div></td><td className="border border-black p-3"></td></tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <div>
+                        <p><span className="inline-block w-32">Hari / Tanggal</span>: {getDayName(data.date)},
+                            {formatDate(data.date)}</p>
+                    </div>
                 </div>
+                <table className="w-full border-collapse border border-black text-sm">
+                    <thead>
+                        <tr className="bg-slate-100">
+                            <th className="border border-black p-2 w-12">NO</th>
+                            <th className="border border-black p-2 w-32">NIS</th>
+                            <th className="border border-black p-2">NAMA PESERTA</th>
+                            <th className="border border-black p-2 w-48">TANDA TANGAN</th>
+                            <th className="border border-black p-2 w-24">KET</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.students.map((s, idx) => (
+                        <tr key={s.id}>
+                            <td className="border border-black p-3 text-center">{idx + 1}</td>
+                            <td className="border border-black p-3 text-center">{s.nis}</td>
+                            <td className="border border-black p-3 font-bold">{s.name}</td>
+                            <td className="border border-black p-3">
+                                <div className={`text-xs text-slate-500 ${idx % 2===0 ? 'text-left pl-2'
+                                    : 'text-center pl-8' }`}>{idx + 1}. ...........</div>
+                            </td>
+                            <td className="border border-black p-3"></td>
+                        </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
             )}
 
             {type === 'report' && (
-                <div className="leading-relaxed text-justify">
-                    <h3 className="text-center text-lg font-bold underline mb-8 uppercase">BERITA ACARA PELAKSANAAN UJIAN</h3>
-                    <p className="mb-6">Pada hari ini <strong>{getDayName(data.date)}</strong> tanggal <strong>{formatDate(data.date)}</strong>, telah dilaksanakan Ujian Sekolah Berbasis Komputer (CBT) Tahun Pelajaran {schoolData.term} di {schoolData.name}.</p>
-                    <table className="w-full mb-8" style={{border: 'none'}}><tbody><tr><td className="w-48 py-1">Mata Pelajaran</td><td className="py-1">: <strong>{data.subjectName}</strong></td></tr><tr><td className="w-48 py-1">Kelas / Ruang</td><td className="py-1">: <strong>{data.class}</strong></td></tr><tr><td className="w-48 py-1">Waktu Pelaksanaan</td><td className="py-1">: 07:30 s.d 09:30 WIB</td></tr><tr><td className="w-48 py-1">Jumlah Peserta</td><td className="py-1">: {data.students.length} Orang</td></tr><tr><td className="w-48 py-1">Hadir</td><td className="py-1">: ........ Orang</td></tr><tr><td className="w-48 py-1">Tidak Hadir</td><td className="py-1">: ........ Orang</td></tr></tbody></table>
-                    <div className="text-center mt-12"><p>Mengetahui,</p><p>Kepala Sekolah</p><div className="h-24"></div><p className="font-bold underline">{schoolData.adminName}</p><p>NIP. {schoolData.adminUsername || "-"}</p></div>
+            <div className="leading-relaxed text-justify">
+                <h3 className="text-center text-lg font-bold underline mb-8 uppercase">BERITA ACARA PELAKSANAAN UJIAN
+                </h3>
+                <p className="mb-6">Pada hari ini <strong>{getDayName(data.date)}</strong> tanggal
+                    <strong>{formatDate(data.date)}</strong>, telah dilaksanakan Ujian Sekolah Berbasis Komputer (CBT)
+                    Tahun Pelajaran {schoolData.term} di {schoolData.name}.</p>
+                <table className="w-full mb-8" style={{border: 'none' }}>
+                    <tbody>
+                        <tr>
+                            <td className="w-48 py-1">Mata Pelajaran</td>
+                            <td className="py-1">: <strong>{data.subjectName}</strong></td>
+                        </tr>
+                        <tr>
+                            <td className="w-48 py-1">Kelas / Ruang</td>
+                            <td className="py-1">: <strong>{data.class}</strong></td>
+                        </tr>
+                        <tr>
+                            <td className="w-48 py-1">Waktu Pelaksanaan</td>
+                            <td className="py-1">: 07:30 s.d 09:30 WIB</td>
+                        </tr>
+                        <tr>
+                            <td className="w-48 py-1">Jumlah Peserta</td>
+                            <td className="py-1">: {data.students.length} Orang</td>
+                        </tr>
+                        <tr>
+                            <td className="w-48 py-1">Hadir</td>
+                            <td className="py-1">: ........ Orang</td>
+                        </tr>
+                        <tr>
+                            <td className="w-48 py-1">Tidak Hadir</td>
+                            <td className="py-1">: ........ Orang</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div className="text-center mt-12">
+                    <p>Mengetahui,</p>
+                    <p>Kepala Sekolah</p>
+                    <div className="h-24"></div>
+                    <p className="font-bold underline">{schoolData.adminName}</p>
+                    <p>NIP. {schoolData.adminUsername || "-"}</p>
                 </div>
+            </div>
             )}
         </div>
-    );
-};
+        );
+        };
 
-// --- MAIN APP COMPONENT ---
+        // --- MAIN APP COMPONENT ---
 
-export default function App() {
-  const [role, setRole] = useState(null); 
-  const [currentUser, setCurrentUser] = useState(null); 
-  const [loginTab, setLoginTab] = useState('student'); 
-  
-  const [schoolData, setSchoolData] = useState(INITIAL_SCHOOL_DATA);
-  const [teachers, setTeachers] = useState(INITIAL_TEACHERS);
-  const [classes, setClasses] = useState(INITIAL_CLASSES);
-  const [subjects, setSubjects] = useState(INITIAL_SUBJECTS);
-  const [students, setStudents] = useState(INITIAL_STUDENTS);
-  const [questions, setQuestions] = useState(INITIAL_QUESTIONS);
-  const [results, setResults] = useState(INITIAL_RESULTS);
-  const [activeExams, setActiveExams] = useState([]); 
-  
-  const [adminMenu, setAdminMenu] = useState('dashboard');
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
-  const [toasts, setToasts] = useState([]);
-  const [quote, setQuote] = useState("");
-  const [openMenuGroups, setOpenMenuGroups] = useState({ master: true, evaluasi: true, laporan: true, sistem: true });
-  
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null); 
-  const [modalType, setModalType] = useState(''); 
-  const [importModalConfig, setImportModalConfig] = useState({ isOpen: false, type: '' });
-  const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, type: '', id: null });
-  const [tempLogo, setTempLogo] = useState(null);
+        export default function App() {
+        const [role, setRole] = useState(null);
+        const [currentUser, setCurrentUser] = useState(null);
+        const [loginTab, setLoginTab] = useState('student');
 
-  const [studentStep, setStudentStep] = useState('token'); 
-  const [studentScore, setStudentScore] = useState(0);
-  const [currentExamSubject, setCurrentExamSubject] = useState(null); 
+        const [schoolData, setSchoolData] = useState(INITIAL_SCHOOL_DATA);
+        const [teachers, setTeachers] = useState(INITIAL_TEACHERS);
+        const [classes, setClasses] = useState(INITIAL_CLASSES);
+        const [subjects, setSubjects] = useState(INITIAL_SUBJECTS);
+        const [students, setStudents] = useState(INITIAL_STUDENTS);
+        const [questions, setQuestions] = useState(INITIAL_QUESTIONS);
+        const [results, setResults] = useState(INITIAL_RESULTS);
+        const [activeExams, setActiveExams] = useState([]);
 
-  const [examBlueprint, setExamBlueprint] = useState({ subjectId: '', total: 20, lots: 20, mots: 50, hots: 30 });
+        const [adminMenu, setAdminMenu] = useState('dashboard');
+        const [sidebarExpanded, setSidebarExpanded] = useState(true);
+        const [toasts, setToasts] = useState([]);
+        const [quote, setQuote] = useState("");
+        const [openMenuGroups, setOpenMenuGroups] = useState({ master: true, evaluasi: true, laporan: true, sistem: true
+        });
 
-  const [classSearch, setClassSearch] = useState('');
-  const [studentFilterClass, setStudentFilterClass] = useState('');
-  const [studentSearch, setStudentSearch] = useState('');
-  const [analysisFilterClass, setAnalysisFilterClass] = useState('');
-  const [analysisFilterSubject, setAnalysisFilterSubject] = useState('');
-  const [selectedSubjectForQuestions, setSelectedSubjectForQuestions] = useState(null);
-  const [questionFormType, setQuestionFormType] = useState('single');
-  const [printForm, setPrintForm] = useState({ class: '', subject: '', date: new Date().toISOString().split('T')[0] });
-  const [printData, setPrintData] = useState(null);
+        const [modalOpen, setModalOpen] = useState(false);
+        const [editingItem, setEditingItem] = useState(null);
+        const [modalType, setModalType] = useState('');
+        const [importModalConfig, setImportModalConfig] = useState({ isOpen: false, type: '' });
+        const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, type: '', id: null });
+        const [tempLogo, setTempLogo] = useState(null);
 
-  const [aiWizardOpen, setAiWizardOpen] = useState(false);
-  const [aiStep, setAiStep] = useState(1);
-  const [aiParams, setAiParams] = useState({ 
-      subject: '', topic: '', cptp: '', 
-      counts: { single: 5, multiple: 0, boolean: 0, matching: 0, short: 0, essay: 0 },
-      pcts: { lots: 20, mots: 50, hots: 30 }
-  });
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiDrafts, setAiDrafts] = useState([]);
+        const [studentStep, setStudentStep] = useState('token');
+        const [studentScore, setStudentScore] = useState(0);
+        const [currentExamSubject, setCurrentExamSubject] = useState(null);
 
-  // Injeksi Dinamis Favicon & OG Image
-  useEffect(() => {
-    let link = document.querySelector("link[rel~='icon']");
-    if (!link) {
-      link = document.createElement('link');
-      link.rel = 'icon';
-      document.getElementsByTagName('head')[0].appendChild(link);
-    }
-    link.href = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhkZZ6nl3Pq7mFou917u9D1yJnyd4AmsDSQI4VyCjaktVQOk6Yj0teuLBiiyBeiyyKhhbBRC5SJW9Ml6QZZ5vlH-ZlR1lrrKO6auMpiFZrs_DC-VINjninMxAh57pj7yVza53Z2qgyUKiGw8RWviLJ8_Cvl_DamdXJG_OVk_CYc8iwVa4BReULUElQxinWK/s16000/logo%20e-quest.png";
-    
-    let metaOg = document.querySelector("meta[property='og:image']");
-    if (!metaOg) {
-      metaOg = document.createElement('meta');
-      metaOg.setAttribute('property', 'og:image');
-      document.getElementsByTagName('head')[0].appendChild(metaOg);
-    }
-    metaOg.content = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhkZZ6nl3Pq7mFou917u9D1yJnyd4AmsDSQI4VyCjaktVQOk6Yj0teuLBiiyBeiyyKhhbBRC5SJW9Ml6QZZ5vlH-ZlR1lrrKO6auMpiFZrs_DC-VINjninMxAh57pj7yVza53Z2qgyUKiGw8RWviLJ8_Cvl_DamdXJG_OVk_CYc8iwVa4BReULUElQxinWK/s16000/logo%20e-quest.png";
-    
-    document.title = "e-Quest Premium CBT";
-  }, []);
+        const [examBlueprint, setExamBlueprint] = useState({ subjectId: '', total: 20, lots: 20, mots: 50, hots: 30 });
 
-  // CSS Injection
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.innerHTML = `
+        const [classSearch, setClassSearch] = useState('');
+        const [studentFilterClass, setStudentFilterClass] = useState('');
+        const [studentSearch, setStudentSearch] = useState('');
+        const [analysisFilterClass, setAnalysisFilterClass] = useState('');
+        const [analysisFilterSubject, setAnalysisFilterSubject] = useState('');
+        const [selectedSubjectForQuestions, setSelectedSubjectForQuestions] = useState(null);
+        const [questionFormType, setQuestionFormType] = useState('single');
+        const [printForm, setPrintForm] = useState({ class: '', subject: '', date: new
+        Date().toISOString().split('T')[0] });
+        const [printData, setPrintData] = useState(null);
+
+        const [aiWizardOpen, setAiWizardOpen] = useState(false);
+        const [aiStep, setAiStep] = useState(1);
+        const [aiParams, setAiParams] = useState({
+        subject: '', topic: '', cptp: '',
+        counts: { single: 5, multiple: 0, boolean: 0, matching: 0, short: 0, essay: 0 },
+        pcts: { lots: 20, mots: 50, hots: 30 }
+        });
+        const [aiLoading, setAiLoading] = useState(false);
+        const [aiDrafts, setAiDrafts] = useState([]);
+
+        // Injeksi Dinamis Favicon & OG Image
+        useEffect(() => {
+        let link = document.querySelector("link[rel~='icon']");
+        if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        link.href =
+        "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhkZZ6nl3Pq7mFou917u9D1yJnyd4AmsDSQI4VyCjaktVQOk6Yj0teuLBiiyBeiyyKhhbBRC5SJW9Ml6QZZ5vlH-ZlR1lrrKO6auMpiFZrs_DC-VINjninMxAh57pj7yVza53Z2qgyUKiGw8RWviLJ8_Cvl_DamdXJG_OVk_CYc8iwVa4BReULUElQxinWK/s16000/logo%20e-quest.png";
+
+        let metaOg = document.querySelector("meta[property='og:image']");
+        if (!metaOg) {
+        metaOg = document.createElement('meta');
+        metaOg.setAttribute('property', 'og:image');
+        document.getElementsByTagName('head')[0].appendChild(metaOg);
+        }
+        metaOg.content =
+        "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhkZZ6nl3Pq7mFou917u9D1yJnyd4AmsDSQI4VyCjaktVQOk6Yj0teuLBiiyBeiyyKhhbBRC5SJW9Ml6QZZ5vlH-ZlR1lrrKO6auMpiFZrs_DC-VINjninMxAh57pj7yVza53Z2qgyUKiGw8RWviLJ8_Cvl_DamdXJG_OVk_CYc8iwVa4BReULUElQxinWK/s16000/logo%20e-quest.png";
+
+        document.title = "e-Quest Premium CBT";
+        }, []);
+
+        // CSS Injection
+        useEffect(() => {
+        const style = document.createElement('style');
+        style.innerHTML = `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes blob {
-            0% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0px, 0px) scale(1); }
+        0% { transform: translate(0px, 0px) scale(1); }
+        33% { transform: translate(30px, -50px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+        100% { transform: translate(0px, 0px) scale(1); }
         }
         .animate-blob { animation: blob 10s infinite; }
         .animation-delay-2000 { animation-delay: 2s; }
         .animation-delay-4000 { animation-delay: 4s; }
-        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-right: 1px solid rgba(255, 255, 255, 0.6); }
-    `;
-    document.head.appendChild(style);
-    return () => document.head.removeChild(style);
-  }, []);
+        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(24px); -webkit-backdrop-filter:
+        blur(24px); border-right: 1px solid rgba(255, 255, 255, 0.6); }
+        `;
+        document.head.appendChild(style);
+        return () => document.head.removeChild(style);
+        }, []);
 
-  useEffect(() => { setQuote(QUOTES[Math.floor(Math.random() * QUOTES.length)]); }, []);
+        useEffect(() => { setQuote(QUOTES[Math.floor(Math.random() * QUOTES.length)]); }, []);
 
-  const showToast = (message, type = 'success') => {
-      setToasts(p => [...p, { id: Date.now(), message: String(message), type }]);
-  };
-  const removeToast = (id) => setToasts(p => p.filter(t => t.id !== id));
-  
-  const openModal = (type, item = null) => {
-      setModalType(type); setEditingItem(item);
-      if (type === 'question') setQuestionFormType(item?.type || 'single');
-      setModalOpen(true);
-  };
+        const showToast = (message, type = 'success') => {
+        setToasts(p => [...p, { id: Date.now(), message: String(message), type }]);
+        };
+        const removeToast = (id) => setToasts(p => p.filter(t => t.id !== id));
 
-  const getMySubjects = () => {
-      if (role === 'admin') return subjects;
-      if (role === 'guru' && currentUser) return subjects.filter(s => s.teacherId === currentUser.id);
-      return [];
-  };
-  const getMyQuestions = () => { 
-      const myIds = getMySubjects().map(s => s.id); 
-      return questions.filter(q => myIds.includes(q.subjectId)); 
-  };
-  const getMyResults = () => {
-      if (role === 'admin') return results;
-      if (role === 'guru' && currentUser) { 
-          const myCls = getMySubjects().map(s => s.class); 
-          return results.filter(r => myCls.includes(r.class)); 
-      }
-      return [];
-  };
+        const openModal = (type, item = null) => {
+        setModalType(type); setEditingItem(item);
+        if (type === 'question') setQuestionFormType(item?.type || 'single');
+        setModalOpen(true);
+        };
 
-  const handleSystemLogin = (e) => {
-      e.preventDefault();
-      const u = e.target.username.value; const p = e.target.password.value;
-      if (u === schoolData.adminUsername && p === schoolData.adminPassword) {
-          setCurrentUser({ name: schoolData.adminName, id: 0 }); setRole('admin'); showToast("Login Super Admin Berhasil!");
-      } else {
-          const teacher = teachers.find(t => t.username === u && t.password === p);
-          if (teacher) { setCurrentUser(teacher); setRole('guru'); showToast(`Selamat Datang, ${teacher.name}`); }
-          else { showToast("Username atau Password Salah!", "error"); }
-      }
-  };
+        const getMySubjects = () => {
+        if (role === 'admin') return subjects;
+        if (role === 'guru' && currentUser) return subjects.filter(s => s.teacherId === currentUser.id);
+        return [];
+        };
+        const getMyQuestions = () => {
+        const myIds = getMySubjects().map(s => s.id);
+        return questions.filter(q => myIds.includes(q.subjectId));
+        };
+        const getMyResults = () => {
+        if (role === 'admin') return results;
+        if (role === 'guru' && currentUser) {
+        const myCls = getMySubjects().map(s => s.class);
+        return results.filter(r => myCls.includes(r.class));
+        }
+        return [];
+        };
 
-  const handleStudentLogin = (e) => {
-      e.preventDefault();
-      const s = students.find(i => i.nis === e.target.username.value && i.password === e.target.password.value);
-      if (s) { setCurrentUser(s); setRole('student'); setStudentStep('token'); showToast("Login Siswa Berhasil!"); } 
-      else { showToast("NIS atau Password salah!", "error"); }
-  };
+        const handleSystemLogin = (e) => {
+        e.preventDefault();
+        const u = e.target.username.value; const p = e.target.password.value;
+        if (u === schoolData.adminUsername && p === schoolData.adminPassword) {
+        setCurrentUser({ name: schoolData.adminName, id: 0 }); setRole('admin'); showToast("Login Super Admin
+        Berhasil!");
+        } else {
+        const teacher = teachers.find(t => t.username === u && t.password === p);
+        if (teacher) { setCurrentUser(teacher); setRole('guru'); showToast(`Selamat Datang, ${teacher.name}`); }
+        else { showToast("Username atau Password Salah!", "error"); }
+        }
+        };
 
-  const handleTokenSubmit = (e) => {
-      e.preventDefault();
-      const inputToken = e.target.token.value.toUpperCase();
-      const exam = activeExams.find(ex => ex.token === inputToken);
-      if (exam) {
-          const subjectObj = subjects.find(s => s.id === exam.subjectId);
-          if (subjectObj.class !== currentUser.class) { showToast("Token ini bukan untuk kelas Anda!", "error"); return; }
-          setCurrentExamSubject(subjectObj); showToast("Token Valid! Mengacak Soal...", "success"); setStudentStep('biodata');
-      } else { showToast("Token tidak ditemukan / tidak aktif!", "error"); }
-  };
+        const handleStudentLogin = (e) => {
+        e.preventDefault();
+        const s = students.find(i => i.nis === e.target.username.value && i.password === e.target.password.value);
+        if (s) { setCurrentUser(s); setRole('student'); setStudentStep('token'); showToast("Login Siswa Berhasil!"); }
+        else { showToast("NIS atau Password salah!", "error"); }
+        };
 
-  const handleStudentFinish = (answers) => {
-      const examQuestions = questions.filter(q => q.subjectId === currentExamSubject.id);
-      let earned = 0; let max = 0;
-      
-      examQuestions.forEach((q, i) => {
-          const weight = Number(q.weight) || 10;
-          max += weight;
-          if (q.type === 'single' && String(answers[i]) === String(q.correct)) {
-              earned += weight;
-          } else if (q.type === 'multiple') {
-              const ansArr = String(answers[i] || "").split(',').filter(Boolean).sort();
-              const corrArr = String(q.correct).split(',').filter(Boolean).sort();
-              if (JSON.stringify(ansArr) === JSON.stringify(corrArr)) earned += weight;
-          } else if (q.type === 'boolean' && String(answers[i]) === String(q.correct)) {
-              earned += weight;
-          } else if ((q.type === 'short' || q.type === 'essay' || q.type === 'matching') && String(answers[i]).toLowerCase().trim() === String(q.correct).toLowerCase().trim()) {
-              earned += weight;
-          }
-      });
-      
-      const finalScore = max > 0 ? (earned / max) * 100 : 0;
-      setStudentScore(finalScore);
-      setResults(prev => [...prev, { id: Date.now(), studentName: currentUser.name, class: currentUser.class, subject: currentExamSubject.name, score: finalScore, submittedAt: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
-      setStudentStep('result');
-      showToast("Ujian Selesai. Hasil terkirim ke server!", "success");
-  };
+        const handleTokenSubmit = (e) => {
+        e.preventDefault();
+        const inputToken = e.target.token.value.toUpperCase();
+        const exam = activeExams.find(ex => ex.token === inputToken);
+        if (exam) {
+        const subjectObj = subjects.find(s => s.id === exam.subjectId);
+        if (subjectObj.class !== currentUser.class) { showToast("Token ini bukan untuk kelas Anda!", "error"); return; }
+        setCurrentExamSubject(subjectObj); showToast("Token Valid! Mengacak Soal...", "success");
+        setStudentStep('biodata');
+        } else { showToast("Token tidak ditemukan / tidak aktif!", "error"); }
+        };
 
-  const handleSave = (e) => {
-    e.preventDefault(); 
-    const formData = new FormData(e.target);
-    const d = Object.fromEntries(formData.entries());
-    
-    if(modalType === 'teacher') {
-       setTeachers(p => editingItem ? p.map(i => i.id === editingItem.id ? {...i, ...d} : i) : [...p, {id: Date.now(), ...d}]);
-    } else if(modalType === 'student') {
-       setStudents(p => editingItem ? p.map(i => i.id === editingItem.id ? {...i, ...d} : i) : [...p, {id: Date.now(), ...d}]);
-    } else if (modalType === 'class') {
-       setClasses(p => editingItem ? p.map(i => i.id === editingItem.id ? {...i, ...d} : i) : [...p, {id: Date.now(), ...d}]);
-    } else if (modalType === 'subject') {
-       setSubjects(p => editingItem ? p.map(i => i.id === editingItem.id ? {...i, ...d, teacherId: parseInt(d.teacherId)} : i) : [...p, {id: Date.now(), ...d, teacherId: parseInt(d.teacherId)}]);
-    } else if (modalType === 'question') {
-       let correctData = d.correct;
-       let optionsData = [d.optA, d.optB, d.optC, d.optD, d.optE];
+        const handleStudentFinish = (answers) => {
+        const examQuestions = questions.filter(q => q.subjectId === currentExamSubject.id);
+        let earned = 0; let max = 0;
 
-       if (d.type !== 'single' && d.type !== 'multiple') {
-           if (d.type === 'boolean') optionsData = ["Benar", "Salah"];
-           else optionsData = []; 
-       }
+        examQuestions.forEach((q, i) => {
+        const weight = Number(q.weight) || 10;
+        max += weight;
+        if (q.type === 'single' && String(answers[i]) === String(q.correct)) {
+        earned += weight;
+        } else if (q.type === 'multiple') {
+        const ansArr = String(answers[i] || "").split(',').filter(Boolean).sort();
+        const corrArr = String(q.correct).split(',').filter(Boolean).sort();
+        if (JSON.stringify(ansArr) === JSON.stringify(corrArr)) earned += weight;
+        } else if (q.type === 'boolean' && String(answers[i]) === String(q.correct)) {
+        earned += weight;
+        } else if ((q.type === 'short' || q.type === 'essay' || q.type === 'matching') &&
+        String(answers[i]).toLowerCase().trim() === String(q.correct).toLowerCase().trim()) {
+        earned += weight;
+        }
+        });
 
-       const newQ = { 
-           id: editingItem ? editingItem.id : Date.now(), 
-           subjectId: parseInt(d.subjectId), type: d.type, text: d.text, 
-           options: optionsData, correct: correctData, 
-           difficulty: d.difficulty, weight: parseInt(d.weight), 
-           indicator: d.indicator, image: d.image 
-       };
-       setQuestions(p => editingItem ? p.map(i => i.id === newQ.id ? newQ : i) : [...p, newQ]); 
-    } 
-    setModalOpen(false); setEditingItem(null); showToast("Data berhasil disimpan!");
-  };
+        const finalScore = max > 0 ? (earned / max) * 100 : 0;
+        setStudentScore(finalScore);
+        setResults(prev => [...prev, { id: Date.now(), studentName: currentUser.name, class: currentUser.class, subject:
+        currentExamSubject.name, score: finalScore, submittedAt: new Date().toLocaleTimeString([], {hour: '2-digit',
+        minute:'2-digit'}) }]);
+        setStudentStep('result');
+        showToast("Ujian Selesai. Hasil terkirim ke server!", "success");
+        };
 
-  const initiateDelete = (type, id) => { setDeleteConfig({ isOpen: true, type, id }); };
-  const confirmDelete = () => {
-      const { type, id } = deleteConfig;
-      if (type === 'teacher') setTeachers(p => p.filter(i => i.id !== id));
-      if (type === 'student') setStudents(p => p.filter(i => i.id !== id));
-      if (type === 'class') setClasses(p => p.filter(i => i.id !== id)); 
-      if (type === 'subject') setSubjects(p => p.filter(i => i.id !== id));
-      if (type === 'question') setQuestions(p => p.filter(i => i.id !== id));
-      setDeleteConfig({ isOpen: false, type: '', id: null }); showToast("Data terhapus.");
-  };
+        const handleSave = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const d = Object.fromEntries(formData.entries());
 
-  const generateNewToken = (e) => {
-      e.preventDefault();
-      if (!examBlueprint.subjectId) return showToast("Pilih Mapel!", "error");
-      const totalPct = parseInt(examBlueprint.lots) + parseInt(examBlueprint.mots) + parseInt(examBlueprint.hots);
-      if (totalPct !== 100) return showToast("Total Proporsi Kognitif harus 100%!", "error");
+        if(modalType === 'teacher') {
+        setTeachers(p => editingItem ? p.map(i => i.id === editingItem.id ? {...i, ...d} : i) : [...p, {id: Date.now(),
+        ...d}]);
+        } else if(modalType === 'student') {
+        setStudents(p => editingItem ? p.map(i => i.id === editingItem.id ? {...i, ...d} : i) : [...p, {id: Date.now(),
+        ...d}]);
+        } else if (modalType === 'class') {
+        setClasses(p => editingItem ? p.map(i => i.id === editingItem.id ? {...i, ...d} : i) : [...p, {id: Date.now(),
+        ...d}]);
+        } else if (modalType === 'subject') {
+        setSubjects(p => editingItem ? p.map(i => i.id === editingItem.id ? {...i, ...d, teacherId:
+        parseInt(d.teacherId)} : i) : [...p, {id: Date.now(), ...d, teacherId: parseInt(d.teacherId)}]);
+        } else if (modalType === 'question') {
+        let correctData = d.correct;
+        let optionsData = [d.optA, d.optB, d.optC, d.optD, d.optE];
 
-      const newToken = Math.random().toString(36).substring(2,8).toUpperCase();
-      setActiveExams(prev => [...prev, { token: newToken, subjectId: parseInt(examBlueprint.subjectId), blueprint: examBlueprint }]);
-      setExamBlueprint({ subjectId: '', total: 20, lots: 20, mots: 50, hots: 30 }); 
-      showToast(`Blueprint Ujian diaktifkan! Token: ${newToken}`);
-  };
+        if (d.type !== 'single' && d.type !== 'multiple') {
+        if (d.type === 'boolean') optionsData = ["Benar", "Salah"];
+        else optionsData = [];
+        }
 
-  const stopExam = (token) => { setActiveExams(p => p.filter(e => e.token !== token)); showToast("Sesi dihentikan."); };
-  const toggleGroup = (group) => setOpenMenuGroups(prev => ({...prev, [group]: !prev[group]}));
+        const newQ = {
+        id: editingItem ? editingItem.id : Date.now(),
+        subjectId: parseInt(d.subjectId), type: d.type, text: d.text,
+        options: optionsData, correct: correctData,
+        difficulty: d.difficulty, weight: parseInt(d.weight),
+        indicator: d.indicator, image: d.image
+        };
+        setQuestions(p => editingItem ? p.map(i => i.id === newQ.id ? newQ : i) : [...p, newQ]);
+        }
+        setModalOpen(false); setEditingItem(null); showToast("Data berhasil disimpan!");
+        };
 
-  const handleGenerateVisual = () => {
-      showToast("AI sedang mengkalkulasi dan membuat visual...");
-      setTimeout(() => {
-          const imgUrl = "https://images.unsplash.com/photo-1596495578065-6e0763fa1178?auto=format&fit=crop&q=80&w=600";
-          const input = document.getElementsByName('image')[0];
-          if(input) input.value = imgUrl;
-          showToast("Visual berhasil disisipkan!");
-      }, 2500);
-  };
+        const initiateDelete = (type, id) => { setDeleteConfig({ isOpen: true, type, id }); };
+        const confirmDelete = () => {
+        const { type, id } = deleteConfig;
+        if (type === 'teacher') setTeachers(p => p.filter(i => i.id !== id));
+        if (type === 'student') setStudents(p => p.filter(i => i.id !== id));
+        if (type === 'class') setClasses(p => p.filter(i => i.id !== id));
+        if (type === 'subject') setSubjects(p => p.filter(i => i.id !== id));
+        if (type === 'question') setQuestions(p => p.filter(i => i.id !== id));
+        setDeleteConfig({ isOpen: false, type: '', id: null }); showToast("Data terhapus.");
+        };
 
-  const generateAIQuestions = () => {
-      const totalPct = Number(aiParams.pcts.lots) + Number(aiParams.pcts.mots) + Number(aiParams.pcts.hots);
-      if (totalPct !== 100) return showToast("Total persentase Kognitif harus tepat 100%!", "error");
-      
-      const totalQ = Object.values(aiParams.counts).reduce((a,b)=>a+Number(b), 0);
-      if (totalQ === 0) return showToast("Jumlah soal tidak boleh kosong!", "error");
+        const generateNewToken = (e) => {
+        e.preventDefault();
+        if (!examBlueprint.subjectId) return showToast("Pilih Mapel!", "error");
+        const totalPct = parseInt(examBlueprint.lots) + parseInt(examBlueprint.mots) + parseInt(examBlueprint.hots);
+        if (totalPct !== 100) return showToast("Total Proporsi Kognitif harus 100%!", "error");
 
-      setAiLoading(true);
-      setTimeout(() => { 
-          let mocks = [];
-          let qIndex = 1;
+        const newToken = Math.random().toString(36).substring(2,8).toUpperCase();
+        setActiveExams(prev => [...prev, { token: newToken, subjectId: parseInt(examBlueprint.subjectId), blueprint:
+        examBlueprint }]);
+        setExamBlueprint({ subjectId: '', total: 20, lots: 20, mots: 50, hots: 30 });
+        showToast(`Blueprint Ujian diaktifkan! Token: ${newToken}`);
+        };
 
-          const createMocks = (type, count, defaultOptions, defaultCorrect, weightBase) => {
-              for(let i=0; i<count; i++) {
-                  mocks.push({
-                      id: `draft_${Date.now()}_${qIndex}`, type: type, 
-                      text: `[AI DRAFT] Berdasarkan CP/TP tentang ${aiParams.topic}, selesaikan pertanyaan berikut... (Soal No. ${qIndex} - ${type})`,
-                      options: defaultOptions, correct: defaultCorrect,
-                      difficulty: 'MOTS', 
-                      weight: weightBase, indicator: `Siswa mampu menganalisis ${aiParams.topic}`
-                  });
-                  qIndex++;
-              }
-          };
+        const stopExam = (token) => { setActiveExams(p => p.filter(e => e.token !== token)); showToast("Sesi
+        dihentikan."); };
+        const toggleGroup = (group) => setOpenMenuGroups(prev => ({...prev, [group]: !prev[group]}));
 
-          createMocks('single', Number(aiParams.counts.single), ["Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E"], "0", 10);
-          createMocks('multiple', Number(aiParams.counts.multiple), ["Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E"], "0,2", 20);
-          createMocks('boolean', Number(aiParams.counts.boolean), ["Benar", "Salah"], "0", 10);
-          createMocks('matching', Number(aiParams.counts.matching), [], "Premis Kiri 1 | Pasangan Kanan 1\nPremis Kiri 2 | Pasangan Kanan 2", 20);
-          createMocks('short', Number(aiParams.counts.short), [], "Jawaban Singkat Akurat", 15);
-          createMocks('essay', Number(aiParams.counts.essay), [], "Rubrik jawaban: poin A, B, dan C harus ada.", 30);
+        const handleGenerateVisual = () => {
+        showToast("AI sedang mengkalkulasi dan membuat visual...");
+        setTimeout(() => {
+        const imgUrl = "https://images.unsplash.com/photo-1596495578065-6e0763fa1178?auto=format&fit=crop&q=80&w=600";
+        const input = document.getElementsByName('image')[0];
+        if(input) input.value = imgUrl;
+        showToast("Visual berhasil disisipkan!");
+        }, 2500);
+        };
 
-          let lotsCount = Math.round((Number(aiParams.pcts.lots) / 100) * totalQ);
-          let motsCount = Math.round((Number(aiParams.pcts.mots) / 100) * totalQ);
-          let hotsCount = totalQ - lotsCount - motsCount; 
+        const generateAIQuestions = () => {
+        const totalPct = Number(aiParams.pcts.lots) + Number(aiParams.pcts.mots) + Number(aiParams.pcts.hots);
+        if (totalPct !== 100) return showToast("Total persentase Kognitif harus tepat 100%!", "error");
 
-          mocks.forEach(m => {
-              if (lotsCount > 0) { m.difficulty = 'LOTS'; lotsCount--; }
-              else if (motsCount > 0) { m.difficulty = 'MOTS'; motsCount--; }
-              else { m.difficulty = 'HOTS'; hotsCount--; }
-          });
+        const totalQ = Object.values(aiParams.counts).reduce((a,b)=>a+Number(b), 0);
+        if (totalQ === 0) return showToast("Jumlah soal tidak boleh kosong!", "error");
 
-          mocks = mocks.sort(() => Math.random() - 0.5);
+        setAiLoading(true);
+        setTimeout(() => {
+        let mocks = [];
+        let qIndex = 1;
 
-          setAiDrafts(mocks); setAiLoading(false); setAiStep(2);
-      }, 2000);
-  };
+        const createMocks = (type, count, defaultOptions, defaultCorrect, weightBase) => {
+        for(let i=0; i<count; i++) { mocks.push({ id: `draft_${Date.now()}_${qIndex}`, type: type, text: `[AI DRAFT]
+            Berdasarkan CP/TP tentang ${aiParams.topic}, selesaikan pertanyaan berikut... (Soal No. ${qIndex} -
+            ${type})`, options: defaultOptions, correct: defaultCorrect, difficulty: 'MOTS' , weight: weightBase,
+            indicator: `Siswa mampu menganalisis ${aiParams.topic}` }); qIndex++; } }; createMocks('single',
+            Number(aiParams.counts.single), ["Opsi A", "Opsi B" , "Opsi C" , "Opsi D" , "Opsi E" ], "0" , 10);
+            createMocks('multiple', Number(aiParams.counts.multiple), ["Opsi A", "Opsi B" , "Opsi C" , "Opsi D"
+            , "Opsi E" ], "0,2" , 20); createMocks('boolean', Number(aiParams.counts.boolean), ["Benar", "Salah" ], "0"
+            , 10); createMocks('matching', Number(aiParams.counts.matching),
+            [], "Premis Kiri 1 | Pasangan Kanan 1\nPremis Kiri 2 | Pasangan Kanan 2" , 20); createMocks('short',
+            Number(aiParams.counts.short), [], "Jawaban Singkat Akurat" , 15); createMocks('essay',
+            Number(aiParams.counts.essay), [], "Rubrik jawaban: poin A, B, dan C harus ada." , 30); let
+            lotsCount=Math.round((Number(aiParams.pcts.lots) / 100) * totalQ); let
+            motsCount=Math.round((Number(aiParams.pcts.mots) / 100) * totalQ); let hotsCount=totalQ - lotsCount -
+            motsCount; mocks.forEach(m=> {
+            if (lotsCount > 0) { m.difficulty = 'LOTS'; lotsCount--; }
+            else if (motsCount > 0) { m.difficulty = 'MOTS'; motsCount--; }
+            else { m.difficulty = 'HOTS'; hotsCount--; }
+            });
 
-  const saveAIDrafts = () => {
-      const finalQuestions = aiDrafts.map(d => ({ ...d, subjectId: parseInt(aiParams.subject), id: Date.now() + Math.random() }));
-      setQuestions(prev => [...prev, ...finalQuestions]); setAiStep(3);
-  };
+            mocks = mocks.sort(() => Math.random() - 0.5);
 
-  const handleAiOptionClick = (idx, oIdx, type) => {
-      const n = [...aiDrafts]; 
-      if (type === 'single') {
-          n[idx].correct = String(oIdx);
-      } else {
-          let curr = String(n[idx].correct).split(',').filter(x => x !== "");
-          if (curr.includes(String(oIdx))) {
-              curr = curr.filter(x => x !== String(oIdx));
-          } else {
-              curr.push(String(oIdx));
-          }
-          n[idx].correct = curr.join(',');
-      }
-      setAiDrafts(n);
-  };
+            setAiDrafts(mocks); setAiLoading(false); setAiStep(2);
+            }, 2000);
+            };
 
-  const handleAiFieldChange = (idx, field, value, oIdx = null) => {
-      const n = [...aiDrafts];
-      if (oIdx !== null) {
-          n[idx].options[oIdx] = value;
-      } else {
-          n[idx][field] = value;
-      }
-      setAiDrafts(n);
-  };
+            const saveAIDrafts = () => {
+            const finalQuestions = aiDrafts.map(d => ({ ...d, subjectId: parseInt(aiParams.subject), id: Date.now() +
+            Math.random() }));
+            setQuestions(prev => [...prev, ...finalQuestions]); setAiStep(3);
+            };
 
-  const filteredClassesList = classes.filter(c => c.name.toLowerCase().includes(classSearch.toLowerCase()));
-  const filteredStudentsList = students.filter(s => {
-      const matchClass = studentFilterClass ? s.class === studentFilterClass : true;
-      const matchSearch = s.name.toLowerCase().includes(studentSearch.toLowerCase()) || s.nis.includes(studentSearch);
-      return matchClass && matchSearch;
-  });
-  const filteredResultsList = getMyResults().filter(res => {
-    const matchClass = analysisFilterClass ? res.class === analysisFilterClass : true;
-    const matchSubject = analysisFilterSubject ? res.subject === analysisFilterSubject : true;
-    return matchClass && matchSubject;
-  });
+            const handleAiOptionClick = (idx, oIdx, type) => {
+            const n = [...aiDrafts];
+            if (type === 'single') {
+            n[idx].correct = String(oIdx);
+            } else {
+            let curr = String(n[idx].correct).split(',').filter(x => x !== "");
+            if (curr.includes(String(oIdx))) {
+            curr = curr.filter(x => x !== String(oIdx));
+            } else {
+            curr.push(String(oIdx));
+            }
+            n[idx].correct = curr.join(',');
+            }
+            setAiDrafts(n);
+            };
 
-  const getExamMonitoringData = () => students.map((s, idx) => ({ ...s, status: idx % 3 === 0 ? 'SELESAI' : idx % 3 === 1 ? 'LOGIN' : 'BELUM' }));
-  const monitoringData = activeExams.length > 0 ? getExamMonitoringData() : [];
-  const statsMonitoring = {
-      login: monitoringData.filter(s => s.status === 'LOGIN').length,
-      belum: monitoringData.filter(s => s.status === 'BELUM').length,
-      selesai: monitoringData.filter(s => s.status === 'SELESAI').length
-  };
+            const handleAiFieldChange = (idx, field, value, oIdx = null) => {
+            const n = [...aiDrafts];
+            if (oIdx !== null) {
+            n[idx].options[oIdx] = value;
+            } else {
+            n[idx][field] = value;
+            }
+            setAiDrafts(n);
+            };
 
-  const handlePrintExcel = () => {
-    const headers = ["Rank,Nama,Kelas,Mata Pelajaran,Waktu,Nilai,Status"];
-    const rows = filteredResultsList.sort((a,b) => b.score - a.score).map((res, idx) => {
-        const status = res.score >= 75 ? "LULUS" : "REMEDIAL"; 
-        return `${idx+1},"${res.studentName}","${res.class}","${res.subject}",${res.submittedAt},${res.score},${status}`;
-    });
-    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", `Nilai_Ujian.csv`);
-    document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast("Data Excel Diunduh!");
-  };
+            const filteredClassesList = classes.filter(c => c.name.toLowerCase().includes(classSearch.toLowerCase()));
+            const filteredStudentsList = students.filter(s => {
+            const matchClass = studentFilterClass ? s.class === studentFilterClass : true;
+            const matchSearch = s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
+            s.nis.includes(studentSearch);
+            return matchClass && matchSearch;
+            });
+            const filteredResultsList = getMyResults().filter(res => {
+            const matchClass = analysisFilterClass ? res.class === analysisFilterClass : true;
+            const matchSubject = analysisFilterSubject ? res.subject === analysisFilterSubject : true;
+            return matchClass && matchSubject;
+            });
 
-  const handleOpenPrintPreview = (type) => {
-      if (!printForm.class || !printForm.subject || !printForm.date) return showToast("Lengkapi form administrasi!", "error");
-      const classStudents = students.filter(s => s.class === printForm.class);
-      const selectedSubjObj = subjects.find(s => String(s.id) === String(printForm.subject));
-      const teacherName = teachers.find(t => t.id === selectedSubjObj?.teacherId)?.name || schoolData.adminName;
-      
-      setPrintData({ 
-          type, 
-          class: printForm.class, 
-          subjectName: selectedSubjObj?.name || 'Mapel', 
-          date: printForm.date, 
-          students: classStudents,
-          teacherName: teacherName,
-          questions: questions.filter(q => String(q.subjectId) === String(printForm.subject))
-      });
-  };
+            const getExamMonitoringData = () => students.map((s, idx) => ({ ...s, status: idx % 3 === 0 ? 'SELESAI' :
+            idx % 3 === 1 ? 'LOGIN' : 'BELUM' }));
+            const monitoringData = activeExams.length > 0 ? getExamMonitoringData() : [];
+            const statsMonitoring = {
+            login: monitoringData.filter(s => s.status === 'LOGIN').length,
+            belum: monitoringData.filter(s => s.status === 'BELUM').length,
+            selesai: monitoringData.filter(s => s.status === 'SELESAI').length
+            };
 
-  const handleLogoUpload = (e) => { const file = e.target.files[0]; if(file){const reader=new FileReader(); reader.onloadend=()=>setTempLogo(reader.result); reader.readAsDataURL(file);} };
-  const handleSaveSchool = (e) => { e.preventDefault(); const d=Object.fromEntries(new FormData(e.target).entries()); setSchoolData(p=>({...p, ...d, logo: tempLogo||p.logo})); showToast("Pengaturan Tersimpan!","success"); };
+            const handlePrintExcel = () => {
+            const headers = ["Rank,Nama,Kelas,Mata Pelajaran,Waktu,Nilai,Status"];
+            const rows = filteredResultsList.sort((a,b) => b.score - a.score).map((res, idx) => {
+            const status = res.score >= 75 ? "LULUS" : "REMEDIAL";
+            return
+            `${idx+1},"${res.studentName}","${res.class}","${res.subject}",${res.submittedAt},${res.score},${status}`;
+            });
+            const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a"); link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Nilai_Ujian.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast("Data Excel
+            Diunduh!");
+            };
 
-  const processImport = (type, useAI, fileName, parsedRows) => {
-      if (type === 'Data Murid' && parsedRows) {
-          if (parsedRows.length <= 1) return showToast("File Excel kosong atau format salah", "error");
-          const newStudents = [];
-          for (let i = 1; i < parsedRows.length; i++) {
-              const cols = parsedRows[i];
-              if (cols.length >= 4 && cols[0]) {
-                  newStudents.push({ id: Date.now() + i, name: String(cols[0]), class: String(cols[1]), nis: String(cols[2]), password: String(cols[3]) });
-              }
-          }
-          setStudents(p => [...p, ...newStudents]);
-          showToast(`Berhasil import ${newStudents.length} data murid dari file ${fileName}`, "success");
-      } 
-      else if (type === 'Data Kelas' && parsedRows) {
-          if (parsedRows.length <= 1) return showToast("File Excel kosong atau format salah", "error");
-          const newClasses = [];
-          for (let i = 1; i < parsedRows.length; i++) {
-              const cols = parsedRows[i];
-              if (cols.length >= 2 && cols[0]) {
-                  newClasses.push({ id: Date.now() + i, name: String(cols[0]), level: String(cols[1]) });
-              }
-          }
-          setClasses(p => [...p, ...newClasses]);
-          showToast(`Berhasil import ${newClasses.length} data kelas dari file ${fileName}`, "success");
-      }
-      else if (type === 'Bank Soal') {
-          const subId = selectedSubjectForQuestions ? selectedSubjectForQuestions.id : subjects[0]?.id;
-          if(!subId) return showToast("Pilih mapel terlebih dahulu sebelum mengimpor soal!", "error");
+            const handleOpenPrintPreview = (type) => {
+            if (!printForm.class || !printForm.subject || !printForm.date) return showToast("Lengkapi form
+            administrasi!", "error");
+            const classStudents = students.filter(s => s.class === printForm.class);
+            const selectedSubjObj = subjects.find(s => String(s.id) === String(printForm.subject));
+            const teacherName = teachers.find(t => t.id === selectedSubjObj?.teacherId)?.name || schoolData.adminName;
 
-          if (parsedRows && !useAI) {
-              if (parsedRows.length <= 1) return showToast("File Excel kosong atau format salah", "error");
-              const newQuestions = [];
-              for (let i = 1; i < parsedRows.length; i++) {
-                  const cols = parsedRows[i];
-                  if (cols.length >= 11 && cols[0]) {
-                      const qType = String(cols[0]) || 'single';
-                      let optionsArr = [cols[5]||"", cols[6]||"", cols[7]||"", cols[8]||"", cols[9]||""];
-                      if(qType !== 'single' && qType !== 'multiple') optionsArr = [];
+            setPrintData({
+            type,
+            class: printForm.class,
+            subjectName: selectedSubjObj?.name || 'Mapel',
+            date: printForm.date,
+            students: classStudents,
+            teacherName: teacherName,
+            questions: questions.filter(q => String(q.subjectId) === String(printForm.subject))
+            });
+            };
 
-                      newQuestions.push({
-                          id: Date.now() + i,
-                          subjectId: subId,
-                          type: qType,
-                          difficulty: String(cols[1]) || 'MOTS',
-                          weight: parseInt(cols[2]) || 10,
-                          indicator: String(cols[3]) || '',
-                          text: String(cols[4]) || 'Soal tidak valid',
-                          options: optionsArr,
-                          correct: String(cols[10] || "0")
-                      });
-                  }
-              }
-              setQuestions(p => [...p, ...newQuestions]);
-              showToast(`Berhasil import ${newQuestions.length} soal presisi dari Excel!`, "success");
-          } else {
-              const parsedQuestions = [
-                  { id: Date.now()+1, subjectId: subId, type: 'single', text: `[Extract AI dari ${fileName}] Manakah di bawah ini yang merupakan alat pernapasan pada ikan?`, options: ["Paru-paru", "Insang", "Trakea", "Kulit", "Stomata"], correct: "1", difficulty: "LOTS", weight: 10, indicator: "Siswa mengetahui organ hewan" },
-                  { id: Date.now()+2, subjectId: subId, type: 'multiple', text: `[Extract AI dari ${fileName}] Pilih ciri-ciri makhluk hidup yang benar:`, options: ["Bernapas", "Tidak bergerak", "Berkembang biak", "Tidak butuh makan", "Tumbuh"], correct: "0,2,4", difficulty: "MOTS", weight: 20, indicator: "Siswa menganalisis ciri makhluk hidup" },
-                  { id: Date.now()+3, subjectId: subId, type: 'boolean', text: `[Extract AI dari ${fileName}] Tumbuhan hijau melakukan fotosintesis menghasilkan oksigen.`, options: ["Benar", "Salah"], correct: "0", difficulty: "LOTS", weight: 10, indicator: "Siswa memahami proses fotosintesis" },
-                  { id: Date.now()+4, subjectId: subId, type: 'matching', text: `[Extract AI dari ${fileName}] Jodohkan bagian tumbuhan dengan fungsinya!`, options: [], correct: "Akar | Menyerap air\nDaun | Tempat fotosintesis\nBunga | Alat reproduksi", difficulty: "MOTS", weight: 20, indicator: "Siswa menghubungkan organ dan fungsi" },
-                  { id: Date.now()+5, subjectId: subId, type: 'essay', text: `[Extract AI dari ${fileName}] Jelaskan dampak penebangan hutan secara liar!`, options: [], correct: "Banjir, longsor, hewan kehilangan habitat, suhu bumi meningkat.", difficulty: "HOTS", weight: 40, indicator: "Siswa mengevaluasi dampak lingkungan" }
-              ];
-              setQuestions(prev => [...prev, ...parsedQuestions]);
-              showToast(`AI berhasil mengekstrak & membuat ${parsedQuestions.length} soal dari dokumen!`, "success");
-          }
-      } else {
-          showToast(`Import ${type} dari file ${fileName} berhasil disimulasikan.`, "success");
-      }
-  };
+            const handleLogoUpload = (e) => { const file = e.target.files[0]; if(file){const reader=new FileReader();
+            reader.onloadend=()=>setTempLogo(reader.result); reader.readAsDataURL(file);} };
+            const handleSaveSchool = (e) => { e.preventDefault(); const d=Object.fromEntries(new
+            FormData(e.target).entries()); setSchoolData(p=>({...p, ...d, logo: tempLogo||p.logo}));
+            showToast("Pengaturan Tersimpan!","success"); };
 
-  const isAiWizardFormValid = aiParams.subject && aiParams.topic && !aiLoading && Object.values(aiParams.counts).reduce((a,b)=>a+Number(b), 0) > 0;
-  const totalAiKognitif = Number(aiParams.pcts.lots) + Number(aiParams.pcts.mots) + Number(aiParams.pcts.hots);
-  const totalAiSoal = Object.values(aiParams.counts).reduce((a,b) => a + Number(b), 0);
+            const processImport = (type, useAI, fileName, parsedRows) => {
+            if (type === 'Data Murid' && parsedRows) {
+            if (parsedRows.length <= 1) return showToast("File Excel kosong atau format salah", "error" ); const
+                newStudents=[]; for (let i=1; i < parsedRows.length; i++) { const cols=parsedRows[i]; if (cols.length>=
+                4 && cols[0]) {
+                newStudents.push({ id: Date.now() + i, name: String(cols[0]), class: String(cols[1]), nis:
+                String(cols[2]), password: String(cols[3]) });
+                }
+                }
+                setStudents(p => [...p, ...newStudents]);
+                showToast(`Berhasil import ${newStudents.length} data murid dari file ${fileName}`, "success");
+                }
+                else if (type === 'Data Kelas' && parsedRows) {
+                if (parsedRows.length <= 1) return showToast("File Excel kosong atau format salah", "error" ); const
+                    newClasses=[]; for (let i=1; i < parsedRows.length; i++) { const cols=parsedRows[i]; if
+                    (cols.length>= 2 && cols[0]) {
+                    newClasses.push({ id: Date.now() + i, name: String(cols[0]), level: String(cols[1]) });
+                    }
+                    }
+                    setClasses(p => [...p, ...newClasses]);
+                    showToast(`Berhasil import ${newClasses.length} data kelas dari file ${fileName}`, "success");
+                    }
+                    else if (type === 'Bank Soal') {
+                    const subId = selectedSubjectForQuestions ? selectedSubjectForQuestions.id : subjects[0]?.id;
+                    if(!subId) return showToast("Pilih mapel terlebih dahulu sebelum mengimpor soal!", "error");
 
-  // --- RENDERERS ---
+                    if (parsedRows && !useAI) {
+                    if (parsedRows.length <= 1) return showToast("File Excel kosong atau format salah", "error" ); const
+                        newQuestions=[]; for (let i=1; i < parsedRows.length; i++) { const cols=parsedRows[i]; if
+                        (cols.length>= 11 && cols[0]) {
+                        const qType = String(cols[0]) || 'single';
+                        let optionsArr = [cols[5]||"", cols[6]||"", cols[7]||"", cols[8]||"", cols[9]||""];
+                        if(qType !== 'single' && qType !== 'multiple') optionsArr = [];
 
-  if (printData) return <PrintLayout type={printData.type} data={printData} schoolData={schoolData} onBack={() => setPrintData(null)} />;
+                        newQuestions.push({
+                        id: Date.now() + i,
+                        subjectId: subId,
+                        type: qType,
+                        difficulty: String(cols[1]) || 'MOTS',
+                        weight: parseInt(cols[2]) || 10,
+                        indicator: String(cols[3]) || '',
+                        text: String(cols[4]) || 'Soal tidak valid',
+                        options: optionsArr,
+                        correct: String(cols[10] || "0")
+                        });
+                        }
+                        }
+                        setQuestions(p => [...p, ...newQuestions]);
+                        showToast(`Berhasil import ${newQuestions.length} soal presisi dari Excel!`, "success");
+                        } else {
+                        const parsedQuestions = [
+                        { id: Date.now()+1, subjectId: subId, type: 'single', text: `[Extract AI dari ${fileName}]
+                        Manakah di bawah ini yang merupakan alat pernapasan pada ikan?`, options: ["Paru-paru",
+                        "Insang", "Trakea", "Kulit", "Stomata"], correct: "1", difficulty: "LOTS", weight: 10,
+                        indicator: "Siswa mengetahui organ hewan" },
+                        { id: Date.now()+2, subjectId: subId, type: 'multiple', text: `[Extract AI dari ${fileName}]
+                        Pilih ciri-ciri makhluk hidup yang benar:`, options: ["Bernapas", "Tidak bergerak", "Berkembang
+                        biak", "Tidak butuh makan", "Tumbuh"], correct: "0,2,4", difficulty: "MOTS", weight: 20,
+                        indicator: "Siswa menganalisis ciri makhluk hidup" },
+                        { id: Date.now()+3, subjectId: subId, type: 'boolean', text: `[Extract AI dari ${fileName}]
+                        Tumbuhan hijau melakukan fotosintesis menghasilkan oksigen.`, options: ["Benar", "Salah"],
+                        correct: "0", difficulty: "LOTS", weight: 10, indicator: "Siswa memahami proses fotosintesis" },
+                        { id: Date.now()+4, subjectId: subId, type: 'matching', text: `[Extract AI dari ${fileName}]
+                        Jodohkan bagian tumbuhan dengan fungsinya!`, options: [], correct: "Akar | Menyerap air\nDaun |
+                        Tempat fotosintesis\nBunga | Alat reproduksi", difficulty: "MOTS", weight: 20, indicator: "Siswa
+                        menghubungkan organ dan fungsi" },
+                        { id: Date.now()+5, subjectId: subId, type: 'essay', text: `[Extract AI dari ${fileName}]
+                        Jelaskan dampak penebangan hutan secara liar!`, options: [], correct: "Banjir, longsor, hewan
+                        kehilangan habitat, suhu bumi meningkat.", difficulty: "HOTS", weight: 40, indicator: "Siswa
+                        mengevaluasi dampak lingkungan" }
+                        ];
+                        setQuestions(prev => [...prev, ...parsedQuestions]);
+                        showToast(`AI berhasil mengekstrak & membuat ${parsedQuestions.length} soal dari dokumen!`,
+                        "success");
+                        }
+                        } else {
+                        showToast(`Import ${type} dari file ${fileName} berhasil disimulasikan.`, "success");
+                        }
+                        };
 
-  if (!role) return (
-    <div className="min-h-screen bg-slate-900 relative overflow-hidden flex flex-col justify-center items-center p-4 sm:p-8 font-sans no-scrollbar">
-      
-      {/* Elegant Architectural Background */}
-      <div className="absolute inset-0 z-0 opacity-20 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-      <div className="absolute left-0 right-0 top-[-10%] -z-10 m-auto h-[400px] w-[400px] rounded-full bg-blue-600 opacity-20 blur-[120px] pointer-events-none"></div>
+                        const isAiWizardFormValid = aiParams.subject && aiParams.topic && !aiLoading &&
+                        Object.values(aiParams.counts).reduce((a,b)=>a+Number(b), 0) > 0;
+                        const totalAiKognitif = Number(aiParams.pcts.lots) + Number(aiParams.pcts.mots) +
+                        Number(aiParams.pcts.hots);
+                        const totalAiSoal = Object.values(aiParams.counts).reduce((a,b) => a + Number(b), 0);
 
-      <div className="fixed top-6 right-6 z-[100] flex flex-col gap-3">
-          {toasts.map(t => <Toast key={t.id} {...t} onClose={() => removeToast(t.id)} />)}
-      </div>
+                        // --- RENDERERS ---
 
-      <div className="w-full max-w-[440px] bg-white rounded-[1.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border border-slate-200 p-8 sm:p-10 z-10 flex flex-col relative overflow-hidden">
-          {/* Subtle top line for premium feel */}
-          <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-800"></div>
-          
-          <div className="flex justify-center mb-6 mt-2">
-              <div className="w-20 h-20 bg-slate-50 p-3 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-center">
-                  <img src={schoolData.logo} alt="Logo" className="w-full h-full object-contain drop-shadow-sm" />
-              </div>
-          </div>
-          
-          <div className="text-center mb-8">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">{schoolData.name}</h1>
-              <p className="text-slate-500 text-[10px] font-bold tracking-widest uppercase">
-                  Portal Ujian Resmi (CBT)
-              </p>
-          </div>
-          
-          <div className="flex p-1 bg-slate-100 rounded-lg mb-8 w-full border border-slate-200/60 shadow-inner">
-              <button onClick={() => setLoginTab('student')} className={`flex-1 py-2.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${loginTab === 'student' ? 'bg-white text-blue-700 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}> <GraduationCap size={16}/> Peserta </button>
-              <button onClick={() => setLoginTab('admin')} className={`flex-1 py-2.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${loginTab === 'admin' ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}> <UserCog size={16}/> Edukator </button>
-          </div>
-          
-          {loginTab === 'student' ? (
-              <form onSubmit={handleStudentLogin} className="space-y-5 animate-fade-in w-full">
-                  <div className="space-y-1.5 text-left">
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Nomor Induk Siswa</label>
-                      <div className="relative group">
-                          <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
-                          <input name="username" required placeholder="Masukkan NIS" className="w-full pl-10 pr-4 py-3 rounded-lg bg-white border border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 text-sm shadow-sm" />
-                      </div>
-                  </div>
-                  <div className="space-y-1.5 text-left">
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Kata Sandi</label>
-                      <div className="relative group">
-                          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
-                          <input name="password" type="password" required placeholder="••••••••" className="w-full pl-10 pr-4 py-3 rounded-lg bg-white border border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 text-sm shadow-sm" />
-                      </div>
-                  </div>
-                  <button type="submit" className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all mt-6 text-sm flex justify-center items-center gap-2 uppercase tracking-widest">Akses Ujian <ChevronRight size={16}/></button>
-              </form>
-          ) : (
-              <form onSubmit={handleSystemLogin} className="space-y-5 animate-fade-in w-full">
-                  <div className="space-y-1.5 text-left">
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Username Pengawas</label>
-                      <div className="relative group">
-                          <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-800 transition-colors" size={18} />
-                          <input name="username" required placeholder="Masukkan username" className="w-full pl-10 pr-4 py-3 rounded-lg bg-white border border-slate-300 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 text-sm shadow-sm" />
-                      </div>
-                  </div>
-                  <div className="space-y-1.5 text-left">
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Kata Sandi</label>
-                      <div className="relative group">
-                          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-800 transition-colors" size={18} />
-                          <input name="password" type="password" required placeholder="••••••••" className="w-full pl-10 pr-4 py-3 rounded-lg bg-white border border-slate-300 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 text-sm shadow-sm" />
-                      </div>
-                  </div>
-                  <button type="submit" className="w-full bg-slate-900 hover:bg-slate-950 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all mt-6 text-sm flex justify-center items-center gap-2 uppercase tracking-widest">Masuk Panel <ChevronRight size={16}/></button>
-              </form>
-          )}
-      </div>
-      <div className="w-full text-center mt-8 text-[10px] font-bold tracking-widest uppercase text-slate-400 z-10 opacity-70">
-          e-Quest Premium CBT &copy; {new Date().getFullYear()} • Secure Access
-      </div>
-    </div>
-  );
+                        if (printData) return <PrintLayout type={printData.type} data={printData}
+                            schoolData={schoolData} onBack={()=> setPrintData(null)} />;
 
-  if (role === 'student') {
-      const stdQuestions = questions.filter(q => q.subjectId === currentExamSubject?.id);
-      return (
-        <div className="min-h-screen bg-slate-50 font-sans">
-            <div className="fixed top-4 right-4 z-[999] flex flex-col gap-2">{toasts.map(t => <Toast key={t.id} {...t} onClose={() => removeToast(t.id)} />)}</div>
-            {studentStep==='token' ? (
-                <div className="min-h-screen flex items-center justify-center p-6"><form onSubmit={handleTokenSubmit} className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm space-y-6 text-center border border-slate-100"><div className="bg-indigo-50 p-4 rounded-full inline-flex text-indigo-600 mb-2"><Key size={32} /></div><h2 className="text-xl font-bold text-slate-800">Masukkan Token</h2><p className="text-slate-500 text-sm">Minta token ujian kepada Pengawas.</p><input name="token" required placeholder="TOKEN" className="w-full p-4 text-center text-xl font-mono tracking-widest border border-slate-200 rounded-xl focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none uppercase font-bold text-slate-700 shadow-sm" /><button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 shadow-sm">VALIDASI TOKEN</button><button type="button" onClick={()=>setRole(null)} className="text-slate-400 hover:text-indigo-600 text-sm font-semibold">Kembali ke Login</button></form></div>
-            ) : studentStep==='biodata' ? (
-                <div className="min-h-screen flex items-center justify-center p-6"><div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-100"><div className="bg-indigo-600 p-6 text-white flex justify-between items-center"><div><h1 className="text-lg font-bold">Konfirmasi Data</h1><p className="text-indigo-200 text-xs mt-1">Cek data sebelum ujian</p></div><User className="w-10 h-10 bg-indigo-500/50 p-2 rounded-xl" /></div><div className="p-6 space-y-6"><div className="bg-slate-50 rounded-xl p-5 space-y-3 border border-slate-100"><div className="flex justify-between border-b border-slate-200 pb-2"><span className="text-slate-500 text-sm">Nama</span><span className="font-bold text-slate-800">{currentUser.name}</span></div><div className="flex justify-between border-b border-slate-200 pb-2"><span className="text-slate-500 text-sm">Kelas</span><span className="font-bold text-slate-800">{currentUser.class}</span></div><div className="flex justify-between"><span className="text-slate-500 text-sm">Ujian Aktif</span><span className="font-bold text-indigo-600">{currentExamSubject?.name}</span></div></div><button onClick={()=>setStudentStep('exam')} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 shadow-sm">MULAI KERJAKAN</button></div></div></div>
-            ) : studentStep==='exam' ? (
-                <div className="h-screen flex flex-col bg-slate-50 font-sans overflow-hidden select-none no-scrollbar">
-                    <div className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-20 shrink-0 border-b border-slate-200">
-                      <div className="flex items-center gap-3"><div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600"><User size={20}/></div><div><div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Siswa Aktif</div><div className="font-bold text-slate-800 text-sm">{currentUser.name}</div></div></div>
-                      <div className="flex gap-2"><div className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg font-medium text-sm flex gap-2 items-center"><Clock size={16} /> Mode Simulasi</div></div>
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-6 relative scroll-smooth flex justify-center items-center no-scrollbar">
-                        <div className="text-center bg-white p-8 rounded-2xl shadow-sm border border-slate-200 max-w-md w-full">
-                            <CheckSquare size={56} className="mx-auto text-indigo-500 mb-4"/>
-                            <h2 className="text-xl font-bold text-slate-800 mb-2">Simulasi Pengacakan Blueprint</h2>
-                            <p className="text-slate-500 mb-8 text-sm leading-relaxed">Ujian {currentExamSubject?.name} sedang berlangsung. Soal diacak sesuai parameter dari guru.</p>
-                            <button onClick={()=>{
-                                const perfectAnswers = {};
-                                stdQuestions.forEach((q, i) => { perfectAnswers[i] = q.correct; });
-                                handleStudentFinish(perfectAnswers);
-                            }} className="bg-indigo-600 text-white w-full py-3 rounded-xl font-semibold hover:bg-indigo-700 shadow-sm">Kirim Hasil Ujian (Mock Akhir)</button>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <div className="min-h-screen flex items-center justify-center p-6"><div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 text-center space-y-6 max-w-sm w-full"><div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-500"><CheckCircle size={32}/></div><h2 className="text-2xl font-bold text-slate-800">Ujian Selesai</h2><div className="bg-slate-50 p-5 rounded-xl border border-slate-100"><div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Skor Akhir (Sistem Bobot)</div><div className="text-4xl font-black text-indigo-600">{studentScore.toFixed(0)}</div></div><button onClick={()=>setRole(null)} className="w-full bg-slate-800 text-white py-3 rounded-xl font-semibold hover:bg-slate-900 shadow-sm">Kembali ke Beranda</button></div></div>
-            )}
-        </div>
-      )
-  }
+                            if (!role) return (
+                            <div
+                                className="min-h-screen bg-slate-900 relative overflow-hidden flex flex-col justify-center items-center p-4 sm:p-8 font-sans no-scrollbar">
 
-  // --- ADMIN / GURU DASHBOARD RENDER ---
-  return (
-    <div className="min-h-screen bg-slate-50 relative flex font-sans overflow-hidden no-scrollbar">
-      <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-indigo-50/50 to-transparent pointer-events-none"></div>
+                                {/* Elegant Architectural Background */}
+                                <div
+                                    className="absolute inset-0 z-0 opacity-20 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]">
+                                </div>
+                                <div
+                                    className="absolute left-0 right-0 top-[-10%] -z-10 m-auto h-[400px] w-[400px] rounded-full bg-blue-600 opacity-20 blur-[120px] pointer-events-none">
+                                </div>
 
-      <div className="fixed top-6 right-6 z-[999] flex flex-col gap-3">{toasts.map(t => <Toast key={t.id} {...t} onClose={() => removeToast(t.id)} />)}</div>
-      
-      <ConfirmModal isOpen={deleteConfig.isOpen} onClose={()=>setDeleteConfig({isOpen:false,type:'',id:null})} onConfirm={confirmDelete} title="Konfirmasi Hapus" message="Data yang dihapus tidak bisa dikembalikan."/>
-      <ImportModal isOpen={importModalConfig.isOpen} type={importModalConfig.type} showToast={showToast} onClose={()=>setImportModalConfig({isOpen:false, type:''})} onImport={processImport} apiKey={schoolData.apiKey} />
+                                <div className="fixed top-6 right-6 z-[100] flex flex-col gap-3">
+                                    {toasts.map(t => <Toast key={t.id} {...t} onClose={()=> removeToast(t.id)} />)}
+                                </div>
 
-      {/* AI WIZARD OVERLAY */}
-      {aiWizardOpen && (
-          <div className="fixed inset-0 bg-slate-900/60 z-[9999] flex items-center justify-center p-4 sm:p-8 backdrop-blur-md animate-fade-in">
-              <div className="bg-white w-full max-w-5xl h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-white/50 relative">
-                  <div className="bg-gradient-to-r from-fuchsia-600 to-purple-600 p-6 text-white flex justify-between items-center shrink-0 relative overflow-hidden">
-                      <div className="absolute right-0 top-0 opacity-10 scale-150 transform -translate-y-4"><BrainCircuit size={120}/></div>
-                      <div className="relative z-10">
-                          <h2 className="text-xl font-bold flex items-center gap-2"><Sparkles size={20} className="text-fuchsia-300"/> AI Wizard Premium</h2>
-                          <p className="text-purple-100 text-xs font-medium mt-1">Otomatisasi pembuatan soal cerdas terintegrasi kurikulum.</p>
-                      </div>
-                      <button onClick={()=>setAiWizardOpen(false)} className="bg-white/20 p-2 rounded-full hover:bg-white/40 transition-colors relative z-10"><X size={20}/></button>
-                  </div>
+                                <div
+                                    className="w-full max-w-[440px] bg-white rounded-[1.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border border-slate-200 p-8 sm:p-10 z-10 flex flex-col relative overflow-hidden">
+                                    {/* Subtle top line for premium feel */}
+                                    <div
+                                        className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-800">
+                                    </div>
 
-                  <div className="flex bg-slate-50 p-3 shrink-0 border-b border-slate-200">
-                      <div className={`flex-1 text-center font-bold tracking-wider uppercase text-[10px] border-b-[3px] pb-2 transition-all ${aiStep >= 1 ? 'border-fuchsia-500 text-fuchsia-700' : 'border-slate-200 text-slate-400'}`}>Langkah 1 <br/><span className="text-xs capitalize tracking-normal font-semibold mt-1 inline-block">Parameter Pembelajaran</span></div>
-                      <div className={`flex-1 text-center font-bold tracking-wider uppercase text-[10px] border-b-[3px] pb-2 transition-all ${aiStep >= 2 ? 'border-fuchsia-500 text-fuchsia-700' : 'border-slate-200 text-slate-400'}`}>Langkah 2 <br/><span className="text-xs capitalize tracking-normal font-semibold mt-1 inline-block">Review & Edit Kognitif</span></div>
-                      <div className={`flex-1 text-center font-bold tracking-wider uppercase text-[10px] border-b-[3px] pb-2 transition-all ${aiStep >= 3 ? 'border-fuchsia-500 text-fuchsia-700' : 'border-slate-200 text-slate-400'}`}>Langkah 3 <br/><span className="text-xs capitalize tracking-normal font-semibold mt-1 inline-block">Distribusi Soal</span></div>
-                  </div>
+                                    <div className="flex justify-center mb-6 mt-2">
+                                        <div
+                                            className="w-20 h-20 bg-slate-50 p-3 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-center">
+                                            <img src={schoolData.logo} alt="Logo"
+                                                className="w-full h-full object-contain drop-shadow-sm" />
+                                        </div>
+                                    </div>
 
-                  <div className="flex-1 overflow-y-auto p-6 bg-slate-50 no-scrollbar">
-                      {aiStep === 1 && (
-                          <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
-                              <div className="text-center mb-6">
-                                  <div className="w-16 h-16 bg-fuchsia-100 text-fuchsia-600 rounded-2xl flex items-center justify-center mx-auto mb-3"><Settings size={32}/></div>
-                                  <h3 className="text-2xl font-bold text-slate-800">Tentukan Parameter & Distribusi</h3>
-                                  {!schoolData.apiKey && <p className="text-xs font-bold text-rose-500 mt-2 flex items-center justify-center gap-1"><AlertCircle size={14}/>Peringatan: API Key AI belum diatur di Pengaturan Sistem.</p>}
-                              </div>
-                              
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
-                                      <h4 className="font-bold text-slate-700 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2"><BookOpen size={18}/> Identitas Materi</h4>
-                                      <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Mapel Ampuan</label><select value={aiParams.subject} onChange={e => setAiParams({...aiParams, subject: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-fuchsia-400 bg-slate-50 font-semibold text-sm text-slate-700"><option value="">-- Pilih --</option>{getMySubjects().map(s => <option key={s.id} value={s.id}>{s.name} ({s.class})</option>)}</select></div>
-                                      <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Topik Spesifik</label><input value={aiParams.topic} onChange={e => setAiParams({...aiParams, topic: e.target.value})} placeholder="Contoh: Ekosistem Laut" className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-fuchsia-400 bg-slate-50 font-medium text-sm text-slate-700" /></div>
-                                      <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Capaian / Tujuan Pembelajaran (Opsional)</label><textarea value={aiParams.cptp} onChange={e => setAiParams({...aiParams, cptp: e.target.value})} placeholder="Tempelkan teks CP/TP dari RPP..." rows="3" className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-fuchsia-400 bg-slate-50 font-medium text-sm text-slate-700 leading-relaxed" /></div>
+                                    <div className="text-center mb-8">
+                                        <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
+                                            {schoolData.name}</h1>
+                                        <p className="text-slate-500 text-[10px] font-bold tracking-widest uppercase">
+                                            Portal Ujian Resmi (CBT)
+                                        </p>
+                                    </div>
+
+                                    <div
+                                        className="flex p-1 bg-slate-100 rounded-lg mb-8 w-full border border-slate-200/60 shadow-inner">
+                                        <button onClick={()=> setLoginTab('student')} className={`flex-1 py-2.5
+                                            rounded-md text-xs font-bold uppercase tracking-wider transition-all
+                                            duration-200 flex items-center justify-center gap-2 ${loginTab === 'student'
+                                            ? 'bg-white text-blue-700 shadow-sm border border-slate-200/50' :
+                                            'text-slate-500 hover:text-slate-700'}`}>
+                                            <GraduationCap size={16} /> Peserta
+                                        </button>
+                                        <button onClick={()=> setLoginTab('admin')} className={`flex-1 py-2.5 rounded-md
+                                            text-xs font-bold uppercase tracking-wider transition-all duration-200 flex
+                                            items-center justify-center gap-2 ${loginTab === 'admin' ? 'bg-white
+                                            text-slate-800 shadow-sm border border-slate-200/50' : 'text-slate-500
+                                            hover:text-slate-700'}`}>
+                                            <UserCog size={16} /> Edukator
+                                        </button>
+                                    </div>
+
+                                    {loginTab === 'student' ? (
+                                    <form onSubmit={handleStudentLogin} className="space-y-5 animate-fade-in w-full">
+                                        <div className="space-y-1.5 text-left">
+                                            <label
+                                                className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Nomor
+                                                Induk Siswa</label>
+                                            <div className="relative group">
+                                                <User
+                                                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors"
+                                                    size={18} />
+                                                <input name="username" required placeholder="Masukkan NIS"
+                                                    className="w-full pl-10 pr-4 py-3 rounded-lg bg-white border border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 text-sm shadow-sm" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5 text-left">
+                                            <label
+                                                className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Kata
+                                                Sandi</label>
+                                            <div className="relative group">
+                                                <Lock
+                                                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors"
+                                                    size={18} />
+                                                <input name="password" type="password" required placeholder="••••••••"
+                                                    className="w-full pl-10 pr-4 py-3 rounded-lg bg-white border border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 text-sm shadow-sm" />
+                                            </div>
+                                        </div>
+                                        <button type="submit"
+                                            className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all mt-6 text-sm flex justify-center items-center gap-2 uppercase tracking-widest">Akses
+                                            Ujian
+                                            <ChevronRight size={16} />
+                                        </button>
+                                    </form>
+                                    ) : (
+                                    <form onSubmit={handleSystemLogin} className="space-y-5 animate-fade-in w-full">
+                                        <div className="space-y-1.5 text-left">
+                                            <label
+                                                className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Username
+                                                Pengawas</label>
+                                            <div className="relative group">
+                                                <User
+                                                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-800 transition-colors"
+                                                    size={18} />
+                                                <input name="username" required placeholder="Masukkan username"
+                                                    className="w-full pl-10 pr-4 py-3 rounded-lg bg-white border border-slate-300 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 text-sm shadow-sm" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5 text-left">
+                                            <label
+                                                className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Kata
+                                                Sandi</label>
+                                            <div className="relative group">
+                                                <Lock
+                                                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-800 transition-colors"
+                                                    size={18} />
+                                                <input name="password" type="password" required placeholder="••••••••"
+                                                    className="w-full pl-10 pr-4 py-3 rounded-lg bg-white border border-slate-300 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 text-sm shadow-sm" />
+                                            </div>
+                                        </div>
+                                        <button type="submit"
+                                            className="w-full bg-slate-900 hover:bg-slate-950 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all mt-6 text-sm flex justify-center items-center gap-2 uppercase tracking-widest">Masuk
+                                            Panel
+                                            <ChevronRight size={16} />
+                                        </button>
+                                    </form>
+                                    )}
+                                </div>
+                                <div
+                                    className="w-full text-center mt-8 text-[10px] font-bold tracking-widest uppercase text-slate-400 z-10 opacity-70">
+                                    e-Quest Premium CBT &copy; {new Date().getFullYear()} • Secure Access
+                                </div>
+                            </div>
+                            );
+
+                            if (role === 'student') {
+                            const stdQuestions = questions.filter(q => q.subjectId === currentExamSubject?.id);
+                            return (
+                            <div className="min-h-screen bg-slate-50 font-sans">
+                                <div className="fixed top-4 right-4 z-[999] flex flex-col gap-2">{toasts.map(t => <Toast
+                                        key={t.id} {...t} onClose={()=> removeToast(t.id)} />)}</div>
+                                {studentStep==='token' ? (
+                                <div className="min-h-screen flex items-center justify-center p-6">
+                                    <form onSubmit={handleTokenSubmit}
+                                        className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm space-y-6 text-center border border-slate-100">
+                                        <div className="bg-indigo-50 p-4 rounded-full inline-flex text-indigo-600 mb-2">
+                                            <Key size={32} />
+                                        </div>
+                                        <h2 className="text-xl font-bold text-slate-800">Masukkan Token</h2>
+                                        <p className="text-slate-500 text-sm">Minta token ujian kepada Pengawas.</p>
+                                        <input name="token" required placeholder="TOKEN"
+                                            className="w-full p-4 text-center text-xl font-mono tracking-widest border border-slate-200 rounded-xl focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none uppercase font-bold text-slate-700 shadow-sm" /><button
+                                            type="submit"
+                                            className="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 shadow-sm">VALIDASI
+                                            TOKEN</button><button type="button" onClick={()=>setRole(null)}
+                                            className="text-slate-400 hover:text-indigo-600 text-sm
+                                            font-semibold">Kembali ke Login</button>
+                                    </form>
+                                </div>
+                                ) : studentStep==='biodata' ? (
+                                <div className="min-h-screen flex items-center justify-center p-6">
+                                    <div
+                                        className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-100">
+                                        <div className="bg-indigo-600 p-6 text-white flex justify-between items-center">
+                                            <div>
+                                                <h1 className="text-lg font-bold">Konfirmasi Data</h1>
+                                                <p className="text-indigo-200 text-xs mt-1">Cek data sebelum ujian</p>
+                                            </div>
+                                            <User className="w-10 h-10 bg-indigo-500/50 p-2 rounded-xl" />
+                                        </div>
+                                        <div className="p-6 space-y-6">
+                                            <div
+                                                className="bg-slate-50 rounded-xl p-5 space-y-3 border border-slate-100">
+                                                <div className="flex justify-between border-b border-slate-200 pb-2">
+                                                    <span className="text-slate-500 text-sm">Nama</span><span
+                                                        className="font-bold text-slate-800">{currentUser.name}</span>
+                                                </div>
+                                                <div className="flex justify-between border-b border-slate-200 pb-2">
+                                                    <span className="text-slate-500 text-sm">Kelas</span><span
+                                                        className="font-bold text-slate-800">{currentUser.class}</span>
+                                                </div>
+                                                <div className="flex justify-between"><span
+                                                        className="text-slate-500 text-sm">Ujian Aktif</span><span
+                                                        className="font-bold text-indigo-600">{currentExamSubject?.name}</span>
+                                                </div>
+                                            </div><button onClick={()=>setStudentStep('exam')} className="w-full
+                                                bg-indigo-600 text-white py-3 rounded-xl font-semibold
+                                                hover:bg-indigo-700 shadow-sm">MULAI KERJAKAN</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                ) : studentStep==='exam' ? (
+                                <div
+                                    className="h-screen flex flex-col bg-slate-50 font-sans overflow-hidden select-none no-scrollbar">
+                                    <div
+                                        className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-20 shrink-0 border-b border-slate-200">
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
+                                                <User size={20} />
+                                            </div>
+                                            <div>
+                                                <div
+                                                    className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                    Siswa Aktif</div>
+                                                <div className="font-bold text-slate-800 text-sm">{currentUser.name}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <div
+                                                className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg font-medium text-sm flex gap-2 items-center">
+                                                <Clock size={16} /> Mode Simulasi
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        className="flex-1 overflow-y-auto p-6 relative scroll-smooth flex justify-center items-center no-scrollbar">
+                                        <div
+                                            className="text-center bg-white p-8 rounded-2xl shadow-sm border border-slate-200 max-w-md w-full">
+                                            <CheckSquare size={56} className="mx-auto text-indigo-500 mb-4" />
+                                            <h2 className="text-xl font-bold text-slate-800 mb-2">Simulasi Pengacakan
+                                                Blueprint</h2>
+                                            <p className="text-slate-500 mb-8 text-sm leading-relaxed">Ujian
+                                                {currentExamSubject?.name} sedang berlangsung. Soal diacak sesuai
+                                                parameter dari guru.</p>
+                                            <button onClick={()=>{
+                                                const perfectAnswers = {};
+                                                stdQuestions.forEach((q, i) => { perfectAnswers[i] = q.correct; });
+                                                handleStudentFinish(perfectAnswers);
+                                                }} className="bg-indigo-600 text-white w-full py-3 rounded-xl
+                                                font-semibold hover:bg-indigo-700 shadow-sm">Kirim Hasil Ujian (Mock
+                                                Akhir)</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                ) : (
+                                <div className="min-h-screen flex items-center justify-center p-6">
+                                    <div
+                                        className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 text-center space-y-6 max-w-sm w-full">
+                                        <div
+                                            className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-500">
+                                            <CheckCircle size={32} />
+                                        </div>
+                                        <h2 className="text-2xl font-bold text-slate-800">Ujian Selesai</h2>
+                                        <div className="bg-slate-50 p-5 rounded-xl border border-slate-100">
+                                            <div
+                                                className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">
+                                                Skor Akhir (Sistem Bobot)</div>
+                                            <div className="text-4xl font-black text-indigo-600">
+                                                {studentScore.toFixed(0)}</div>
+                                        </div><button onClick={()=>setRole(null)} className="w-full bg-slate-800
+                                            text-white py-3 rounded-xl font-semibold hover:bg-slate-900
+                                            shadow-sm">Kembali ke Beranda</button>
+                                    </div>
+                                </div>
+                                )}
+                            </div>
+                            )
+                            }
+
+                            // --- ADMIN / GURU DASHBOARD RENDER ---
+                            return (
+                            <div
+                                className="min-h-screen bg-slate-50 relative flex font-sans overflow-hidden no-scrollbar">
+                                <div
+                                    className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-indigo-50/50 to-transparent pointer-events-none">
+                                </div>
+
+                                <div className="fixed top-6 right-6 z-[999] flex flex-col gap-3">{toasts.map(t => <Toast
+                                        key={t.id} {...t} onClose={()=> removeToast(t.id)} />)}</div>
+
+                                <ConfirmModal isOpen={deleteConfig.isOpen} onClose={()=>
+                                    setDeleteConfig({isOpen:false,type:'',id:null})} onConfirm={confirmDelete}
+                                    title="Konfirmasi Hapus" message="Data yang dihapus tidak bisa dikembalikan."/>
+                                    <ImportModal isOpen={importModalConfig.isOpen} type={importModalConfig.type}
+                                        showToast={showToast} onClose={()=>setImportModalConfig({isOpen:false,
+                                        type:''})} onImport={processImport} apiKey={schoolData.apiKey} />
+
+                                        {/* AI WIZARD OVERLAY */}
+                                        {aiWizardOpen && (
+                                        <div
+                                            className="fixed inset-0 bg-slate-900/60 z-[9999] flex items-center justify-center p-4 sm:p-8 backdrop-blur-md animate-fade-in">
+                                            <div
+                                                className="bg-white w-full max-w-5xl h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-white/50 relative">
+                                                <div
+                                                    className="bg-gradient-to-r from-fuchsia-600 to-purple-600 p-6 text-white flex justify-between items-center shrink-0 relative overflow-hidden">
+                                                    <div
+                                                        className="absolute right-0 top-0 opacity-10 scale-150 transform -translate-y-4">
+                                                        <BrainCircuit size={120} />
+                                                    </div>
+                                                    <div className="relative z-10">
+                                                        <h2 className="text-xl font-bold flex items-center gap-2">
+                                                            <Sparkles size={20} className="text-fuchsia-300" /> AI
+                                                            Wizard Premium
+                                                        </h2>
+                                                        <p className="text-purple-100 text-xs font-medium mt-1">
+                                                            Otomatisasi pembuatan soal cerdas terintegrasi kurikulum.
+                                                        </p>
+                                                    </div>
+                                                    <button onClick={()=>setAiWizardOpen(false)} className="bg-white/20
+                                                        p-2 rounded-full hover:bg-white/40 transition-colors relative
+                                                        z-10">
+                                                        <X size={20} />
+                                                    </button>
+                                                </div>
+
+                                                <div
+                                                    className="flex bg-slate-50 p-3 shrink-0 border-b border-slate-200">
+                                                    <div className={`flex-1 text-center font-bold tracking-wider
+                                                        uppercase text-[10px] border-b-[3px] pb-2 transition-all
+                                                        ${aiStep>= 1 ? 'border-fuchsia-500 text-fuchsia-700' :
+                                                        'border-slate-200 text-slate-400'}`}>Langkah 1 <br /><span
+                                                            className="text-xs capitalize tracking-normal font-semibold mt-1 inline-block">Parameter
+                                                            Pembelajaran</span></div>
+                                                    <div className={`flex-1 text-center font-bold tracking-wider
+                                                        uppercase text-[10px] border-b-[3px] pb-2 transition-all
+                                                        ${aiStep>= 2 ? 'border-fuchsia-500 text-fuchsia-700' :
+                                                        'border-slate-200 text-slate-400'}`}>Langkah 2 <br /><span
+                                                            className="text-xs capitalize tracking-normal font-semibold mt-1 inline-block">Review
+                                                            & Edit Kognitif</span></div>
+                                                    <div className={`flex-1 text-center font-bold tracking-wider
+                                                        uppercase text-[10px] border-b-[3px] pb-2 transition-all
+                                                        ${aiStep>= 3 ? 'border-fuchsia-500 text-fuchsia-700' :
+                                                        'border-slate-200 text-slate-400'}`}>Langkah 3 <br /><span
+                                                            className="text-xs capitalize tracking-normal font-semibold mt-1 inline-block">Distribusi
+                                                            Soal</span></div>
+                                                </div>
+
+                                                <div className="flex-1 overflow-y-auto p-6 bg-slate-50 no-scrollbar">
+                                                    {aiStep === 1 && (
+                                                    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+                                                        <div className="text-center mb-6">
+                                                            <div
+                                                                className="w-16 h-16 bg-fuchsia-100 text-fuchsia-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                                                <Settings size={32} />
+                                                            </div>
+                                                            <h3 className="text-2xl font-bold text-slate-800">Tentukan
+                                                                Parameter & Distribusi</h3>
+                                                            {!schoolData.apiKey && <p
+                                                                className="text-xs font-bold text-rose-500 mt-2 flex items-center justify-center gap-1">
+                                                                <AlertCircle size={14} />Peringatan: API Key AI belum
+                                                                diatur di Pengaturan Sistem.
+                                                            </p>}
+                                                        </div>
+
+                                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                            <div
+                                                                className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                                                                <h4
+                                                                    className="font-bold text-slate-700 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                                                                    <BookOpen size={18} /> Identitas Materi
+                                                                </h4>
+                                                                <div><label
+                                                                        className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Mapel
+                                                                        Ampuan</label><select value={aiParams.subject}
+                                                                        onChange={e=> setAiParams({...aiParams, subject:
+                                                                        e.target.value})} className="w-full p-3 border
+                                                                        border-slate-200 rounded-xl outline-none
+                                                                        focus:border-fuchsia-400 bg-slate-50
+                                                                        font-semibold text-sm text-slate-700"><option
+                                                                            value="">-- Pilih --</option>
+                                                                        {getMySubjects().map(s => <option key={s.id}
+                                                                            value={s.id}>{s.name} ({s.class})</option>
+                                                                        )}</select></div>
+                                                                <div><label
+                                                                        className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Topik
+                                                                        Spesifik</label><input value={aiParams.topic}
+                                                                        onChange={e=> setAiParams({...aiParams, topic:
+                                                                    e.target.value})} placeholder="Contoh: Ekosistem
+                                                                    Laut" className="w-full p-3 border border-slate-200
+                                                                    rounded-xl outline-none focus:border-fuchsia-400
+                                                                    bg-slate-50 font-medium text-sm text-slate-700" />
+                                                                </div>
+                                                                <div><label
+                                                                        className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Capaian
+                                                                        / Tujuan Pembelajaran
+                                                                        (Opsional)</label><textarea
+                                                                        value={aiParams.cptp} onChange={e=> setAiParams({...aiParams, cptp: e.target.value})} placeholder="Tempelkan teks CP/TP dari RPP..." rows="3" className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-fuchsia-400 bg-slate-50 font-medium text-sm text-slate-700 leading-relaxed" /></div>
                                   </div>
 
                                   <div className="space-y-6">
