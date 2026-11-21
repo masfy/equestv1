@@ -1,50 +1,98 @@
-
 export const aiService = {
-    getValidModel: async (apiKey) => {
+    fetchAvailableModels: async (apiKey) => {
+        if (!apiKey || !apiKey.trim()) {
+            return { success: false, error: "API Key tidak boleh kosong", models: [] };
+        }
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+            const key = apiKey.trim();
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
             const data = await res.json();
 
             if (data.error) {
                 console.error("List Models Error:", data.error);
-                return null;
+                return {
+                    success: false,
+                    error: data.error.message || "API Key tidak valid atau kuota habis.",
+                    models: []
+                };
             }
 
-            if (data.models) {
-                // Filter for models that support generateContent
-                const capableModels = data.models.filter(m =>
+            if (data.models && Array.isArray(data.models)) {
+                // Filter models that support generateContent
+                const capable = data.models.filter(m =>
                     m.supportedGenerationMethods &&
                     m.supportedGenerationMethods.includes('generateContent')
                 );
 
-                // Priority list
-                const priorities = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.0-pro'];
+                const mapped = capable.map(m => {
+                    const cleanId = m.name.replace(/^models\//, '');
+                    return {
+                        id: cleanId,
+                        name: m.displayName || cleanId,
+                        description: m.description || '',
+                        isFlash: cleanId.toLowerCase().includes('flash'),
+                        isPro: cleanId.toLowerCase().includes('pro'),
+                    };
+                });
 
-                for (const pref of priorities) {
-                    const found = capableModels.find(m => m.name.includes(pref));
-                    if (found) return found.name.replace('models/', '');
-                }
+                // Priority ranking
+                const rankModel = (id) => {
+                    const lower = id.toLowerCase();
+                    if (lower.includes('2.0-flash')) return 1;
+                    if (lower.includes('1.5-flash')) return 2;
+                    if (lower.includes('2.5-flash')) return 3;
+                    if (lower.includes('2.0-pro')) return 4;
+                    if (lower.includes('1.5-pro')) return 5;
+                    if (lower.includes('pro')) return 6;
+                    return 10;
+                };
 
-                // Fallback to the first available capable model
-                if (capableModels.length > 0) {
-                    return capableModels[0].name.replace('models/', '');
-                }
+                mapped.sort((a, b) => rankModel(a.id) - rankModel(b.id));
+
+                return {
+                    success: true,
+                    models: mapped
+                };
             }
-            return 'gemini-pro'; // Ultimate fallback
+
+            return {
+                success: false,
+                error: "Tidak ada model yang ditemukan untuk API Key ini.",
+                models: []
+            };
         } catch (e) {
-            console.error("Failed to list models", e);
-            return 'gemini-pro';
+            console.error("Failed to fetch models", e);
+            return {
+                success: false,
+                error: e.message || "Gagal menghubungi server Google AI.",
+                models: []
+            };
+        }
+    },
+
+    getValidModel: async (apiKey, preferredModel = null) => {
+        if (!apiKey || !apiKey.trim()) return 'gemini-1.5-flash';
+        try {
+            const result = await aiService.fetchAvailableModels(apiKey);
+            if (result.success && result.models.length > 0) {
+                if (preferredModel) {
+                    const match = result.models.find(m => m.id === preferredModel);
+                    if (match) return match.id;
+                }
+                return result.models[0].id;
+            }
+            return preferredModel || 'gemini-1.5-flash';
+        } catch (e) {
+            console.error("Failed in getValidModel", e);
+            return preferredModel || 'gemini-1.5-flash';
         }
     },
 
     generateQuestions: async (apiKey, config) => {
-        const { topic, counts, contextDist, cognitiveDist } = config;
+        const { topic, counts, contextDist, cognitiveDist, model = 'gemini-1.5-flash' } = config;
 
-        // 1. Get a valid model dynamically
-        const modelName = await aiService.getValidModel(apiKey);
-        if (!modelName) {
-            throw new Error("Gagal menemukan model AI yang valid untuk API Key ini. Pastikan API Key benar.");
-        }
+        // Verify or fallback model dynamically
+        const modelName = await aiService.getValidModel(apiKey, model);
         console.log("Using AI Model:", modelName);
 
         const prompt = `
@@ -53,18 +101,18 @@ export const aiService = {
         **Topic**: ${topic}
 
         **Quantity & Types**:
-        - ${counts.mcma} questions of type 'mcma' (Multiple Correct Multiple Answer).
-        - ${counts.complex} questions of type 'complex' (True/False statements).
-        - ${counts.single} questions of type 'single' (Standard Multiple Choice with 1 correct answer).
+        - ${counts.mcma || 0} questions of type 'mcma' (Multiple Correct Multiple Answer).
+        - ${counts.complex || 0} questions of type 'complex' (True/False statements).
+        - ${counts.single || 0} questions of type 'single' (Standard Multiple Choice with 1 correct answer).
 
         **Context Distribution**:
-        - ${contextDist.math}% Mathematical/Theoretical problems.
-        - ${contextDist.daily}% Daily Life/Real-world application problems.
+        - ${contextDist?.math || 50}% Mathematical/Theoretical problems.
+        - ${contextDist?.daily || 50}% Daily Life/Real-world application problems.
 
         **Cognitive Level Distribution**:
-        - ${cognitiveDist.knowledge}% Knowledge & Understanding (C1-C2).
-        - ${cognitiveDist.application}% Application (C3).
-        - ${cognitiveDist.reasoning}% Reasoning/Analysis (C4-C6).
+        - ${cognitiveDist?.knowledge || 30}% Knowledge & Understanding (C1-C2).
+        - ${cognitiveDist?.application || 50}% Application (C3).
+        - ${cognitiveDist?.reasoning || 20}% Reasoning/Analysis (C4-C6).
 
         **Output Format (JSON Array of Objects)**:
         Each object must have:
@@ -100,14 +148,11 @@ export const aiService = {
 
             const data = await response.json();
 
-            console.log("AI API Response:", data); // Debug log
-
             if (data.error) {
                 throw new Error(data.error.message || "Terjadi kesalahan pada AI API.");
             }
 
             if (!data.candidates || data.candidates.length === 0) {
-                // Check if it's a safety block
                 if (data.promptFeedback && data.promptFeedback.blockReason) {
                     throw new Error(`Konten diblokir: ${data.promptFeedback.blockReason}`);
                 }
@@ -115,17 +160,14 @@ export const aiService = {
             }
 
             let rawText = data.candidates[0].content.parts[0].text;
-
-            // Clean up markdown if present
             rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
 
             const questions = JSON.parse(rawText);
 
-            // Add IDs
             return questions.map(q => ({
                 ...q,
                 id: Date.now() + Math.random(),
-                stimulus: null // AI currently doesn't generate images
+                stimulus: null
             }));
 
         } catch (error) {

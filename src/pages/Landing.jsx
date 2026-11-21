@@ -4,8 +4,9 @@ import {
   Brain, ShieldCheck, Sparkles, LayoutDashboard, Zap,
   Target, BookOpen, MonitorPlay, ChevronRight, ArrowRight,
   ClipboardList, CheckCircle, UploadCloud, BarChart3, Clock,
-  LockKeyhole, FileCheck2
+  LockKeyhole, FileCheck2, Download
 } from 'lucide-react';
+import PwaInstallPrompt from '../components/PwaInstallPrompt';
 
 const LOGO = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhkZZ6nl3Pq7mFou917u9D1yJnyd4AmsDSQI4VyCjaktVQOk6Yj0teuLBiiyBeiyyKhhbBRC5SJW9Ml6QZZ5vlH-ZlR1lrrKO6auMpiFZrs_DC-VINjninMxAh57pj7yVza53Z2qgyUKiGw8RWviLJ8_Cvl_DamdXJG_OVk_CYc8iwVa4BReULUElQxinWK/s16000/logo%20e-quest.png";
 
@@ -81,7 +82,8 @@ export default function Landing({ onEnterApp }) {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-4">
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3">
+            <PwaInstallPrompt variant="button" />
             <button onClick={() => onEnterApp('admin')} className="hidden md:flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">
               Masuk Edukator
             </button>
@@ -176,8 +178,15 @@ export default function Landing({ onEnterApp }) {
         </div>
 
         <div className="relative pt-8">
-          {/* Connecting line (desktop) - now aligned with the center of the icons (which are 64px tall, center at 32px) */}
-          <div className="hidden md:block absolute top-[32px] left-[10%] w-[80%] h-1 bg-indigo-100 -translate-y-1/2 rounded-full" />
+          {/* Connecting line (desktop) - now perfectly aligned with the center of the icons (which are 64px tall, center at 64px including pt-8) */}
+          <motion.div 
+            initial={{ scaleX: 0 }} 
+            whileInView={{ scaleX: 1 }} 
+            viewport={{ once: true, margin: "-100px" }} 
+            transition={{ duration: 1.5, ease: "easeInOut" }} 
+            style={{ transformOrigin: "left center" }}
+            className="hidden md:block absolute top-[64px] left-[12%] w-[76%] h-[3px] bg-gradient-to-r from-indigo-200 via-fuchsia-200 to-rose-200 -translate-y-1/2 rounded-full" 
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-6 relative z-10">
             {steps.map((step, i) => (
