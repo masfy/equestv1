@@ -121,12 +121,12 @@ const ecosystemLogos = [
   { name: "Analisis HOTS", role: "Blueprint Kognitif", icon: <BarChart3 size={18} className="text-fuchsia-600" /> },
 ];
 
-const heroRotatingWords = [
-  "Cerdas, Cepat & Elegan",
-  "Berstandar Asesmen TKA",
-  "Ekstraksi Soal AI Otomatis",
-  "Mudah bagi Semua Guru",
-  "Seru & Nyaman untuk Siswa"
+const catchyHeadlines = [
+  "Redefining the Future of Digital Examination.",
+  "Satu Platform, Semua Kebutuhan Ujian.",
+  "Transformasi Ujian Sekolah ke Era Digital.",
+  "Ujian Modern dengan Teknologi yang Lebih Cerdas.",
+  "The Smarter Way to Test, Evaluate & Learn."
 ];
 
 export default function Landing({ onEnterApp }) {
@@ -145,8 +145,8 @@ export default function Landing({ onEnterApp }) {
   // Animasi Teks Bergantian di Hero
   useEffect(() => {
     const timer = setInterval(() => {
-      setWordIndex((prev) => (prev + 1) % heroRotatingWords.length);
-    }, 3000);
+      setWordIndex((prev) => (prev + 1) % catchyHeadlines.length);
+    }, 3200);
     return () => clearInterval(timer);
   }, []);
 
@@ -314,69 +314,69 @@ export default function Landing({ onEnterApp }) {
       <section id="hero" className="relative z-10 pt-28 pb-14 sm:pt-36 sm:pb-18 md:pt-42 md:pb-20 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto text-center">
 
-          {/* Badge: The Future of Smart CBT */}
+          {/* 1. BADGE KECIL: NEXT GENERATION DIGITAL ASSESSMENT */}
           <motion.div
-            initial={{ opacity: 1, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.04)] mb-5 sm:mb-6"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/90 backdrop-blur-md border border-indigo-200/80 shadow-[0_2px_12px_rgba(79,70,229,0.08)] mb-5 sm:mb-6"
           >
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600" />
+            <Sparkles size={14} className="text-indigo-600 animate-pulse" />
+            <span className="text-[11px] sm:text-xs font-black tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-900">
+              NEXT GENERATION DIGITAL ASSESSMENT
             </span>
-            <span className="text-[11px] sm:text-xs font-bold text-slate-700 tracking-wide uppercase">
-              The Future of Smart CBT & TKA
-            </span>
-            <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-200/70 px-2 py-0.5 rounded-full">v2.5</span>
+            <span className="text-[9px] font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">v2.5</span>
           </motion.div>
 
-          {/* Headline Beranimasi dengan Ukuran Proporsional */}
-          <div className="min-h-[110px] sm:min-h-[140px] md:min-h-[160px] flex flex-col justify-center mb-4 sm:mb-5">
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-[1.16] sm:leading-[1.14]">
-              Ujian Digital Masa Depan yang <br className="hidden sm:inline" />
-              <span className="inline-block relative">
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={wordIndex}
-                    initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                    exit={{ opacity: 0, y: -14, filter: "blur(4px)" }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                    className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600"
-                  >
-                    {heroRotatingWords[wordIndex]}
-                  </motion.span>
-                </AnimatePresence>
+          {/* 2. HEADLINE RESMI & ALTERNATIF CATCHY */}
+          <div className="mb-4 sm:mb-5">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-[1.18] sm:leading-[1.14] mb-3 sm:mb-4">
+              Ujian Digital Masa Depan, <br className="hidden sm:inline" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600">
+                Lebih Cerdas dan Terintegrasi.
               </span>
             </h1>
+
+            {/* Alternatif Headline Catchy (Animasi Bergantian) */}
+            <div className="h-7 sm:h-8 flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={wordIndex}
+                  initial={{ opacity: 0, y: 8, filter: "blur(2px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, y: -8, filter: "blur(2px)" }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                  className="text-[11px] sm:text-xs md:text-sm font-bold text-indigo-700/90 tracking-wide inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-50/90 border border-indigo-200/80 shadow-2xs"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-ping" />
+                  <span>{catchyHeadlines[wordIndex]}</span>
+                </motion.p>
+              </AnimatePresence>
+            </div>
           </div>
 
-          {/* Copywriting Resmi e-Quest MfyTech */}
+          {/* 3. DESKRIPSI SINGKAT E-QUEST */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="text-xs sm:text-sm md:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed mb-7 sm:mb-8 font-normal px-2"
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-xs sm:text-sm md:text-base text-slate-600 max-w-3xl mx-auto leading-relaxed mb-7 sm:mb-8 font-normal px-2"
           >
-            <p className="font-extrabold text-slate-900 mb-1 text-sm sm:text-base">
-              e-Quest MfyTech (Electronic Question, Evaluation & Examination System)
-            </p>
-            <p className="text-slate-600 font-medium">
-              Platform CBT & TKA cerdas terpadu dari <strong className="text-slate-900 font-bold">MfyTech</strong> yang mengintegrasikan pembuatan soal otomatis berbasis AI, penyusunan stimulus literasi dan numerasi TKA, pelaksanaan ujian interaktif, hingga koreksi nilai dan administrasi otomatis dari hulu ke hilir untuk berbagai satuan pendidikan.
+            <p>
+              Hadirkan pengalaman asesmen pendidikan yang modern melalui <strong className="text-slate-900 font-bold">e-Quest</strong> (Electronic Question, Evaluation & Examination System). Platform ujian berbasis Computer Based Test (CBT) yang mengintegrasikan teknologi AI untuk pembuatan soal, penyusunan stimulus literasi dan numerasi, pelaksanaan ujian, hingga evaluasi hasil belajar secara otomatis.
             </p>
           </motion.div>
 
-          {/* Tombol Aksi Proporsional */}
+          {/* 4. CTA (MASUK PORTAL, JELAJAHI FITUR, PASANG APLIKASI DI HP / LAPTOP AUTO PASANG) */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-xs sm:max-w-none mx-auto mb-6"
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-md sm:max-w-none mx-auto mb-4"
           >
             <button
               onClick={() => onEnterApp('student')}
-              className="w-full sm:w-auto px-8 py-3.5 sm:px-9 sm:py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-slate-900/15 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-95"
+              className="w-full sm:w-auto px-7 py-3.5 sm:px-8 sm:py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-slate-900/15 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-95"
             >
               <LogIn size={17} className="text-indigo-400" />
               <span>Masuk ke Portal Ujian</span>
@@ -390,36 +390,60 @@ export default function Landing({ onEnterApp }) {
               <Sparkles size={16} className="text-fuchsia-600" />
               <span>Jelajahi Fitur</span>
             </button>
+
+            <PwaInstallPrompt variant="hero-cta" />
           </motion.div>
 
-          {/* Kotak PWA Install di Hero */}
+          {/* 5. SUPPORTING TEXT */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.35 }}
-            className="inline-flex flex-col sm:flex-row items-center justify-center gap-3 bg-white/80 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-2.5 sm:px-4 sm:py-2.5 shadow-2xs mx-auto mb-4"
-          >
-            <div className="flex items-center gap-2 text-left">
-              <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Smartphone size={15} />
-              </div>
-              <div>
-                <p className="text-[11px] font-bold text-slate-800 leading-tight">Pasang Aplikasi di HP / Laptop</p>
-                <p className="text-[9px] text-slate-500">Mengerjakan ujian lancar, fullscreen & bebas hambatan</p>
-              </div>
-            </div>
-            <PwaInstallPrompt variant="button" />
-          </motion.div>
-
-          {/* Slogan Resmi e-Quest */}
-          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.45 }}
-            className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-slate-400 italic mb-10 sm:mb-14"
+            transition={{ delay: 0.3 }}
+            className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-slate-500 mb-8 sm:mb-10 px-3.5 py-1 rounded-full bg-slate-100/70 border border-slate-200/60"
           >
-            "Mudah untuk Guru, Seru untuk Siswa, Cerdas untuk Semua"
-          </motion.p>
+            <CheckCircle size={14} className="text-emerald-500" />
+            <span>Satu Platform untuk Seluruh Kebutuhan Asesmen Digital.</span>
+          </motion.div>
+
+          {/* 6. FITUR UNGGULAN: AI, CBT, AUTO SCORING, TKA */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto mb-10 sm:mb-14 text-left"
+          >
+            <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-sm hover:border-indigo-300 transition-all group">
+              <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform shadow-2xs">
+                <Brain size={18} />
+              </div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">AI-Powered Question Generator</h4>
+              <p className="text-[11px] text-slate-500 mt-1 leading-snug">Generasi soal LOTS/HOTS & stimulus otomatis</p>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-sm hover:border-indigo-300 transition-all group">
+              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform shadow-2xs">
+                <MonitorPlay size={18} />
+              </div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">Smart Exam & Digital CBT</h4>
+              <p className="text-[11px] text-slate-500 mt-1 leading-snug">Ujian responsif, fullscreen & anti-curang</p>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-sm hover:border-indigo-300 transition-all group">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform shadow-2xs">
+                <CheckCircle size={18} />
+              </div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">Automatic Scoring & Evaluation</h4>
+              <p className="text-[11px] text-slate-500 mt-1 leading-snug">Hasil nilai detik itu juga & rekap cetak</p>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-sm hover:border-indigo-300 transition-all group">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform shadow-2xs">
+                <Target size={18} />
+              </div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">TKA-Based Literacy & Numeracy</h4>
+              <p className="text-[11px] text-slate-500 mt-1 leading-snug">Standar Tes Kemampuan Akademik nasional</p>
+            </div>
+          </motion.div>
 
           {/* JAVAPIXA-STYLE INTERACTIVE APP PREVIEW CARD (MOCKUP WINDOW) */}
           <motion.div

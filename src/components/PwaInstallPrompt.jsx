@@ -120,6 +120,57 @@ export default function PwaInstallPrompt({ variant = 'card' }) {
         );
     }
 
+    if (variant === 'hero-cta') {
+        return (
+            <>
+                <button
+                    onClick={handleInstallClick}
+                    type="button"
+                    className="w-full sm:w-auto px-6 py-3.5 sm:px-7 sm:py-3.5 rounded-2xl bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 hover:from-indigo-100 hover:to-purple-100 text-indigo-700 border border-indigo-200/90 font-bold text-xs sm:text-sm shadow-2xs hover:shadow-xs hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                    title="Pasang Aplikasi di HP / Laptop (Auto Terpasang)"
+                >
+                    <Smartphone size={16} className="text-indigo-600" />
+                    <span>Pasang Aplikasi di HP / Laptop</span>
+                </button>
+
+                {/* Modal Panduan iOS */}
+                {showIOSGuide && (
+                    <div className="fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+                        <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 animate-fade-in relative border border-slate-100">
+                            <button onClick={() => setShowIOSGuide(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-full"><X size={18} /></button>
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                                    <Smartphone size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-slate-800 text-sm">Pasang di iPhone / iPad</h3>
+                                    <p className="text-[11px] text-slate-400">Petunjuk instalasi cepat Safari</p>
+                                </div>
+                            </div>
+                            <ol className="text-xs text-slate-600 space-y-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-100 font-medium">
+                                <li className="flex items-start gap-2">
+                                    <span className="font-bold text-indigo-600">1.</span>
+                                    <span>Ketuk tombol <strong>Bagikan / Share</strong> (<Share size={13} className="inline text-blue-600" />) di bilah navigasi Safari.</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="font-bold text-indigo-600">2.</span>
+                                    <span>Pilih opsi <strong>"Tambah ke Layar Utama" (Add to Home Screen)</strong>.</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="font-bold text-indigo-600">3.</span>
+                                    <span>Aplikasi CBTku akan muncul di homescreen siap dipakai ujian secara layar penuh.</span>
+                                </li>
+                            </ol>
+                            <button onClick={() => setShowIOSGuide(false)} className="w-full py-3 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors">
+                                Mengerti
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    }
+
     if (variant === 'button') {
         return (
             <>

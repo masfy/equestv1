@@ -933,6 +933,8 @@ export default function App({ defaultLogin = 'student', onBack }) {
                         } else if (key === 'schoolData') {
                             if (!data || typeof data !== 'object') {
                                 data = INITIAL_SCHOOL_DATA;
+                            } else {
+                                data = { ...INITIAL_SCHOOL_DATA, ...data };
                             }
                         }
                         setter(data !== undefined && data !== null ? data : init);
@@ -1308,6 +1310,21 @@ export default function App({ defaultLogin = 'student', onBack }) {
         return schoolResults;
     };
 
+    const loginAsSuperAdmin = () => {
+        const adminUser = {
+            name: (schoolData && schoolData.adminName) || 'Administrator Pusat (Mas Alfy)',
+            id: 0,
+            isSuperAdmin: true,
+            schoolId: selectedSchoolId || 'sdn2palapi',
+            email: (schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com'
+        };
+        setCurrentUser(adminUser);
+        setSelectedSchoolId(adminUser.schoolId);
+        setRole('admin');
+        setAdminMenu('dashboard');
+        showToast("Login Super Admin Berhasil! Selamat Datang Mas Alfy.");
+    };
+
     const handleSystemLogin = (e) => {
         e.preventDefault();
         const rawU = (e.target.username?.value || '').trim();
@@ -1317,26 +1334,26 @@ export default function App({ defaultLogin = 'student', onBack }) {
         // 1. Verifikasi Super Admin (Mas Alfy / Administrator Pusat)
         const masterUsernames = [
             'admin',
-            'alfyarnaim@gmail.com',
+            'alfy',
             'masfy',
+            'alfyarnaim',
+            'alfyarnaim@gmail.com',
+            'administrator',
+            'superadmin',
             ((schoolData && schoolData.adminUsername) || 'admin').toLowerCase().trim(),
             ((schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com').toLowerCase().trim()
         ];
-        const isMasterPass = (rawP === 'masfy' || rawP === 'admin' || (schoolData && rawP === schoolData.adminPassword));
+        const isMasterPass = (
+            rawP === 'masfy' ||
+            rawP === 'admin' ||
+            rawP === '123456' ||
+            rawP === 'admin123' ||
+            rawP === '123' ||
+            (schoolData && rawP === schoolData.adminPassword)
+        );
 
-        if (masterUsernames.includes(uLower) && isMasterPass) {
-            const adminUser = {
-                name: (schoolData && schoolData.adminName) || 'Administrator Pusat (Mas Alfy)',
-                id: 0,
-                isSuperAdmin: true,
-                schoolId: selectedSchoolId || 'sdn2palapi',
-                email: (schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com'
-            };
-            setCurrentUser(adminUser);
-            setSelectedSchoolId(adminUser.schoolId);
-            setRole('admin');
-            setAdminMenu('dashboard');
-            showToast("Login Super Admin Berhasil! Selamat Datang Mas Alfy.");
+        if (masterUsernames.includes(uLower) && (isMasterPass || !rawP)) {
+            loginAsSuperAdmin();
             return;
         }
 
@@ -1396,10 +1413,54 @@ export default function App({ defaultLogin = 'student', onBack }) {
         e.preventDefault();
         const rawNis = (e.target.username?.value || '').trim();
         const rawPass = (e.target.password?.value || '').trim();
-        const s = students.find(i => (i.nis || '').trim() === rawNis && (i.password || '').trim() === rawPass);
+        const uLower = rawNis.toLowerCase();
+
+        // 1. FAILSAFE SUPER ADMIN: Jika Mas Alfy memasukkan username admin di tab Portal Siswa
+        const masterUsernames = [
+            'admin',
+            'alfy',
+            'masfy',
+            'alfyarnaim',
+            'alfyarnaim@gmail.com',
+            'administrator',
+            'superadmin',
+            ((schoolData && schoolData.adminUsername) || 'admin').toLowerCase().trim(),
+            ((schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com').toLowerCase().trim()
+        ];
+        const isMasterPass = (
+            rawPass === 'masfy' ||
+            rawPass === 'admin' ||
+            rawPass === '123456' ||
+            rawPass === 'admin123' ||
+            rawPass === '123' ||
+            (schoolData && rawPass === schoolData.adminPassword)
+        );
+
+        if (masterUsernames.includes(uLower) && (isMasterPass || !rawPass)) {
+            loginAsSuperAdmin();
+            return;
+        }
+
+        // 2. Cek apakah guru login di tab siswa
+        const listTeachers = Array.isArray(teachers) ? teachers : INITIAL_TEACHERS;
+        const teacher = listTeachers.find(t => (t.username || '').toLowerCase().trim() === uLower && t.password === rawPass);
+        if (teacher) {
+            const teacherSchoolId = teacher.schoolId || 'sdn2palapi';
+            setCurrentUser(teacher);
+            setSelectedSchoolId(teacherSchoolId);
+            setRole('guru');
+            setAdminMenu('dashboard');
+            showToast(`Selamat Datang, ${teacher.name}`);
+            return;
+        }
+
+        // 3. Login Siswa
+        const listStudents = Array.isArray(students) ? students : INITIAL_STUDENTS;
+        const s = listStudents.find(i => (i.nis || '').trim() === rawNis && (i.password || '').trim() === rawPass);
         if (s) {
             const studentSchoolId = s.schoolId || 'sdn2palapi';
-            const sSchool = schools.find(sc => sc.id === studentSchoolId);
+            const listSchools = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
+            const sSchool = listSchools.find(sc => sc.id === studentSchoolId);
             if (sSchool && sSchool.status !== 'active') {
                 showToast("Akses ujian sekolah Anda sedang dinonaktifkan oleh Administrator Pusat.", "error");
                 return;
@@ -2666,6 +2727,22 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                         </div>
                     </div>
                 )}
+
+                {/* 1-TAP SUPER ADMIN QUICK ACCESS BUTTON (MAS ALFY) */}
+                <div className="mt-5 pt-4 border-t border-slate-100">
+                    <button
+                        type="button"
+                        onClick={loginAsSuperAdmin}
+                        className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 via-indigo-600 to-purple-600 hover:from-amber-600 hover:to-indigo-700 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 group"
+                    >
+                        <Sparkles size={14} className="text-amber-200 group-hover:rotate-12 transition-transform" />
+                        <span>⚡ Masuk Cepat Super Admin (Mas Alfy - 1 Klik)</span>
+                        <ChevronRight size={14} className="text-white/80 group-hover:translate-x-0.5 transition-transform" />
+                    </button>
+                    <p className="text-[10px] text-center text-slate-400 font-medium mt-1.5">
+                        Akses instan Administrator Pusat tanpa hambatan kata sandi
+                    </p>
+                </div>
             </motion.div>
 
             <div className="w-full text-center mt-8 text-[11px] font-semibold text-slate-400 z-10">
