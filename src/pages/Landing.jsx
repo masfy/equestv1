@@ -6,7 +6,7 @@ import {
   ClipboardList, CheckCircle, UploadCloud, BarChart3, Clock,
   LockKeyhole, FileCheck2, Table, Image as ImageIcon,
   Check, GraduationCap, UserCheck, Smartphone, Laptop,
-  Menu, X, Home, CheckSquare, Download, Compass,
+  Menu, X, Home, CheckSquare, Download, Compass, LogIn,
   Layers, FileText, Shield, Sparkle, Award, PlayCircle, School
 } from 'lucide-react';
 import PwaInstallPrompt from '../components/PwaInstallPrompt';
@@ -204,19 +204,12 @@ export default function Landing({ onEnterApp }) {
           {/* Action Navigation (Desktop) */}
           <div className="flex items-center gap-2 sm:gap-3">
             <button
-              onClick={() => onEnterApp('admin')}
-              className="text-xs sm:text-sm font-semibold text-slate-700 hover:text-indigo-600 px-3.5 py-2 rounded-xl hover:bg-white/80 transition-colors hidden sm:flex items-center gap-1.5 cursor-pointer"
-            >
-              <UserCheck size={16} className="text-indigo-600" />
-              <span>Masuk Edukator</span>
-            </button>
-
-            <button
               onClick={() => onEnterApp('student')}
-              className="hidden sm:flex bg-slate-900 hover:bg-slate-800 text-white px-4.5 py-2 rounded-xl font-semibold text-xs sm:text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all items-center gap-2 cursor-pointer active:scale-95"
+              className="hidden sm:flex bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all items-center gap-2 cursor-pointer active:scale-95"
             >
-              <span>Portal Siswa</span>
-              <ArrowRight size={14} />
+              <LogIn size={15} />
+              <span>Masuk Portal</span>
+              <ArrowRight size={13} className="text-slate-400" />
             </button>
 
             {/* Mobile Hamburger Toggle Button */}
@@ -300,19 +293,17 @@ export default function Landing({ onEnterApp }) {
               <div className="space-y-2 pt-2 border-t border-slate-100">
                 <button
                   onClick={() => { setMobileMenuOpen(false); onEnterApp('student'); }}
-                  className="w-full py-3 px-4 rounded-xl bg-slate-900 text-white font-semibold text-xs shadow-md flex items-center justify-between cursor-pointer active:scale-95"
+                  className="w-full py-3.5 px-4 rounded-xl bg-slate-900 text-white font-bold text-xs sm:text-sm shadow-md flex items-center justify-between cursor-pointer active:scale-95"
                 >
-                  <span className="flex items-center gap-2"><GraduationCap size={16} className="text-indigo-400" /> Masuk Portal Siswa</span>
-                  <ArrowRight size={15} />
+                  <span className="flex items-center gap-2.5">
+                    <LogIn size={17} className="text-indigo-400" />
+                    <span>Masuk ke Portal e-Quest</span>
+                  </span>
+                  <ArrowRight size={16} />
                 </button>
-
-                <button
-                  onClick={() => { setMobileMenuOpen(false); onEnterApp('admin'); }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-between transition-colors cursor-pointer"
-                >
-                  <span className="flex items-center gap-2"><UserCheck size={16} className="text-indigo-600" /> Masuk Edukator / Guru</span>
-                  <ChevronRight size={15} />
-                </button>
+                <p className="text-[10.5px] text-center text-slate-400 font-medium">
+                  Tersedia pilihan login Siswa & Edukator / Guru di dalam
+                </p>
               </div>
             </motion.div>
           </>
@@ -385,19 +376,19 @@ export default function Landing({ onEnterApp }) {
           >
             <button
               onClick={() => onEnterApp('student')}
-              className="w-full sm:w-auto px-7 py-3.5 sm:px-8 sm:py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-slate-900/15 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              className="w-full sm:w-auto px-8 py-3.5 sm:px-9 sm:py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-slate-900/15 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-95"
             >
-              <GraduationCap size={18} className="text-indigo-400" />
-              <span>Mulai Ujian (Portal Siswa)</span>
-              <ChevronRight size={16} />
+              <LogIn size={17} className="text-indigo-400" />
+              <span>Masuk ke Portal Ujian</span>
+              <ArrowRight size={16} />
             </button>
 
             <button
-              onClick={() => onEnterApp('admin')}
-              className="w-full sm:w-auto px-6 py-3.5 sm:px-7 sm:py-3.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 hover:border-indigo-300 font-bold text-xs sm:text-sm shadow-2xs hover:shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              onClick={() => scrollToSection('features')}
+              className="w-full sm:w-auto px-6 py-3.5 sm:px-7 sm:py-3.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 hover:border-indigo-300 font-bold text-xs sm:text-sm shadow-2xs hover:shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
-              <UserCheck size={17} className="text-indigo-600" />
-              <span>Masuk Edukator / Guru</span>
+              <Sparkles size={16} className="text-fuchsia-600" />
+              <span>Jelajahi Fitur</span>
             </button>
           </motion.div>
 
@@ -523,8 +514,9 @@ export default function Landing({ onEnterApp }) {
                     <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold">Bobot: 20 Poin</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => onEnterApp('student')} className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 cursor-pointer">
-                      Coba Ujian Sekarang &rarr;
+                    <button onClick={() => onEnterApp('student')} className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs">
+                      <span>Masuk ke Ujian</span>
+                      <ArrowRight size={13} />
                     </button>
                   </div>
                 </div>
@@ -860,18 +852,19 @@ export default function Landing({ onEnterApp }) {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5">
               <button
-                onClick={() => onEnterApp('admin')}
-                className="w-full sm:w-auto bg-white text-indigo-600 px-8 py-4 rounded-2xl font-bold text-sm sm:text-base shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-95"
+                onClick={() => onEnterApp('student')}
+                className="w-full sm:w-auto bg-white text-indigo-700 hover:bg-slate-50 px-8 py-4 rounded-2xl font-bold text-sm sm:text-base shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-95"
               >
-                <span>Masuk Panel Edukator</span>
+                <LogIn size={18} />
+                <span>Masuk ke Portal e-Quest</span>
                 <ArrowRight size={18} />
               </button>
 
               <button
-                onClick={() => onEnterApp('student')}
-                className="w-full sm:w-auto bg-indigo-950/40 hover:bg-indigo-950/60 text-white border border-white/20 px-7 py-4 rounded-2xl font-bold text-sm sm:text-base transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                onClick={() => scrollToSection('hero')}
+                className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/25 px-7 py-4 rounded-2xl font-bold text-sm sm:text-base transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
               >
-                <span>Portal Siswa</span>
+                <span>Kembali ke Atas</span>
               </button>
             </div>
           </div>
@@ -891,8 +884,12 @@ export default function Landing({ onEnterApp }) {
             &copy; {new Date().getFullYear()} SD Negeri 2 Palapi. Dikembangkan oleh Mas Alfy.
           </p>
           <div className="flex items-center gap-4 text-xs font-semibold text-slate-600">
-            <button onClick={() => onEnterApp('admin')} className="hover:text-indigo-600 transition-colors cursor-pointer">Admin Panel</button>
-            <button onClick={() => onEnterApp('student')} className="hover:text-indigo-600 transition-colors cursor-pointer">Portal Siswa</button>
+            <button onClick={() => scrollToSection('hero')} className="hover:text-indigo-600 transition-colors cursor-pointer">Beranda</button>
+            <button onClick={() => scrollToSection('features')} className="hover:text-indigo-600 transition-colors cursor-pointer">Fitur</button>
+            <button onClick={() => onEnterApp('student')} className="text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer font-bold flex items-center gap-1">
+              <span>Masuk Portal</span>
+              <ArrowRight size={12} />
+            </button>
           </div>
         </div>
       </footer>
