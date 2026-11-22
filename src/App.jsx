@@ -501,7 +501,7 @@ const PrintLayout = ({ type, data, schoolData, onBack }) => {
 
             {type === 'kisi-kisi' && (
                 <div>
-                    <h3 className="text-center text-lg font-bold underline mb-6 uppercase">KISI-KISI PENULISAN SOAL UJIAN</h3>
+                    <h3 className="text-center text-lg font-bold underline mb-6 uppercase">KISI-KISI & BLUEPRINT SOAL TES KEMAMPUAN AKADEMIK (TKA)</h3>
                     <div className="grid grid-cols-2 gap-4 mb-6 text-sm font-medium">
                         <div><p><span className="inline-block w-32">Mata Pelajaran</span>: {data.subjectName}</p><p><span className="inline-block w-32">Kelas</span>: {data.class}</p></div>
                         <div><p><span className="inline-block w-32">Guru Pengampu</span>: {data.teacherName}</p><p><span className="inline-block w-32">Tahun Ajaran</span>: {schoolData.term}</p></div>
@@ -613,13 +613,13 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const dbLoadedKeys = useRef(new Set());
     const DB_TOTAL_COLLECTIONS = 10;
 
-    // State awal KOSONG — data asli dimuat dari Firestore
+    // State awal dengan fallback data awal — data asli otomatis disinkronkan dari Firestore
     const [schoolData, setSchoolData] = useState(INITIAL_SCHOOL_DATA);
-    const [teachers, setTeachers] = useState([]);
-    const [classes, setClasses] = useState([]);
-    const [subjects, setSubjects] = useState([]);
-    const [students, setStudents] = useState([]);
-    const [questions, setQuestions] = useState([]);
+    const [teachers, setTeachers] = useState(INITIAL_TEACHERS);
+    const [classes, setClasses] = useState(INITIAL_CLASSES);
+    const [subjects, setSubjects] = useState(INITIAL_SUBJECTS);
+    const [students, setStudents] = useState(INITIAL_STUDENTS);
+    const [questions, setQuestions] = useState(INITIAL_QUESTIONS);
     const [stimuli, setStimuli] = useState(INITIAL_STIMULI);
     const [results, setResults] = useState([]);
     const [activeExams, setActiveExams] = useState([]);
@@ -823,7 +823,15 @@ export default function App({ defaultLogin = 'student', onBack }) {
         try {
             const keys = Object.keys(updates);
             for (let key of keys) {
-                await setDoc(doc(db, key, 'data'), { data: updates[key] });
+                let payload = updates[key];
+                // Firestore menolak nested array langsung; lakukan serialisasi JSON aman jika key === 'stimuli'
+                if (key === 'stimuli' && Array.isArray(payload)) {
+                    payload = payload.map(s => ({
+                        ...s,
+                        tableData: Array.isArray(s.tableData) ? JSON.stringify(s.tableData) : (s.tableData || '[]')
+                    }));
+                }
+                await setDoc(doc(db, key, 'data'), { data: payload });
             }
         } catch (e) {
             console.error("Firestore Write Error:", e);
@@ -831,6 +839,12 @@ export default function App({ defaultLogin = 'student', onBack }) {
     };
 
     useEffect(() => {
+        // Fallback safety timeout: jika koneksi Firestore tertunda / lambat,
+        // jangan biarkan aplikasi tertahan di layar loading "Menghubungkan ke database..."
+        const safetyTimeout = setTimeout(() => {
+            setDbLoaded(true);
+        }, 3000);
+
         const collections = [
             { key: 'results', setter: setResults, init: [] },
             { key: 'activeExams', setter: setActiveExams, init: [] },
@@ -849,21 +863,36 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 doc(db, key, 'data'),
                 (docSnap) => {
                     if (docSnap.exists()) {
-                        // ✅ Dokumen ada — pakai data dari Firestore
-                        setter(docSnap.data().data);
+                        let data = docSnap.data()?.data;
+                        if (key === 'stimuli' && Array.isArray(data)) {
+                            data = data.map(s => {
+                                let parsedTable = [];
+                                if (typeof s.tableData === 'string') {
+                                    try { parsedTable = JSON.parse(s.tableData); } catch (e) { parsedTable = []; }
+                                } else if (Array.isArray(s.tableData)) {
+                                    parsedTable = s.tableData;
+                                }
+                                return { ...s, tableData: parsedTable };
+                            });
+                        }
+                        setter(data !== undefined ? data : init);
                     } else {
-                        // ⚠️ Dokumen belum ada — seed HANYA saat pertama kali setup
                         console.warn(`[Firestore] Collection '${key}' belum ada, melakukan seed awal...`);
-                        setDoc(doc(db, key, 'data'), { data: init });
+                        let seedData = init;
+                        if (key === 'stimuli' && Array.isArray(seedData)) {
+                            seedData = seedData.map(s => ({
+                                ...s,
+                                tableData: Array.isArray(s.tableData) ? JSON.stringify(s.tableData) : (s.tableData || '[]')
+                            }));
+                        }
+                        setDoc(doc(db, key, 'data'), { data: seedData }).catch(e => console.error("Seed error for " + key, e));
                     }
-                    // Tandai koleksi ini sudah loaded (Set mencegah hitung ganda)
                     dbLoadedKeys.current.add(key);
                     if (dbLoadedKeys.current.size >= DB_TOTAL_COLLECTIONS) {
                         setDbLoaded(true);
                     }
                 },
                 (error) => {
-                    // Jika error (misal Firestore rules expired), jangan timpa data
                     console.error(`[Firestore] Gagal membaca '${key}':`, error.message);
                     dbLoadedKeys.current.add(key);
                     if (dbLoadedKeys.current.size >= DB_TOTAL_COLLECTIONS) {
@@ -873,7 +902,10 @@ export default function App({ defaultLogin = 'student', onBack }) {
             );
         });
 
-        return () => unsubs.forEach(unsub => unsub());
+        return () => {
+            clearTimeout(safetyTimeout);
+            unsubs.forEach(unsub => unsub());
+        };
     }, []);
 
     useEffect(() => {
