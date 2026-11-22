@@ -2047,148 +2047,177 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
     );
 
     if (!role) return (
-        <div className="min-h-screen bg-slate-900 relative overflow-hidden flex flex-col justify-center items-center p-4 sm:p-8 font-sans no-scrollbar">
+        <div className="min-h-screen bg-[#fafafa] relative overflow-hidden flex flex-col justify-center items-center p-4 sm:p-8 font-sans no-scrollbar">
 
-            {/* Elegant Architectural Background */}
-            <div className="absolute inset-0 z-0 opacity-20 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-            <div className="absolute left-0 right-0 top-[-10%] -z-10 m-auto h-[400px] w-[400px] rounded-full bg-blue-600 opacity-20 blur-[120px] pointer-events-none"></div>
+            {/* Apple Clean Radial Ambient Accents */}
+            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+                <div className="absolute -top-[15%] left-1/2 -translate-x-1/2 w-[700px] h-[450px] rounded-full bg-gradient-to-b from-indigo-200/35 via-purple-100/20 to-transparent blur-[120px]" />
+                <div className="absolute bottom-[10%] -left-[10%] w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-blue-200/25 via-indigo-100/20 to-transparent blur-[120px]" />
+                <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:28px_28px] opacity-60" />
+            </div>
 
             <div className="fixed top-6 right-6 z-[100] flex flex-col gap-3">
                 {toasts.map(t => <Toast key={t.id} {...t} onClose={() => removeToast(t.id)} />)}
             </div>
 
-            {loginTab === 'student' ? (
-                /* Main Student Login Form */
-                <motion.div
-                    key="student-login"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                    className="w-full max-w-[420px] bg-white/70 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-white/50 p-8 sm:p-10 z-10 flex flex-col relative overflow-hidden"
+            {/* Back to Landing Pill Button */}
+            <div className="w-full max-w-[440px] mb-4 z-10 flex justify-between items-center px-1">
+                <button
+                    onClick={onBack}
+                    className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white text-slate-600 hover:text-indigo-600 border border-slate-200/80 shadow-2xs text-xs font-bold transition-all cursor-pointer group"
                 >
-                    <button onClick={onBack} className="absolute top-6 left-6 text-slate-400 hover:text-blue-600 transition-colors p-2 bg-white/50 rounded-full hover:bg-white"><ChevronLeft size={18} /></button>
+                    <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+                    <span>Kembali ke Beranda</span>
+                </button>
 
-                    <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600"></div>
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
+                    CBT & TKA System
+                </span>
+            </div>
 
-                    <div className="flex justify-center mb-8 mt-2">
-                        <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                            className="w-24 h-24 bg-white p-4 rounded-[1.5rem] shadow-xl shadow-blue-900/10 flex items-center justify-center border border-white"
-                        >
-                            <img src={schoolData.logo} alt="Logo" className="w-full h-full object-contain drop-shadow-md" />
-                        </motion.div>
+            {/* Main Login Card (Apple Glassmorphism + e-Quest Colors) */}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="w-full max-w-[440px] bg-white/95 backdrop-blur-2xl rounded-[2.25rem] shadow-[0_20px_50px_rgba(79,70,229,0.08)] border border-slate-200/90 p-6 sm:p-9 z-10 relative overflow-hidden"
+            >
+                {/* Header: Logo & School Identity */}
+                <div className="text-center mb-6">
+                    <div className="w-16 h-16 sm:w-18 sm:h-18 bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-center mx-auto mb-3">
+                        <img src={schoolData.logo || EQUEST_LOGO} alt="Logo" className="w-full h-full object-contain" />
                     </div>
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                        e-<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600">Quest</span> CBT
+                    </h2>
+                    <p className="text-slate-500 text-xs font-semibold mt-0.5">
+                        {schoolData.name || "SD Negeri 2 Palapi"}
+                    </p>
+                </div>
 
-                    <div className="text-center mb-5">
-                        <h1 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight mb-2">Portal Siswa</h1>
-                        <p className="text-slate-500 text-[11px] font-bold tracking-[0.2em] uppercase">
-                            {schoolData.name}
-                        </p>
-                    </div>
+                {/* Segmented Pill Role Switcher */}
+                <div className="bg-slate-100 p-1 rounded-2xl flex items-center mb-6 border border-slate-200/70">
+                    <button
+                        type="button"
+                        onClick={() => setLoginTab('student')}
+                        className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${loginTab === 'student' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                        <GraduationCap size={15} />
+                        <span>Portal Siswa</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setLoginTab('admin')}
+                        className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${loginTab === 'admin' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                        <UserCog size={15} />
+                        <span>Edukator / Guru</span>
+                    </button>
+                </div>
 
-                    <div className="mb-6">
-                        <PwaInstallPrompt variant="card" />
-                    </div>
+                {/* Forms */}
+                {loginTab === 'student' ? (
+                    <div>
+                        <div className="mb-5">
+                            <PwaInstallPrompt variant="card" />
+                        </div>
 
-                    <form onSubmit={handleStudentLogin} className="space-y-5 w-full">
-                        <div className="space-y-1.5 text-left">
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nomor Induk Siswa</label>
-                            <div className="relative group">
-                                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
-                                <input name="username" required placeholder="Masukkan NIS Anda" className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/80 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-slate-800 font-bold placeholder-slate-400 text-sm shadow-sm backdrop-blur-sm" />
+                        <form onSubmit={handleStudentLogin} className="space-y-4">
+                            <div className="space-y-1.5 text-left">
+                                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                    Nomor Induk Siswa (NIS)
+                                </label>
+                                <div className="relative group">
+                                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={17} />
+                                    <input
+                                        name="username"
+                                        required
+                                        placeholder="Masukkan NIS Anda"
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-slate-800 font-bold placeholder-slate-400 text-sm"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                        <div className="space-y-1.5 text-left">
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Kata Sandi</label>
-                            <div className="relative group">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
-                                <input name="password" type="password" required placeholder="••••••••" className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/80 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-slate-800 font-bold placeholder-slate-400 text-sm shadow-sm backdrop-blur-sm" />
+
+                            <div className="space-y-1.5 text-left">
+                                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                    Kata Sandi Ujian
+                                </label>
+                                <div className="relative group">
+                                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={17} />
+                                    <input
+                                        name="password"
+                                        type="password"
+                                        required
+                                        placeholder="••••••••"
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-slate-800 font-bold placeholder-slate-400 text-sm"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            type="submit"
-                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all mt-8 text-sm flex justify-center items-center gap-2 uppercase tracking-widest"
-                        >
-                            Mulai Ujian <ChevronRight size={18} />
-                        </motion.button>
-                    </form>
 
-                    <div className="mt-8 pt-6 border-t border-slate-200/50">
-                        <button
-                            type="button"
-                            onClick={() => setLoginTab('admin')}
-                            className="w-full flex items-center justify-center gap-2 text-slate-500 hover:text-indigo-600 text-[10px] font-bold uppercase tracking-wider transition-colors py-2"
-                        >
-                            <UserCog size={16} /> Akses Login Guru / Admin
-                        </button>
+                            <button
+                                type="submit"
+                                className="w-full mt-6 py-3.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-md shadow-slate-900/15 hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                            >
+                                <span>Mulai Ujian</span>
+                                <ChevronRight size={17} />
+                            </button>
+                        </form>
                     </div>
-                </motion.div>
-            ) : (
-                /* Admin Login Full Page Form */
-                <motion.div
-                    key="admin-login"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                    className="w-full max-w-[400px] bg-white/90 backdrop-blur-xl rounded-[2rem] shadow-2xl p-8 sm:p-10 z-10 relative overflow-hidden"
-                >
-                    <button onClick={onBack} className="absolute top-6 left-6 text-slate-400 hover:text-indigo-600 transition-colors p-2 bg-slate-100 rounded-full hover:bg-indigo-50"><ChevronLeft size={18} /></button>
-
-                    <div className="absolute top-0 inset-x-0 h-1.5 bg-slate-900"></div>
-
-                    <div className="text-center mb-8 mt-2">
-                        <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <UserCog size={32} />
+                ) : (
+                    <div>
+                        <div className="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-3 mb-5 text-left flex items-start gap-2.5">
+                            <Info size={16} className="text-indigo-600 shrink-0 mt-0.5" />
+                            <p className="text-[11px] text-indigo-900 font-medium leading-relaxed">
+                                Masuk sebagai <strong>Administrator Sekolah</strong> atau <strong>Guru Pengampu</strong> untuk mengelola bank soal, stimulus TKA, serta memantau proctoring ujian.
+                            </p>
                         </div>
-                        <h2 className="text-2xl font-black text-slate-800 tracking-tight">Portal Edukator</h2>
-                        <p className="text-slate-500 text-xs mt-1 font-medium">Manajemen sistem dan laporan CBT</p>
-                    </div>
 
-                    <form onSubmit={handleSystemLogin} className="space-y-5">
-                        <div className="space-y-1.5 text-left">
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Username</label>
-                            <div className="relative group">
-                                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={18} />
-                                <input name="username" required placeholder="Username Anda" className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all text-slate-800 font-bold placeholder-slate-400 text-sm" />
+                        <form onSubmit={handleSystemLogin} className="space-y-4">
+                            <div className="space-y-1.5 text-left">
+                                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                    Username Edukator
+                                </label>
+                                <div className="relative group">
+                                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={17} />
+                                    <input
+                                        name="username"
+                                        required
+                                        placeholder="Username akun guru / admin"
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-slate-800 font-bold placeholder-slate-400 text-sm"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                        <div className="space-y-1.5 text-left">
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Kata Sandi</label>
-                            <div className="relative group">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={18} />
-                                <input name="password" type="password" required placeholder="••••••••" className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all text-slate-800 font-bold placeholder-slate-400 text-sm" />
+
+                            <div className="space-y-1.5 text-left">
+                                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                    Kata Sandi
+                                </label>
+                                <div className="relative group">
+                                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={17} />
+                                    <input
+                                        name="password"
+                                        type="password"
+                                        required
+                                        placeholder="••••••••"
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-slate-800 font-bold placeholder-slate-400 text-sm"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            type="submit"
-                            className="w-full bg-slate-900 hover:bg-slate-950 text-white font-bold py-4 rounded-xl shadow-lg transition-all mt-8 text-sm flex justify-center items-center gap-2 uppercase tracking-widest"
-                        >
-                            Masuk Panel <ChevronRight size={18} />
-                        </motion.button>
-                    </form>
 
-                    <div className="mt-8 pt-6 border-t border-slate-200/50">
-                        <button
-                            type="button"
-                            onClick={() => setLoginTab('student')}
-                            className="w-full flex items-center justify-center gap-2 text-slate-500 hover:text-blue-600 text-[10px] font-bold uppercase tracking-wider transition-colors py-2"
-                        >
-                            Akses Login Siswa
-                        </button>
+                            <button
+                                type="submit"
+                                className="w-full mt-6 py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-sm shadow-md shadow-indigo-600/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                            >
+                                <span>Masuk Panel Edukator</span>
+                                <ChevronRight size={17} />
+                            </button>
+                        </form>
                     </div>
-                </motion.div>
-            )}
+                )}
+            </motion.div>
 
-            <div className="w-full text-center mt-12 text-[10px] font-bold tracking-widest uppercase text-slate-400 z-10 opacity-70">
-                e-Quest Premium CBT &copy; {new Date().getFullYear()} • Secure Access<br />By Mas Alfy | {schoolData.name}
+            <div className="w-full text-center mt-8 text-[11px] font-semibold text-slate-400 z-10">
+                e-Quest CBT System &copy; {new Date().getFullYear()} • SD Negeri 2 Palapi
             </div>
         </div>
     );
@@ -3005,39 +3034,39 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                     {/* DASHBOARD */}
                     {adminMenu === 'dashboard' && (
                         <div className="space-y-6 animate-fade-in">
-                            <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-10 rounded-3xl text-white shadow-xl shadow-indigo-500/10 relative overflow-hidden mb-8 border border-white/20">
+                            <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-6 sm:p-10 rounded-2xl sm:rounded-3xl text-white shadow-xl shadow-indigo-500/10 relative overflow-hidden mb-6 sm:mb-8 border border-white/20">
                                 <div className="absolute right-[-5%] top-[-10%] opacity-10 transform rotate-12 scale-150 pointer-events-none"><BookOpen size={300} strokeWidth={1} /></div>
                                 <div className="relative z-10 max-w-xl">
-                                    <p className="text-indigo-200 font-bold tracking-widest text-xs uppercase mb-2">Selamat Datang Kembali</p>
-                                    <h2 className="text-4xl font-bold mb-4 tracking-tight">{currentUser.name}</h2>
-                                    <div className="p-5 bg-black/10 backdrop-blur-sm border border-white/10 rounded-2xl inline-block shadow-inner">
-                                        <p className="italic text-base font-medium leading-relaxed text-indigo-50">"{quote}"</p>
+                                    <p className="text-indigo-200 font-bold tracking-widest text-[10px] sm:text-xs uppercase mb-1.5">Selamat Datang Kembali</p>
+                                    <h2 className="text-2xl sm:text-4xl font-black mb-3 tracking-tight">{currentUser.name}</h2>
+                                    <div className="p-3.5 sm:p-5 bg-black/10 backdrop-blur-sm border border-white/10 rounded-xl sm:rounded-2xl inline-block shadow-inner">
+                                        <p className="italic text-xs sm:text-base font-medium leading-relaxed text-indigo-50">"{quote}"</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow group">
-                                    <div className="w-14 h-14 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><BookOpen size={24} /></div>
-                                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">{role === 'admin' ? 'Total Mapel' : 'Mapel Diampu'}</p>
-                                    <p className="text-3xl font-bold text-slate-800">{getMySubjects().length}</p>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+                                <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow group">
+                                    <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><BookOpen size={20} /></div>
+                                    <p className="text-slate-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mb-0.5">{role === 'admin' ? 'Total Mapel' : 'Mapel Diampu'}</p>
+                                    <p className="text-2xl sm:text-3xl font-black text-slate-800">{getMySubjects().length}</p>
                                 </div>
-                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow group">
-                                    <div className="w-14 h-14 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><Layers size={24} /></div>
-                                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">{role === 'admin' ? 'Total Kelas' : 'Kelas Diampu'}</p>
-                                    <p className="text-3xl font-bold text-slate-800">{getMyClasses().length}</p>
+                                <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow group">
+                                    <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><Layers size={20} /></div>
+                                    <p className="text-slate-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mb-0.5">{role === 'admin' ? 'Total Kelas' : 'Kelas Diampu'}</p>
+                                    <p className="text-2xl sm:text-3xl font-black text-slate-800">{getMyClasses().length}</p>
                                 </div>
-                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow group">
-                                    <div className="w-14 h-14 rounded-xl bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><FileText size={24} /></div>
-                                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Bank Soal</p>
-                                    <p className="text-3xl font-bold text-slate-800">{getMyQuestions().length}</p>
+                                <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow group">
+                                    <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><FileText size={20} /></div>
+                                    <p className="text-slate-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mb-0.5">Total Bank Soal</p>
+                                    <p className="text-2xl sm:text-3xl font-black text-slate-800">{getMyQuestions().length}</p>
                                 </div>
-                                <div className="bg-emerald-600 p-6 rounded-2xl shadow-sm border border-emerald-500 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow group text-white relative overflow-hidden">
-                                    <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><MonitorPlay size={24} /></div>
-                                    <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-widest mb-1">Sesi Ujian Aktif</p>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-3xl font-bold">{activeExams.length}</span>
-                                        {activeExams.length > 0 && <span className="flex h-3 w-3 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-200 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span></span>}
+                                <div className="bg-emerald-600 p-4 sm:p-6 rounded-2xl shadow-sm border border-emerald-500 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow group text-white relative overflow-hidden">
+                                    <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl bg-white/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><MonitorPlay size={20} /></div>
+                                    <p className="text-emerald-100 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mb-0.5">Sesi Ujian Aktif</p>
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <span className="text-2xl sm:text-3xl font-black">{activeExams.length}</span>
+                                        {activeExams.length > 0 && <span className="flex h-2.5 w-2.5 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-200 opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span></span>}
                                     </div>
                                 </div>
                             </div>
@@ -3046,15 +3075,15 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                     {/* TEACHERS DATA (ADMIN) */}
                     {adminMenu === 'teachers' && role === 'admin' && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-fade-in max-w-6xl mx-auto">
-                            <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-5">
+                        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-8 animate-fade-in max-w-6xl mx-auto">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 border-b border-slate-100 pb-5">
                                 <div>
-                                    <h3 className="font-bold text-2xl text-slate-800">Manajemen Akun Guru</h3>
+                                    <h3 className="font-bold text-xl sm:text-2xl text-slate-800">Manajemen Akun Guru</h3>
                                     <p className="text-slate-500 font-medium text-xs mt-1">Atur wewenang Guru Kelas (Wali Kelas) atau Guru Mapel (Multi-Kelas).</p>
                                 </div>
-                                <button onClick={() => openModal('teacher')} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex gap-2 hover:bg-indigo-700 shadow-sm transition-all"><Plus size={18} /> Tambah Guru Baru</button>
+                                <button onClick={() => openModal('teacher')} className="w-full sm:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:bg-indigo-700 shadow-sm transition-all"><Plus size={18} /> Tambah Guru Baru</button>
                             </div>
-                            <div className="overflow-hidden rounded-xl border border-slate-200">
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
                                 <table className="w-full text-left bg-white">
                                     <thead className="bg-slate-50 border-b border-slate-200">
                                         <tr>
@@ -3152,11 +3181,11 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                     {/* CLASSES DATA */}
                     {adminMenu === 'classes' && (role === 'admin' || role === 'guru') && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-fade-in max-w-6xl mx-auto">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-slate-100 pb-5">
+                        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-8 animate-fade-in max-w-6xl mx-auto">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 sm:mb-8 border-b border-slate-100 pb-5">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="font-bold text-2xl text-slate-800">{role === 'admin' ? 'Data Master Kelas' : 'Ruang Kelas yang Anda Ampu'}</h3>
+                                        <h3 className="font-bold text-xl sm:text-2xl text-slate-800">{role === 'admin' ? 'Data Master Kelas' : 'Ruang Kelas yang Anda Ampu'}</h3>
                                         {role === 'guru' && (
                                             currentUser?.teacherType === 'guru_kelas' ? (
                                                 <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1">
@@ -3271,26 +3300,26 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                     {/* STUDENTS DATA */}
                     {adminMenu === 'students' && (role === 'admin' || role === 'guru') && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-fade-in max-w-6xl mx-auto">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-slate-100 pb-5">
+                        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-8 animate-fade-in max-w-6xl mx-auto">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 sm:mb-8 border-b border-slate-100 pb-5">
                                 <div>
-                                    <h3 className="font-bold text-2xl text-slate-800">{role === 'admin' ? 'Database Murid' : 'Data Murid Binaan'}</h3>
+                                    <h3 className="font-bold text-xl sm:text-2xl text-slate-800">{role === 'admin' ? 'Database Murid' : 'Data Murid Binaan'}</h3>
                                     <p className="text-slate-500 font-medium text-xs mt-1">
                                         {role === 'admin' ? 'Database seluruh siswa terdaftar.' : 'Daftar siswa yang berada pada kelas yang Anda ampu.'}
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap gap-2 w-full md:w-auto">
                                     <select
-                                        className="p-2.5 border border-slate-200 bg-slate-50 focus:border-indigo-400 rounded-xl text-sm font-medium text-slate-600 outline-none"
+                                        className="p-2.5 border border-slate-200 bg-slate-50 focus:border-indigo-400 rounded-xl text-sm font-medium text-slate-600 outline-none flex-1 sm:flex-none"
                                         value={studentFilterClass}
                                         onChange={e => setStudentFilterClass(e.target.value)}
                                     >
                                         <option value="">{role === 'admin' ? 'Semua Kelas' : 'Seluruh Kelas Ampuan'}</option>
                                         {getMyClasses().map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                                     </select>
-                                    <div className="relative flex-1 md:w-56">
+                                    <div className="relative flex-1 min-w-[160px] md:w-56">
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                        <input value={studentSearch} onChange={e => setStudentSearch(e.target.value)} placeholder="Cari Nama/NIS..." className="pl-10 pr-3 py-2.5 border border-slate-200 bg-slate-50 focus:border-indigo-400 rounded-xl text-sm outline-none font-medium text-slate-700" />
+                                        <input value={studentSearch} onChange={e => setStudentSearch(e.target.value)} placeholder="Cari Nama/NIS..." className="w-full pl-10 pr-3 py-2.5 border border-slate-200 bg-slate-50 focus:border-indigo-400 rounded-xl text-sm outline-none font-medium text-slate-700" />
                                     </div>
                                     {role === 'admin' && (
                                         <button onClick={() => setImportModalConfig({ isOpen: true, type: 'Data Murid' })} className="bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-semibold text-sm flex gap-2 hover:bg-slate-50 shadow-sm"><FileBox size={18} /> Import</button>
@@ -3300,7 +3329,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                     )}
                                 </div>
                             </div>
-                            <div className="overflow-hidden rounded-xl border border-slate-200">
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
                                 <table className="w-full text-left bg-white">
                                     <thead className="bg-slate-50 border-b border-slate-200">
                                         <tr>
@@ -3336,10 +3365,10 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                     {/* SUBJECTS DATA */}
                     {adminMenu === 'subjects' && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-fade-in max-w-6xl mx-auto">
+                        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-8 animate-fade-in max-w-6xl mx-auto">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-slate-100 pb-5">
                                 <div>
-                                    <h3 className="font-bold text-2xl text-slate-800">
+                                    <h3 className="font-bold text-xl sm:text-2xl text-slate-800">
                                         {role === 'admin' ? 'Semua Mata Pelajaran' : (currentUser?.teacherType === 'guru_kelas' ? `Mata Pelajaran ${currentUser.assignedClass || ''} (Kelas Binaan)` : `Mata Pelajaran ${currentUser?.subjectName || ''} (Multi-Kelas)`)}
                                     </h3>
                                     <p className="text-slate-500 font-medium text-xs mt-1">
@@ -3350,7 +3379,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                 : `Sebagai Guru Mapel, Anda berwenang membuat dan mengelola soal ${currentUser?.subjectName || ''} di setiap kelas yang Anda ampu.`}
                                     </p>
                                 </div>
-                                <button onClick={() => openModal('subject')} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex gap-2 shadow-sm hover:bg-indigo-700 shrink-0"><Plus size={18} /> Mapel Baru</button>
+                                <button onClick={() => openModal('subject')} className="w-full sm:w-auto justify-center bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 shadow-sm hover:bg-indigo-700 shrink-0"><Plus size={18} /> Mapel Baru</button>
                             </div>
 
                             {/* Filter Bar Mata Pelajaran */}
@@ -3529,14 +3558,14 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                 )}
                             </div>
                         ) : (
-                            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-fade-in max-w-6xl mx-auto">
+                            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-8 animate-fade-in max-w-6xl mx-auto">
                                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 border-b border-slate-100 pb-6">
                                     <div>
                                         <button onClick={() => setSelectedSubjectForQuestions(null)} className="text-xs font-bold uppercase tracking-wider text-indigo-500 flex items-center gap-1 mb-3 hover:bg-indigo-50 px-2 py-1 rounded transition-colors"><ArrowLeft size={14} /> Kembali</button>
-                                        <h3 className="font-bold text-2xl text-slate-800">{selectedSubjectForQuestions.name}</h3>
-                                        <p className="text-slate-500 font-medium text-sm mt-0.5">Area Kerja Kelas {selectedSubjectForQuestions.class} • Pelaksanaan: <span className="font-bold text-indigo-600">Semester {activeSemester} ({activeAcademicYear})</span></p>
+                                        <h3 className="font-bold text-xl sm:text-2xl text-slate-800">{selectedSubjectForQuestions.name}</h3>
+                                        <p className="text-slate-500 font-medium text-xs sm:text-sm mt-0.5">Area Kerja Kelas {selectedSubjectForQuestions.class} • Pelaksanaan: <span className="font-bold text-indigo-600">Semester {activeSemester} ({activeAcademicYear})</span></p>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-2 w-full lg:w-auto">
                                         <button onClick={() => { setPrintData({ type: 'kisi-kisi', class: selectedSubjectForQuestions.class, subjectName: selectedSubjectForQuestions.name, teacherName: currentUser.name, questions: questions.filter(q => q.subjectId === selectedSubjectForQuestions.id && (questionSemesterFilter === 'all' || (q.semester || activeSemester).toLowerCase() === (questionSemesterFilter === 'active' ? activeSemester : questionSemesterFilter).toLowerCase())) }) }} className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl font-semibold text-sm flex gap-2 items-center hover:bg-slate-50 shadow-sm"><FileSpreadsheet size={16} /> Kisi-kisi</button>
                                         {questions.filter(q => q.subjectId === selectedSubjectForQuestions.id).length > 0 && (
                                             <button onClick={() => initiateDelete('clear_subject', selectedSubjectForQuestions.id)} className="bg-rose-50 border border-rose-200 text-rose-600 px-4 py-2 rounded-xl font-semibold text-sm flex gap-2 items-center hover:bg-rose-100 shadow-sm transition-colors"><Trash2 size={16} /> Kosongkan</button>
@@ -3855,21 +3884,21 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                     {/* ANALYSIS / Laporan Ujian */}
                     {adminMenu === 'analysis' && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-fade-in space-y-8 max-w-7xl mx-auto">
-                            <div className="text-center mb-8 border-b border-slate-100 pb-6">
-                                <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3"><BarChart2 size={28} /></div>
-                                <h2 className="text-2xl font-bold text-slate-800 tracking-tight">LAPORAN HASIL UJIAN</h2>
+                        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-8 animate-fade-in space-y-6 sm:space-y-8 max-w-7xl mx-auto">
+                            <div className="text-center mb-6 sm:mb-8 border-b border-slate-100 pb-5 sm:pb-6">
+                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3"><BarChart2 size={24} /></div>
+                                <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">LAPORAN HASIL UJIAN</h2>
                                 <p className="text-slate-500 font-semibold mt-1 uppercase tracking-widest text-[10px]">{schoolData.name} - {schoolData.term}</p>
                             </div>
 
-                            <div className="flex flex-col lg:flex-row gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-200 mb-6">
+                            <div className="flex flex-col lg:flex-row gap-4 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 mb-6">
                                 <div className="flex flex-col sm:flex-row gap-3 flex-1">
                                     <div className="relative flex-1"><Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} /><select className="w-full pl-10 pr-4 py-2.5 border border-slate-200 focus:border-indigo-400 rounded-xl text-sm bg-white outline-none font-semibold text-slate-700 shadow-sm" value={analysisFilterClass} onChange={e => setAnalysisFilterClass(e.target.value)}><option value="">Seluruh Kelas</option>{getMyClasses().map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select></div>
                                     <div className="relative flex-1"><BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} /><select className="w-full pl-10 pr-4 py-2.5 border border-slate-200 focus:border-indigo-400 rounded-xl text-sm bg-white outline-none font-semibold text-slate-700 shadow-sm" value={analysisFilterSubject} onChange={e => setAnalysisFilterSubject(e.target.value)}><option value="">Seluruh Mata Pelajaran</option>{getMySubjects().map(s => <option key={s.id} value={s.name}>{s.name}</option>)}</select></div>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button onClick={handlePrintResults} className="bg-white border border-slate-200 text-slate-600 px-5 py-2.5 rounded-xl flex gap-1.5 items-center hover:bg-slate-50 font-semibold text-sm shadow-sm transition-colors"><Printer size={16} /> Print</button>
-                                    <button onClick={handlePrintExcel} className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl flex gap-1.5 items-center hover:bg-emerald-700 font-semibold text-sm shadow-sm transition-colors"><Download size={16} /> Excel</button>
+                                    <button onClick={handlePrintResults} className="flex-1 sm:flex-none justify-center bg-white border border-slate-200 text-slate-600 px-5 py-2.5 rounded-xl flex gap-1.5 items-center hover:bg-slate-50 font-semibold text-sm shadow-sm transition-colors"><Printer size={16} /> Print</button>
+                                    <button onClick={handlePrintExcel} className="flex-1 sm:flex-none justify-center bg-emerald-600 text-white px-5 py-2.5 rounded-xl flex gap-1.5 items-center hover:bg-emerald-700 font-semibold text-sm shadow-sm transition-colors"><Download size={16} /> Excel</button>
                                 </div>
                             </div>
 
@@ -3922,13 +3951,13 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                     {/* ADMIN: COMMAND CENTER TOKEN */}
                     {adminMenu === 'token' && role === 'admin' && (
-                        <div className="bg-white p-8 lg:p-12 rounded-3xl shadow-sm border border-slate-100 text-center animate-fade-in max-w-4xl mx-auto relative overflow-hidden">
+                        <div className="bg-white p-5 sm:p-8 lg:p-12 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 text-center animate-fade-in max-w-4xl mx-auto relative overflow-hidden">
                             <div className="relative z-10">
-                                <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-6"><Power size={32} /></div>
-                                <h2 className="text-3xl font-bold text-slate-800 mb-3 tracking-tight">Pusat Kendali Ujian</h2>
-                                <p className="text-slate-500 mb-8 max-w-xl mx-auto font-medium text-sm leading-relaxed">Aktifkan sesi ujian secara terpusat. Tentukan <strong>Blueprint Kognitif</strong> agar sistem mengacak proporsi soal berdasarkan level kesulitannya.</p>
+                                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-5 sm:mb-6"><Power size={30} /></div>
+                                <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2 sm:mb-3 tracking-tight">Pusat Kendali Ujian</h2>
+                                <p className="text-slate-500 mb-6 sm:mb-8 max-w-xl mx-auto font-medium text-xs sm:text-sm leading-relaxed">Aktifkan sesi ujian secara terpusat. Tentukan <strong>Blueprint Kognitif</strong> agar sistem mengacak proporsi soal berdasarkan level kesulitannya.</p>
 
-                                <form onSubmit={generateNewToken} className="bg-slate-50 p-6 rounded-2xl border border-slate-200 mx-auto text-left shadow-sm">
+                                <form onSubmit={generateNewToken} className="bg-slate-50 p-4 sm:p-6 rounded-2xl border border-slate-200 mx-auto text-left shadow-sm">
                                     <div className="mb-6">
                                         <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">Pilih Mata Pelajaran</label>
                                         <select className="w-full p-3.5 border border-slate-200 focus:border-rose-400 rounded-xl outline-none font-semibold text-slate-700 bg-white shadow-sm text-sm transition-all" value={examBlueprint.subjectId} onChange={(e) => setExamBlueprint({ ...examBlueprint, subjectId: e.target.value })} required><option value="">-- Sentuh untuk Memilih --</option>{subjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.class}) - Oleh: {teachers.find(t => t.id === s.teacherId)?.name}</option>)}</select>
@@ -4024,23 +4053,23 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                     {/* ADMINISTRASI CETAK (ADMIN ONLY) */}
                     {adminMenu === 'documents' && role === 'admin' && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-fade-in space-y-6 max-w-4xl mx-auto">
+                        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-8 animate-fade-in space-y-6 max-w-4xl mx-auto">
                             <div className="text-center mb-6 border-b border-slate-100 pb-6">
                                 <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-3"><ClipboardList size={28} /></div>
-                                <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Administrasi Pelaksanaan</h2>
-                                <p className="text-slate-500 font-medium mt-1 text-sm">Pusat cetak Daftar Hadir & Berita Acara Ujian</p>
+                                <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Administrasi Pelaksanaan</h2>
+                                <p className="text-slate-500 font-medium mt-1 text-xs sm:text-sm">Pusat cetak Daftar Hadir & Berita Acara Ujian</p>
                             </div>
 
-                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Pilih Kelas</label><select className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white outline-none font-semibold text-slate-700 shadow-sm text-sm" value={printForm.class} onChange={(e) => setPrintForm({ ...printForm, class: e.target.value })}><option value="">-- Kelas --</option>{classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select></div>
                                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Pilih Mata Pelajaran</label><select className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white outline-none font-semibold text-slate-700 shadow-sm text-sm" value={printForm.subject} onChange={(e) => setPrintForm({ ...printForm, subject: e.target.value })}><option value="">-- Mapel --</option>{subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}</select></div>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Nama Kegiatan (Kustom)</label><input type="text" className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white outline-none font-semibold text-slate-700 shadow-sm text-sm" value={printForm.activityName} onChange={(e) => setPrintForm({ ...printForm, activityName: e.target.value })} /></div>
                                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Tanggal Pelaksanaan</label><div className="relative"><Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" size={18} /><input type="date" className="w-full pl-10 p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white outline-none font-semibold text-slate-700 shadow-sm text-sm" value={printForm.date} onChange={(e) => setPrintForm({ ...printForm, date: e.target.value })} /></div></div>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Nama Pengawas Ruang</label><input type="text" placeholder="Masukkan nama pengawas" className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white outline-none font-semibold text-slate-700 shadow-sm text-sm" value={printForm.pengawas} onChange={(e) => setPrintForm({ ...printForm, pengawas: e.target.value })} /></div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Jam Mulai</label><input type="time" className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white outline-none font-semibold text-slate-700 shadow-sm text-sm" value={printForm.waktuMulai} onChange={(e) => setPrintForm({ ...printForm, waktuMulai: e.target.value })} /></div>
@@ -4057,10 +4086,10 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Catatan Selama Pelaksanaan</label><input type="text" placeholder="Misal: Ujian berjalan lancar tanpa kendala..." className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white outline-none font-semibold text-slate-700 shadow-sm text-sm" value={printForm.catatan} onChange={(e) => setPrintForm({ ...printForm, catatan: e.target.value })} /></div>
                                 </div>
 
-                                <div className="pt-5 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <button onClick={() => handleOpenPrintPreview('attendance')} className="bg-indigo-600 text-white p-4 rounded-xl font-bold text-sm flex flex-col items-center justify-center gap-2 hover:bg-indigo-700 shadow-sm transition-all"><ClipboardList size={24} /> Cetak Daftar Hadir</button>
-                                    <button onClick={() => handleOpenPrintPreview('report')} className="bg-emerald-600 text-white p-4 rounded-xl font-bold text-sm flex flex-col items-center justify-center gap-2 hover:bg-emerald-700 shadow-sm transition-all"><FileText size={24} /> Cetak Berita Acara</button>
-                                    <button onClick={() => handleOpenPrintPreview('kartu_login')} className="bg-fuchsia-600 text-white p-4 rounded-xl font-bold text-sm flex flex-col items-center justify-center gap-2 hover:bg-fuchsia-700 shadow-sm transition-all"><User size={24} /> Cetak Kartu Login</button>
+                                <div className="pt-5 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                                    <button onClick={() => handleOpenPrintPreview('attendance')} className="bg-indigo-600 text-white p-3.5 sm:p-4 rounded-xl font-bold text-sm flex flex-col items-center justify-center gap-2 hover:bg-indigo-700 shadow-sm transition-all"><ClipboardList size={22} /> Cetak Daftar Hadir</button>
+                                    <button onClick={() => handleOpenPrintPreview('report')} className="bg-emerald-600 text-white p-3.5 sm:p-4 rounded-xl font-bold text-sm flex flex-col items-center justify-center gap-2 hover:bg-emerald-700 shadow-sm transition-all"><FileText size={22} /> Cetak Berita Acara</button>
+                                    <button onClick={() => handleOpenPrintPreview('kartu_login')} className="bg-fuchsia-600 text-white p-3.5 sm:p-4 rounded-xl font-bold text-sm flex flex-col items-center justify-center gap-2 hover:bg-fuchsia-700 shadow-sm transition-all"><User size={22} /> Cetak Kartu Login</button>
                                 </div>
                             </div>
                         </div>
@@ -4068,7 +4097,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                     {/* PENGATURAN SEKOLAH (ADMIN ONLY) */}
                     {adminMenu === 'school' && role === 'admin' && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 max-w-3xl mx-auto animate-fade-in"><div className="flex items-center gap-4 mb-6 border-b border-slate-100 pb-5"><div className="bg-slate-100 p-3.5 rounded-xl text-slate-600 shadow-sm"><Settings size={28} /></div><div><h3 className="font-bold text-2xl text-slate-800 tracking-tight">Pengaturan Sistem</h3><p className="text-slate-500 font-medium text-sm mt-0.5">Identitas Institusi & Akun Admin</p></div></div><form onSubmit={handleSaveSchool} className="space-y-6">
+                        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-8 max-w-3xl mx-auto animate-fade-in"><div className="flex items-center gap-4 mb-6 border-b border-slate-100 pb-5"><div className="bg-slate-100 p-3 sm:p-3.5 rounded-xl text-slate-600 shadow-sm"><Settings size={26} /></div><div><h3 className="font-bold text-xl sm:text-2xl text-slate-800 tracking-tight">Pengaturan Sistem</h3><p className="text-slate-500 font-medium text-xs sm:text-sm mt-0.5">Identitas Institusi & Akun Admin</p></div></div><form onSubmit={handleSaveSchool} className="space-y-6">
 
                             {/* BRANDING LOGO — hanya info, tidak bisa diubah */}
                             <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
@@ -4102,7 +4131,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                             <div className="space-y-4 pt-2">
                                 <label className="block text-[10px] font-bold text-indigo-500 uppercase tracking-wider border-b border-slate-200 pb-1">Informasi Instansi</label>
                                 <div><input name="dinasPendidikan" defaultValue={schoolData.dinasPendidikan} placeholder="Dinas Pendidikan (Kop Surat)" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div><input name="name" defaultValue={schoolData.name} placeholder="Nama Sekolah" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div>
                                     <div><input name="kabupaten" defaultValue={schoolData.kabupaten} placeholder="Nama Kabupaten/Kota" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div>
                                 </div>

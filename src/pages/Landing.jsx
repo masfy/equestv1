@@ -7,7 +7,7 @@ import {
   LockKeyhole, FileCheck2, Table, Image as ImageIcon,
   Check, GraduationCap, UserCheck, Smartphone, Laptop,
   Menu, X, Home, CheckSquare, Download, Compass,
-  Layers, FileText, Shield, Sparkle, Award, PlayCircle
+  Layers, FileText, Shield, Sparkle, Award, PlayCircle, School
 } from 'lucide-react';
 import PwaInstallPrompt from '../components/PwaInstallPrompt';
 
@@ -109,10 +109,30 @@ const questionFormats = [
   { id: 6, name: "Uraian / Esai", desc: "Penilaian komprehensif didukung rubrik skor mandiri guru", tag: "Kognitif" }
 ];
 
+// DATA LOGO BERJALAN (INFINITE MARQUEE)
+const ecosystemLogos = [
+  { name: "Kemendikbudristek", role: "Kurikulum Merdeka", icon: <GraduationCap size={18} className="text-indigo-600" /> },
+  { name: "SD Negeri 2 Palapi", role: "Sekolah Penggerak", icon: <School size={18} className="text-blue-600" /> },
+  { name: "Asesmen TKA", role: "Standar Literasi & Numerasi", icon: <Target size={18} className="text-amber-600" /> },
+  { name: "Google Gemini AI", role: "Cognitive Generator", icon: <Brain size={18} className="text-purple-600" /> },
+  { name: "Google Cloud", role: "Real-Time Firestore", icon: <UploadCloud size={18} className="text-cyan-600" /> },
+  { name: "PWA Mobile", role: "Aplikasi Terpasang", icon: <Smartphone size={18} className="text-emerald-600" /> },
+  { name: "Anti-Contek System", role: "Secure Exam Browser", icon: <ShieldCheck size={18} className="text-rose-600" /> },
+  { name: "Analisis HOTS", role: "Blueprint Kognitif", icon: <BarChart3 size={18} className="text-fuchsia-600" /> },
+];
+
+const heroRotatingWords = [
+  "Cerdas, Cepat & Elegan",
+  "Berstandar Asesmen TKA",
+  "Ekstraksi Soal AI Otomatis",
+  "Mudah bagi Semua Guru",
+  "Seru & Nyaman untuk Siswa"
+];
+
 export default function Landing({ onEnterApp }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activePreviewTab, setActivePreviewTab] = useState('wacana'); // 'wacana' | 'tabel' | 'infografis'
+  const [wordIndex, setWordIndex] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -120,6 +140,14 @@ export default function Landing({ onEnterApp }) {
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Animasi Teks Bergantian di Hero
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setWordIndex((prev) => (prev + 1) % heroRotatingWords.length);
+    }, 3000);
+    return () => clearInterval(timer);
   }, []);
 
   const scrollToSection = (id) => {
@@ -291,17 +319,16 @@ export default function Landing({ onEnterApp }) {
         )}
       </AnimatePresence>
 
-      {/* HERO SECTION (JAVAPIXA STYLE + APPLE CLEAN AESTHETIC) */}
-      {/* Note: No scroll transform opacity/y here so buttons stay 100% visible and interactive when scrolling */}
-      <section id="hero" className="relative z-10 pt-28 pb-16 sm:pt-36 sm:pb-20 md:pt-44 md:pb-24 px-4 sm:px-6">
+      {/* HERO SECTION DENGAN TEKS BERANIMASI & UKURAN PROPORSIONAL */}
+      <section id="hero" className="relative z-10 pt-28 pb-14 sm:pt-36 sm:pb-18 md:pt-42 md:pb-20 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto text-center">
 
-          {/* Badge: The Future of Smart Examination */}
+          {/* Badge: The Future of Smart CBT */}
           <motion.div
             initial={{ opacity: 1, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.04)] mb-6 sm:mb-8"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.04)] mb-5 sm:mb-6"
           >
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
@@ -313,27 +340,35 @@ export default function Landing({ onEnterApp }) {
             <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-200/70 px-2 py-0.5 rounded-full">v2.5</span>
           </motion.div>
 
-          {/* Main Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-            className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 tracking-tight leading-[1.12] mb-6 sm:mb-7"
-          >
-            Ujian Digital Masa Depan yang <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600">
-              Cerdas, Cepat & Elegan
-            </span>
-          </motion.h1>
+          {/* Headline Beranimasi dengan Ukuran Proporsional */}
+          <div className="min-h-[110px] sm:min-h-[140px] md:min-h-[160px] flex flex-col justify-center mb-4 sm:mb-5">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-[1.16] sm:leading-[1.14]">
+              Ujian Digital Masa Depan yang <br className="hidden sm:inline" />
+              <span className="inline-block relative">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={wordIndex}
+                    initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, y: -14, filter: "blur(4px)" }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                    className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600"
+                  >
+                    {heroRotatingWords[wordIndex]}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
+            </h1>
+          </div>
 
-          {/* Official Copywriting e-Quest & SD Negeri 2 Palapi */}
+          {/* Copywriting Resmi e-Quest SD Negeri 2 Palapi */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="text-sm sm:text-base md:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed mb-8 sm:mb-10 font-normal px-2"
+            className="text-xs sm:text-sm md:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed mb-7 sm:mb-8 font-normal px-2"
           >
-            <p className="font-bold text-slate-900 mb-1 text-base sm:text-lg">
+            <p className="font-extrabold text-slate-900 mb-1 text-sm sm:text-base">
               e-Quest (Electronic Question, Evaluation & Examination System)
             </p>
             <p className="text-slate-600 font-medium">
@@ -341,45 +376,45 @@ export default function Landing({ onEnterApp }) {
             </p>
           </motion.div>
 
-          {/* Hero Action Buttons (Always Visible & Interactive) */}
+          {/* Tombol Aksi Proporsional */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.25 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-sm sm:max-w-none mx-auto mb-7"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-xs sm:max-w-none mx-auto mb-6"
           >
             <button
               onClick={() => onEnterApp('student')}
-              className="w-full sm:w-auto px-8 py-3.5 sm:py-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm sm:text-base shadow-lg shadow-slate-900/15 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-95"
+              className="w-full sm:w-auto px-7 py-3.5 sm:px-8 sm:py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-slate-900/15 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
-              <GraduationCap size={19} className="text-indigo-400" />
+              <GraduationCap size={18} className="text-indigo-400" />
               <span>Mulai Ujian (Portal Siswa)</span>
-              <ChevronRight size={18} />
+              <ChevronRight size={16} />
             </button>
 
             <button
               onClick={() => onEnterApp('admin')}
-              className="w-full sm:w-auto px-7 py-3.5 sm:py-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 hover:border-indigo-300 font-bold text-sm sm:text-base shadow-xs hover:shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              className="w-full sm:w-auto px-6 py-3.5 sm:px-7 sm:py-3.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 hover:border-indigo-300 font-bold text-xs sm:text-sm shadow-2xs hover:shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
-              <UserCheck size={18} className="text-indigo-600" />
+              <UserCheck size={17} className="text-indigo-600" />
               <span>Masuk Edukator / Guru</span>
             </button>
           </motion.div>
 
-          {/* KOTAK INSTAL APLIKASI DI HERO (PWA Quick Access) */}
+          {/* Kotak PWA Install di Hero */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.35 }}
-            className="inline-flex flex-col sm:flex-row items-center justify-center gap-3.5 bg-white/80 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-3 sm:px-5 sm:py-3 shadow-xs mx-auto mb-6"
+            className="inline-flex flex-col sm:flex-row items-center justify-center gap-3 bg-white/80 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-2.5 sm:px-4 sm:py-2.5 shadow-2xs mx-auto mb-4"
           >
-            <div className="flex items-center gap-2.5 text-left">
-              <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Smartphone size={16} />
+            <div className="flex items-center gap-2 text-left">
+              <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Smartphone size={15} />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-800 leading-tight">Pasang Aplikasi di HP / Laptop</p>
-                <p className="text-[10px] text-slate-500">Mengerjakan ujian lancar, fullscreen & bebas hambatan</p>
+                <p className="text-[11px] font-bold text-slate-800 leading-tight">Pasang Aplikasi di HP / Laptop</p>
+                <p className="text-[9px] text-slate-500">Mengerjakan ujian lancar, fullscreen & bebas hambatan</p>
               </div>
             </div>
             <PwaInstallPrompt variant="button" />
@@ -390,7 +425,7 @@ export default function Landing({ onEnterApp }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.45 }}
-            className="text-xs sm:text-sm font-bold tracking-widest uppercase text-slate-400 italic mb-12 sm:mb-16"
+            className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-slate-400 italic mb-10 sm:mb-14"
           >
             "Mudah untuk Guru, Seru untuk Siswa, Cerdas untuk Semua"
           </motion.p>
@@ -497,7 +532,7 @@ export default function Landing({ onEnterApp }) {
               </div>
             </div>
 
-            {/* Floating Metric Badges (Javapixa Characteristic) */}
+            {/* Floating Metric Badges */}
             <div className="absolute -top-4 -right-2 sm:-top-5 sm:-right-5 bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 hidden md:flex">
               <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                 <ShieldCheck size={18} />
@@ -523,19 +558,103 @@ export default function Landing({ onEnterApp }) {
         </div>
       </section>
 
-      {/* METRICS & STATS SECTION (Apple-Style Clean Strip) */}
+      {/* INFINITE LOGO MARQUEE (LOGO BERJALAN GAYA JAVAPIXA) */}
+      <section className="relative z-10 py-8 sm:py-12 overflow-hidden border-y border-slate-200/70 bg-white/60 backdrop-blur-sm mb-16 sm:mb-20">
+        <div className="max-w-7xl mx-auto px-4 mb-4 text-center">
+          <p className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-[0.25em] text-slate-400">
+            Terintegrasi dengan Standar & Ekosistem Pendidikan Digital
+          </p>
+        </div>
+
+        {/* Mask Gradients for smooth fade at sides */}
+        <div className="relative w-full overflow-hidden">
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-28 bg-gradient-to-r from-[#fafafa] to-transparent z-10" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-28 bg-gradient-to-l from-[#fafafa] to-transparent z-10" />
+
+          <div className="animate-marquee flex items-center gap-3 sm:gap-4 py-1">
+            {[...ecosystemLogos, ...ecosystemLogos].map((item, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:border-indigo-300 hover:shadow-xs transition-all whitespace-nowrap group cursor-default"
+              >
+                <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  {item.icon}
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-bold text-slate-800 leading-tight">{item.name}</p>
+                  <p className="text-[10px] font-medium text-slate-400 leading-tight">{item.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* METRICS & STATS SECTION (BENTO GRID DESIGN + COPYWRITING TERBARU) */}
       <section className="relative z-10 px-4 sm:px-6 max-w-6xl mx-auto mb-20 sm:mb-28">
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.03)] grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 text-center">
+        <div className="text-center mb-8">
+          <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-widest text-indigo-600 bg-indigo-50 border border-indigo-200/80 px-3 py-1 rounded-full">
+            Kemampuan Inti Platform
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-2.5">
+            Dirancang untuk Standar Ujian Terbaik
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {[
-            { label: "Format Soal", val: "6+", sub: "PG, Kompleks, B/S, Jodohkan, Isian, Esai" },
-            { label: "Generasi Soal", val: "AI", sub: "Ekstrak Dokumen & Deteksi LOTS/HOTS" },
-            { label: "Penyimpanan", val: "Cloud", sub: "Sinkronisasi Real-Time Firestore" },
-            { label: "Koreksi Nilai", val: "Instan", sub: "Hasil Detik Itu Juga & Rekap Excel" }
+            {
+              badge: "TKA Ready",
+              val: "6+ Bentuk",
+              title: "Format Soal Komprehensif",
+              desc: "Pilihan Ganda, PG Kompleks, Benar/Salah, Menjodohkan, Isian Singkat, hingga Uraian dengan rubrik penskoran baku.",
+              icon: <CheckSquare size={18} className="text-indigo-600" />,
+              badgeColor: "bg-indigo-50 text-indigo-700 border-indigo-200"
+            },
+            {
+              badge: "AI Powered",
+              val: "AI Engine",
+              title: "Ekstraksi & Blueprint AI",
+              desc: "Ubah naskah Word & PDF jadi bank soal lengkap dengan deteksi otomatis tingkat kognitif LOTS, MOTS, dan HOTS.",
+              icon: <Brain size={18} className="text-purple-600" />,
+              badgeColor: "bg-purple-50 text-purple-700 border-purple-200"
+            },
+            {
+              badge: "Cloud Sync",
+              val: "Real-Time",
+              title: "Penyimpanan Sinkron",
+              desc: "Jawaban siswa tersimpan per detik ke Google Cloud Firestore. Ujian anti-putus walau koneksi atau laptop terganggu.",
+              icon: <UploadCloud size={18} className="text-blue-600" />,
+              badgeColor: "bg-blue-50 text-blue-700 border-blue-200"
+            },
+            {
+              badge: "Otomatis",
+              val: "0 Detik",
+              title: "Koreksi & Rekap Excel",
+              desc: "Hasil keluar detik ujian selesai, lengkap dengan analisis kognitif, daya beda, dan unduhan berkas Excel resmi.",
+              icon: <BarChart3 size={18} className="text-emerald-600" />,
+              badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200"
+            }
           ].map((stat, i) => (
-            <div key={i} className="flex flex-col justify-between p-3 border-r last:border-r-0 border-slate-100">
-              <div className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-1">{stat.val}</div>
-              <div className="text-xs sm:text-sm font-bold text-indigo-600 uppercase tracking-wider mb-0.5">{stat.label}</div>
-              <div className="text-[10px] text-slate-400 font-medium leading-tight">{stat.sub}</div>
+            <div
+              key={i}
+              className="bg-white/95 backdrop-blur-xl rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_32px_rgba(79,70,229,0.06)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${stat.badgeColor}`}>
+                    {stat.badge}
+                  </span>
+                  <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-center">
+                    {stat.icon}
+                  </div>
+                </div>
+                <div className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-1.5">
+                  {stat.val}
+                </div>
+                <h4 className="text-sm font-bold text-slate-900 mb-1.5">{stat.title}</h4>
+                <p className="text-slate-500 text-xs leading-relaxed font-normal">{stat.desc}</p>
+              </div>
             </div>
           ))}
         </div>
