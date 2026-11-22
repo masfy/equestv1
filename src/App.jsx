@@ -637,6 +637,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
 
     const [adminMenu, setAdminMenu] = useState('dashboard');
     const [sidebarExpanded, setSidebarExpanded] = useState(true);
+    const [mobileAdminDrawerOpen, setMobileAdminDrawerOpen] = useState(false);
     const [toasts, setToasts] = useState([]);
     const [quote, setQuote] = useState("");
     const [openMenuGroups, setOpenMenuGroups] = useState({ master: true, evaluasi: true, laporan: true, sistem: true });
@@ -2910,8 +2911,35 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                 </div>
             )}
 
-            {/* SIDEBAR */}
-            <div className={`glass-panel border-r border-slate-200/60 h-screen fixed left-0 top-0 flex flex-col z-40 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-all duration-300 ${sidebarExpanded ? 'w-64' : 'w-20'}`}>
+            {/* MOBILE TOP BAR (KHUSUS SMARTPHONE) */}
+            <div className="md:hidden fixed top-0 inset-x-0 z-30 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 px-4 py-2.5 flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center justify-center p-1">
+                        <img src={EQUEST_LOGO} alt="e-Quest" className="w-full h-full object-contain" />
+                    </div>
+                    <div>
+                        <h1 className="font-extrabold text-xs text-slate-800 leading-tight">
+                            e-<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Quest</span> CBT
+                        </h1>
+                        <p className="text-[10px] text-slate-400 font-medium truncate max-w-[150px]">{currentUser?.name}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200/80 px-2 py-0.5 rounded-full">
+                        {role === 'admin' ? 'Admin' : (currentUser?.teacherType === 'guru_kelas' ? 'Wali' : 'Mapel')}
+                    </span>
+                    <button
+                        onClick={() => setRole(null)}
+                        className="p-1.5 rounded-xl bg-rose-50 text-rose-600 border border-rose-200/80 hover:bg-rose-100 transition-colors"
+                        title="Keluar"
+                    >
+                        <LogOut size={15} />
+                    </button>
+                </div>
+            </div>
+
+            {/* SIDEBAR DESKTOP */}
+            <div className={`hidden md:flex glass-panel border-r border-slate-200/60 h-screen fixed left-0 top-0 flex-col z-40 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-all duration-300 ${sidebarExpanded ? 'w-64' : 'w-20'}`}>
                 <div className="p-5 border-b border-slate-200/50 h-20 flex items-center gap-3 overflow-hidden shrink-0">
                     <div className="w-10 h-10 shrink-0 bg-white rounded-xl flex items-center justify-center shadow-md border border-slate-200 overflow-hidden">
                         <img src={EQUEST_LOGO} alt="e-Quest" className="w-full h-full object-contain p-1" />
@@ -2971,8 +2999,8 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
             </div>
 
             {/* CONTENT AREA */}
-            <main className={`flex-1 flex flex-col h-screen transition-all duration-300 overflow-hidden relative z-10 ${sidebarExpanded ? 'ml-64' : 'ml-20'}`}>
-                <div className="flex-1 overflow-y-auto p-6 md:p-10 pb-20 no-scrollbar">
+            <main className={`flex-1 flex flex-col h-screen transition-all duration-300 overflow-hidden relative z-10 ml-0 ${sidebarExpanded ? 'md:ml-64' : 'md:ml-20'}`}>
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-10 pt-16 md:pt-10 pb-28 md:pb-20 no-scrollbar">
 
                     {/* DASHBOARD */}
                     {adminMenu === 'dashboard' && (
@@ -4188,6 +4216,256 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                 </div>
             </main>
+
+            {/* MOBILE 3-BUTTON BOTTOM DOCK (KHUSUS LOGIN GURU / ADMIN) */}
+            <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-2xl border-t border-slate-200/90 py-2 px-6 shadow-[0_-6px_25px_rgba(0,0,0,0.06)]">
+                <div className="flex items-center justify-between max-w-sm mx-auto relative">
+                    
+                    {/* TOMBOL KIRI (MENU CEPAT PRIORITAS: BANK SOAL) */}
+                    <button
+                        onClick={() => setAdminMenu('questions')}
+                        className={`flex flex-col items-center justify-center py-1 px-3.5 rounded-2xl transition-all cursor-pointer ${adminMenu === 'questions' ? 'text-indigo-600 font-extrabold bg-indigo-50/80' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                        <FileText size={20} className={adminMenu === 'questions' ? 'text-indigo-600' : 'text-slate-500'} />
+                        <span className="text-[10px] mt-1 font-semibold">Bank Soal</span>
+                    </button>
+
+                    {/* TOMBOL TENGAH (PROMINENT FLOATING BUTTON UNTUK MEMUNCULKAN SEMUA MENU) */}
+                    <div className="relative -top-4 flex flex-col items-center">
+                        <button
+                            onClick={() => setMobileAdminDrawerOpen(true)}
+                            className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-600/35 border-4 border-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+                            aria-label="Buka Semua Menu"
+                        >
+                            <Grid size={24} className="text-white group-hover:rotate-45 transition-transform" />
+                        </button>
+                        <span className="text-[10px] font-extrabold text-indigo-700 tracking-tight mt-0.5">
+                            Semua Menu
+                        </span>
+                    </div>
+
+                    {/* TOMBOL KANAN (MENU CEPAT PRIORITAS GURU/ADMIN) */}
+                    {role === 'admin' ? (
+                        <button
+                            onClick={() => setAdminMenu('token')}
+                            className={`flex flex-col items-center justify-center py-1 px-3.5 rounded-2xl transition-all cursor-pointer ${adminMenu === 'token' ? 'text-rose-600 font-extrabold bg-rose-50/80' : 'text-slate-500 hover:text-slate-800'}`}
+                        >
+                            <div className="relative">
+                                <MonitorPlay size={20} className={adminMenu === 'token' ? 'text-rose-600' : 'text-slate-500'} />
+                                {activeExams.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                                    </span>
+                                )}
+                            </div>
+                            <span className="text-[10px] mt-1 font-semibold">Pusat Ujian</span>
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => setAdminMenu('analysis')}
+                            className={`flex flex-col items-center justify-center py-1 px-3.5 rounded-2xl transition-all cursor-pointer ${adminMenu === 'analysis' ? 'text-indigo-600 font-extrabold bg-indigo-50/80' : 'text-slate-500 hover:text-slate-800'}`}
+                        >
+                            <BarChart2 size={20} className={adminMenu === 'analysis' ? 'text-indigo-600' : 'text-slate-500'} />
+                            <span className="text-[10px] mt-1 font-semibold">Analisis Nilai</span>
+                        </button>
+                    )}
+
+                </div>
+            </div>
+
+            {/* MOBILE FULL NAVIGATION DRAWER (DIBUKA DARI TOMBOL TENGAH) */}
+            <AnimatePresence>
+                {mobileAdminDrawerOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setMobileAdminDrawerOpen(false)}
+                            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 md:hidden"
+                        />
+
+                        <motion.div
+                            initial={{ y: "100%" }}
+                            animate={{ y: 0 }}
+                            exit={{ y: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 220 }}
+                            className="fixed bottom-0 inset-x-0 z-50 bg-white rounded-t-[2.5rem] border-t border-slate-200/90 shadow-2xl p-6 md:hidden max-h-[88vh] overflow-y-auto no-scrollbar flex flex-col"
+                        >
+                            {/* Drawer Grabber Handle */}
+                            <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-4 shrink-0" />
+
+                            {/* Header Profil Edukator */}
+                            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-11 h-11 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center p-1 shadow-xs">
+                                        <img src={EQUEST_LOGO} alt="e-Quest" className="w-full h-full object-contain" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-extrabold text-sm text-slate-800 leading-tight">{currentUser.name}</h3>
+                                        <p className="text-[10px] text-slate-400 font-medium">
+                                            {role === 'admin' ? 'Administrator Sekolah' : (currentUser?.teacherType === 'guru_kelas' ? `Wali ${currentUser?.assignedClass || ''}` : `Guru Mapel: ${currentUser?.subjectName || ''}`)}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setMobileAdminDrawerOpen(false)}
+                                    className="p-2 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            {/* Grid Semua Menu Lengkap */}
+                            <div className="space-y-4 flex-1">
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Menu Utama</p>
+                                    <div className="grid grid-cols-2 gap-2.5">
+                                        <button
+                                            onClick={() => { setAdminMenu('dashboard'); setMobileAdminDrawerOpen(false); }}
+                                            className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'dashboard' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 shrink-0">
+                                                <LayoutDashboard size={18} />
+                                            </div>
+                                            <span className="text-xs">Dashboard</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => { setAdminMenu('questions'); setMobileAdminDrawerOpen(false); }}
+                                            className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'questions' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 shrink-0">
+                                                <FileText size={18} />
+                                            </div>
+                                            <span className="text-xs">Bank Soal</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Akademik & Kelas</p>
+                                    <div className="grid grid-cols-2 gap-2.5">
+                                        {role === 'admin' && (
+                                            <button
+                                                onClick={() => { setAdminMenu('teachers'); setMobileAdminDrawerOpen(false); }}
+                                                className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'teachers' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
+                                            >
+                                                <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 shrink-0">
+                                                    <UserCog size={18} />
+                                                </div>
+                                                <span className="text-xs">Data Guru</span>
+                                            </button>
+                                        )}
+
+                                        <button
+                                            onClick={() => { setAdminMenu('classes'); setMobileAdminDrawerOpen(false); }}
+                                            className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'classes' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 shrink-0">
+                                                <Layers size={18} />
+                                            </div>
+                                            <span className="text-xs">{role === 'admin' ? 'Data Kelas' : 'Kelas Diampu'}</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => { setAdminMenu('students'); setMobileAdminDrawerOpen(false); }}
+                                            className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'students' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 shrink-0">
+                                                <Users size={18} />
+                                            </div>
+                                            <span className="text-xs">{role === 'admin' ? 'Data Murid' : 'Murid Binaan'}</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => { setAdminMenu('subjects'); setMobileAdminDrawerOpen(false); }}
+                                            className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'subjects' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 shrink-0">
+                                                <BookOpen size={18} />
+                                            </div>
+                                            <span className="text-xs">Mata Pelajaran</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Evaluasi & Laporan</p>
+                                    <div className="grid grid-cols-2 gap-2.5">
+                                        {role === 'admin' && (
+                                            <button
+                                                onClick={() => { setAdminMenu('token'); setMobileAdminDrawerOpen(false); }}
+                                                className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'token' ? 'bg-rose-50 border-rose-200 text-rose-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
+                                            >
+                                                <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-rose-600 shrink-0">
+                                                    <MonitorPlay size={18} />
+                                                </div>
+                                                <span className="text-xs">Pusat Ujian</span>
+                                            </button>
+                                        )}
+
+                                        <button
+                                            onClick={() => { setAdminMenu('analysis'); setMobileAdminDrawerOpen(false); }}
+                                            className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'analysis' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 shrink-0">
+                                                <BarChart2 size={18} />
+                                            </div>
+                                            <span className="text-xs">Analisis Nilai</span>
+                                        </button>
+
+                                        {role === 'admin' && (
+                                            <button
+                                                onClick={() => { setAdminMenu('documents'); setMobileAdminDrawerOpen(false); }}
+                                                className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'documents' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
+                                            >
+                                                <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 shrink-0">
+                                                    <ClipboardList size={18} />
+                                                </div>
+                                                <span className="text-xs">Administrasi</span>
+                                            </button>
+                                        )}
+
+                                        {role === 'admin' && (
+                                            <button
+                                                onClick={() => { setAdminMenu('school'); setMobileAdminDrawerOpen(false); }}
+                                                className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'school' ? 'bg-slate-800 border-slate-900 text-white font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
+                                            >
+                                                <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-slate-700 shrink-0">
+                                                    <Settings size={18} />
+                                                </div>
+                                                <span className="text-xs">Pengaturan</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Action Pintar AI & Logout */}
+                                <div className="pt-3 border-t border-slate-100 space-y-2">
+                                    <button
+                                        onClick={() => { setAiWizardOpen(true); setMobileAdminDrawerOpen(false); }}
+                                        className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-md shadow-indigo-600/20 flex items-center justify-between cursor-pointer"
+                                    >
+                                        <span className="flex items-center gap-2"><Sparkles size={16} className="text-fuchsia-300" /> Buka AI Soal Wizard</span>
+                                        <ChevronRight size={16} />
+                                    </button>
+
+                                    <button
+                                        onClick={() => { setMobileAdminDrawerOpen(false); setRole(null); }}
+                                        className="w-full py-2.5 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                                    >
+                                        <LogOut size={16} />
+                                        <span>Keluar Aplikasi</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
 
             {/* EDITOR MODALS (CRUD) */}
             {modalOpen && (
