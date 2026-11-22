@@ -7,7 +7,7 @@ import {
   LockKeyhole, FileCheck2, Table, Image as ImageIcon,
   Check, GraduationCap, UserCheck, Smartphone, Laptop,
   Menu, X, Home, CheckSquare, Download, Compass, LogIn,
-  Layers, FileText, Shield, Sparkle, Award, PlayCircle, School
+  Layers, FileText, Shield, Sparkle, Award, PlayCircle, School, Building
 } from 'lucide-react';
 import PwaInstallPrompt from '../components/PwaInstallPrompt';
 
@@ -112,7 +112,7 @@ const questionFormats = [
 // DATA LOGO BERJALAN (INFINITE MARQUEE)
 const ecosystemLogos = [
   { name: "Kemendikbudristek", role: "Kurikulum Merdeka", icon: <GraduationCap size={18} className="text-indigo-600" /> },
-  { name: "SD Negeri 2 Palapi", role: "Sekolah Penggerak", icon: <School size={18} className="text-blue-600" /> },
+  { name: "Multi-Satuan Pendidikan", role: "Lintas Sekolah Terpadu", icon: <Building size={18} className="text-blue-600" /> },
   { name: "Asesmen TKA", role: "Standar Literasi & Numerasi", icon: <Target size={18} className="text-amber-600" /> },
   { name: "Google Gemini AI", role: "Cognitive Generator", icon: <Brain size={18} className="text-purple-600" /> },
   { name: "Google Cloud", role: "Real-Time Firestore", icon: <UploadCloud size={18} className="text-cyan-600" /> },
@@ -186,9 +186,9 @@ export default function Landing({ onEnterApp }) {
             </div>
             <div className="flex flex-col">
               <div className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 leading-none">
-                e-<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600">Quest</span>
+                e-<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600">Quest</span> <span className="text-indigo-600 font-black">MfyTech</span>
               </div>
-              <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-0.5">CBT & TKA System</span>
+              <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-0.5">Smart CBT & TKA Platform</span>
             </div>
           </div>
 
@@ -248,8 +248,8 @@ export default function Landing({ onEnterApp }) {
                 <div className="flex items-center gap-2.5">
                   <img src={LOGO} alt="Logo" className="w-7 h-7 object-contain" />
                   <div>
-                    <span className="font-extrabold text-sm text-slate-900 block">e-Quest CBT System</span>
-                    <span className="text-[10px] text-slate-400 font-medium">SD Negeri 2 Palapi</span>
+                    <span className="font-extrabold text-sm text-slate-900 block">e-Quest MfyTech</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Smart CBT & TKA Platform</span>
                   </div>
                 </div>
                 <button onClick={() => setMobileMenuOpen(false)} className="p-1 rounded-full text-slate-400 hover:text-slate-600"><X size={18} /></button>
@@ -352,7 +352,7 @@ export default function Landing({ onEnterApp }) {
             </h1>
           </div>
 
-          {/* Copywriting Resmi e-Quest SD Negeri 2 Palapi */}
+          {/* Copywriting Resmi e-Quest MfyTech */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -360,10 +360,10 @@ export default function Landing({ onEnterApp }) {
             className="text-xs sm:text-sm md:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed mb-7 sm:mb-8 font-normal px-2"
           >
             <p className="font-extrabold text-slate-900 mb-1 text-sm sm:text-base">
-              e-Quest (Electronic Question, Evaluation & Examination System)
+              e-Quest MfyTech (Electronic Question, Evaluation & Examination System)
             </p>
             <p className="text-slate-600 font-medium">
-              Platform CBT terpadu untuk <strong className="text-slate-800 font-bold">SD Negeri 2 Palapi</strong> yang mengintegrasikan pembuatan soal otomatis berbasis AI, penyusunan stimulus literasi dan numerasi TKA, pelaksanaan ujian interaktif, hingga koreksi nilai dan administrasi otomatis dari hulu ke hilir.
+              Platform CBT & TKA cerdas terpadu dari <strong className="text-slate-900 font-bold">MfyTech</strong> yang mengintegrasikan pembuatan soal otomatis berbasis AI, penyusunan stimulus literasi dan numerasi TKA, pelaksanaan ujian interaktif, hingga koreksi nilai dan administrasi otomatis dari hulu ke hilir untuk berbagai satuan pendidikan.
             </p>
           </motion.div>
 
@@ -847,7 +847,7 @@ export default function Landing({ onEnterApp }) {
               Siap Melangkah ke Era CBT Pintar?
             </h2>
             <p className="text-xs sm:text-base md:text-lg text-indigo-100 font-normal mb-8 max-w-2xl mx-auto leading-relaxed">
-              Tinggalkan cara manual. Hemat waktu guru, berikan pengalaman modern berstandar TKA bagi siswa SD Negeri 2 Palapi.
+              Tinggalkan cara manual. Hemat waktu guru, berikan pengalaman modern berstandar TKA bagi siswa di berbagai sekolah.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5">
@@ -877,11 +877,12 @@ export default function Landing({ onEnterApp }) {
           <div className="flex items-center gap-2.5">
             <img src={LOGO} alt="e-Quest Logo" className="w-7 h-7 object-contain" />
             <div className="font-bold text-slate-800 text-sm">
-              e-Quest <span className="text-slate-400 font-medium text-xs ml-1">CBT System • SD Negeri 2 Palapi</span>
+              e-Quest <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 font-extrabold">MfyTech</span>
+              <span className="text-slate-400 font-medium text-xs ml-1.5 hidden sm:inline">• Smart CBT & TKA Platform</span>
             </div>
           </div>
           <p className="text-xs font-medium text-slate-500">
-            &copy; {new Date().getFullYear()} SD Negeri 2 Palapi. Dikembangkan oleh Mas Alfy.
+            &copy; {new Date().getFullYear()} e-Quest MfyTech. Dikembangkan oleh Mas Alfy (MfyTech).
           </p>
           <div className="flex items-center gap-4 text-xs font-semibold text-slate-600">
             <button onClick={() => scrollToSection('hero')} className="hover:text-indigo-600 transition-colors cursor-pointer">Beranda</button>

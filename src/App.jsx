@@ -15,7 +15,7 @@ import {
     FileSpreadsheet, BrainCircuit, Play, ChevronDown, ChevronUp, FileUp,
     FileBox, FileText as FileWord, Wand2, ImagePlus, FileCheck, Table,
     Target, Activity, Award, TrendingUp, PieChart, Zap, Database,
-    Shield, Building, ToggleLeft, ToggleRight
+    Shield, Building, ToggleLeft, ToggleRight, Copy
 } from 'lucide-react';
 
 // --- INITIAL DATA & MOCKUP DATABASE ---
@@ -47,6 +47,7 @@ const INITIAL_SCHOOL_DATA = {
 const INITIAL_SCHOOLS = [
     {
         id: "sdn2palapi",
+        referralCode: "EQ-PALAPI",
         npsn: "40402918",
         name: "SD Negeri 2 Palapi",
         address: "Jl. Pendidikan Cerdas No. 1, Jakarta Selatan",
@@ -644,6 +645,8 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const [selectedSchoolId, setSelectedSchoolId] = useState('sdn2palapi');
     const [showSystemPassword, setShowSystemPassword] = useState(false);
     const [showStudentPassword, setShowStudentPassword] = useState(false);
+    const [referralCodeInput, setReferralCodeInput] = useState('');
+    const [showReferralBox, setShowReferralBox] = useState(false);
     const [schoolSearch, setSchoolSearch] = useState('');
     const [schoolStatusFilter, setSchoolStatusFilter] = useState('all');
     const [teachers, setTeachers] = useState(INITIAL_TEACHERS);
@@ -656,9 +659,9 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const [activeExams, setActiveExams] = useState([]);
     const [liveStatus, setLiveStatus] = useState({});
 
-    // Akses Semester & Tahun Pelajaran yang Aktif
-    const activeSemester = schoolData.semester || (schoolData.term?.toLowerCase().includes('genap') ? 'Genap' : 'Ganjil');
-    const activeAcademicYear = schoolData.academicYear || schoolData.term?.replace(/Ganjil|Genap/gi, '').trim() || '2025/2026';
+    // Akses Semester & Tahun Pelajaran yang Aktif (Safe Fallback)
+    const activeSemester = (schoolData && schoolData.semester) || (schoolData?.term?.toLowerCase().includes('genap') ? 'Genap' : 'Ganjil');
+    const activeAcademicYear = (schoolData && schoolData.academicYear) || schoolData?.term?.replace(/Ganjil|Genap/gi, '').trim() || '2025/2026';
 
     // Model AI Generator & Filter Soal
     const [availableAiModels, setAvailableAiModels] = useState([]);
@@ -911,7 +914,28 @@ export default function App({ defaultLogin = 'student', onBack }) {
                                 return { ...s, tableData: parsedTable };
                             });
                         }
-                        setter(data !== undefined ? data : init);
+                        if (key === 'schools') {
+                            if (!Array.isArray(data) || data.length === 0) {
+                                data = INITIAL_SCHOOLS;
+                            } else {
+                                data = data.map(s => ({
+                                    ...s,
+                                    referralCode: s.referralCode || (s.id === 'sdn2palapi' ? 'EQ-PALAPI' : ('EQ-' + (s.id || '').replace('school_', '').slice(-4).toUpperCase())),
+                                    status: s.status || 'active'
+                                }));
+                            }
+                        }
+                        const arrayKeys = ['results', 'activeExams', 'schools', 'teachers', 'classes', 'subjects', 'students', 'questions', 'stimuli'];
+                        if (arrayKeys.includes(key)) {
+                            if (!Array.isArray(data)) {
+                                data = Array.isArray(init) ? init : [];
+                            }
+                        } else if (key === 'schoolData') {
+                            if (!data || typeof data !== 'object') {
+                                data = INITIAL_SCHOOL_DATA;
+                            }
+                        }
+                        setter(data !== undefined && data !== null ? data : init);
                     } else {
                         console.warn(`[Firestore] Collection '${key}' belum ada, melakukan seed awal...`);
                         let seedData = init;
@@ -1097,14 +1121,53 @@ export default function App({ defaultLogin = 'student', onBack }) {
             if (currentUser?.isSuperAdmin) {
                 return selectedSchoolId || 'sdn2palapi';
             }
-            return currentUser?.schoolId || 'sdn2palapi';
+            return currentUser?.schoolId || selectedSchoolId || 'sdn2palapi';
         }
-        return currentUser?.schoolId || 'sdn2palapi';
+        return currentUser?.schoolId || selectedSchoolId || 'sdn2palapi';
     };
 
     const getActiveSchool = () => {
         const sId = getActiveSchoolId();
-        return schools.find(s => s.id === sId) || schools[0] || INITIAL_SCHOOLS[0];
+        const list = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
+        return list.find(s => s && s.id === sId) || list[0] || INITIAL_SCHOOLS[0] || {
+            id: 'sdn2palapi',
+            name: 'e-Quest MfyTech',
+            status: 'active',
+            semester: 'Ganjil',
+            academicYear: '2025/2026',
+            referralCode: 'EQ-PALAPI'
+        };
+    };
+
+    const handleClaimReferralCode = (code) => {
+        const cleaned = (code || referralCodeInput || '').trim().toUpperCase();
+        if (!cleaned) {
+            showToast("Masukkan Kode Referensi Sekolah!", "error");
+            return;
+        }
+        const list = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
+        const matched = list.find(s => (s.referralCode || '').toUpperCase().trim() === cleaned);
+        if (!matched) {
+            showToast(`Kode Referensi "${cleaned}" tidak ditemukan! Pastikan kode dari Super Admin benar.`, "error");
+            return;
+        }
+        if (matched.status !== 'active') {
+            showToast(`Akses sekolah "${matched.name}" dinonaktifkan oleh Super Admin (Mas Alfy).`, "error");
+            return;
+        }
+
+        setSelectedSchoolId(matched.id);
+        const schoolAdminUser = {
+            name: matched.adminName || `Admin ${matched.name}`,
+            id: matched.id,
+            isSuperAdmin: false,
+            schoolId: matched.id,
+            email: matched.adminEmail || ''
+        };
+        setCurrentUser(schoolAdminUser);
+        setRole('admin');
+        setAdminMenu('school');
+        showToast(`Sekolah "${matched.name}" berhasil diaktifkan! Silakan sesuaikan data sekolah Anda.`);
     };
 
     const toggleSchoolStatus = (schoolId) => {
@@ -1113,7 +1176,8 @@ export default function App({ defaultLogin = 'student', onBack }) {
             return;
         }
         setSchools(prev => {
-            const next = prev.map(s => {
+            const list = Array.isArray(prev) ? prev : INITIAL_SCHOOLS;
+            const next = list.map(s => {
                 if (s.id === schoolId) {
                     const newStatus = s.status === 'active' ? 'suspended' : 'active';
                     return { ...s, status: newStatus };
@@ -1123,7 +1187,8 @@ export default function App({ defaultLogin = 'student', onBack }) {
             updateGlobalState({ schools: next });
             return next;
         });
-        const target = schools.find(s => s.id === schoolId);
+        const list = Array.isArray(schools) ? schools : INITIAL_SCHOOLS;
+        const target = list.find(s => s.id === schoolId);
         const willBeActive = target?.status !== 'active';
         showToast(
             `Akses login untuk ${target?.name || 'sekolah'} berhasil ${willBeActive ? 'DIAKTIFKAN' : 'DIBEKUKAN / DINONAKTIFKAN'}!`,
@@ -1134,58 +1199,65 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const getTeacherClasses = (teacher) => {
         if (!teacher) return [];
         const sId = getActiveSchoolId();
-        const schoolClasses = classes.filter(c => (c.schoolId || 'sdn2palapi') === sId);
+        const listClasses = Array.isArray(classes) ? classes : [];
+        const schoolClasses = listClasses.filter(c => (c.schoolId || 'sdn2palapi') === sId);
         if (teacher.teacherType === 'guru_kelas') {
             return teacher.assignedClass ? [teacher.assignedClass] : (schoolClasses[0]?.name ? [schoolClasses[0].name] : []);
         }
+        const listSubjects = Array.isArray(subjects) ? subjects : [];
         if (teacher.teacherType === 'guru_mapel') {
             if (Array.isArray(teacher.assignedClasses) && teacher.assignedClasses.length > 0) {
                 return teacher.assignedClasses;
             }
-            const cls = subjects.filter(s => s.teacherId === teacher.id && (s.schoolId || 'sdn2palapi') === sId).map(s => s.class);
+            const cls = listSubjects.filter(s => s.teacherId === teacher.id && (s.schoolId || 'sdn2palapi') === sId).map(s => s.class);
             return Array.from(new Set(cls));
         }
         if (teacher.assignedClass) return [teacher.assignedClass];
         if (Array.isArray(teacher.assignedClasses) && teacher.assignedClasses.length > 0) return teacher.assignedClasses;
-        const cls = subjects.filter(s => s.teacherId === teacher.id && (s.schoolId || 'sdn2palapi') === sId).map(s => s.class);
+        const cls = listSubjects.filter(s => s.teacherId === teacher.id && (s.schoolId || 'sdn2palapi') === sId).map(s => s.class);
         return cls.length > 0 ? Array.from(new Set(cls)) : (schoolClasses[0]?.name ? [schoolClasses[0].name] : []);
     };
 
     const getMyClasses = () => {
         const sId = getActiveSchoolId();
-        const schoolClasses = classes.filter(c => (c.schoolId || 'sdn2palapi') === sId);
+        const listClasses = Array.isArray(classes) ? classes : [];
+        const schoolClasses = listClasses.filter(c => (c.schoolId || 'sdn2palapi') === sId);
         if (role === 'admin') return schoolClasses;
         if (role === 'guru' && currentUser) {
-            const currentTeacher = teachers.find(t => t.id === currentUser.id) || currentUser;
+            const listTeachers = Array.isArray(teachers) ? teachers : [];
+            const currentTeacher = listTeachers.find(t => t.id === currentUser.id) || currentUser;
             const allowedNames = getTeacherClasses(currentTeacher);
             return schoolClasses.filter(c => allowedNames.includes(c.name));
         }
-        return [];
+        return schoolClasses;
     };
 
     const getMyTeachers = () => {
         const sId = getActiveSchoolId();
-        return teachers.filter(t => (t.schoolId || 'sdn2palapi') === sId);
+        const listTeachers = Array.isArray(teachers) ? teachers : [];
+        return listTeachers.filter(t => (t.schoolId || 'sdn2palapi') === sId);
     };
 
     const getMyStudents = () => {
         const sId = getActiveSchoolId();
-        return students.filter(s => (s.schoolId || 'sdn2palapi') === sId);
+        const listStudents = Array.isArray(students) ? students : [];
+        return listStudents.filter(s => (s.schoolId || 'sdn2palapi') === sId);
     };
 
     const getMySubjects = () => {
         const sId = getActiveSchoolId();
-        const schoolSubjects = subjects.filter(s => (s.schoolId || 'sdn2palapi') === sId);
+        const listSubjects = Array.isArray(subjects) ? subjects : [];
+        const schoolSubjects = listSubjects.filter(s => (s.schoolId || 'sdn2palapi') === sId);
         if (role === 'admin') return schoolSubjects;
         if (role === 'guru' && currentUser) {
-            const currentTeacher = teachers.find(t => t.id === currentUser.id) || currentUser;
+            const listTeachers = Array.isArray(teachers) ? teachers : [];
+            const currentTeacher = listTeachers.find(t => t.id === currentUser.id) || currentUser;
             const tType = currentTeacher.teacherType || (currentTeacher.subjectName ? 'guru_mapel' : 'guru_kelas');
 
             if (tType === 'guru_kelas') {
                 const myClass = currentTeacher.assignedClass || getTeacherClasses(currentTeacher)[0];
                 return schoolSubjects.filter(s => s.class === myClass || s.teacherId === currentTeacher.id);
             } else {
-                // Guru Mapel (multi-kelas)
                 const allowedClasses = getTeacherClasses(currentTeacher);
                 const subjLower = (currentTeacher.subjectName || '').toLowerCase().trim();
                 return schoolSubjects.filter(s => {
@@ -1199,27 +1271,31 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 });
             }
         }
-        return [];
+        return schoolSubjects;
     };
 
     const getMyQuestions = () => {
         const sId = getActiveSchoolId();
+        const listQuestions = Array.isArray(questions) ? questions : [];
         const myIds = getMySubjects().map(s => s.id);
-        return questions.filter(q => (q.schoolId ? q.schoolId === sId : myIds.includes(q.subjectId)));
+        return listQuestions.filter(q => (q.schoolId ? q.schoolId === sId : myIds.includes(q.subjectId)));
     };
 
     const getMyStimuli = () => {
         const sId = getActiveSchoolId();
+        const listStimuli = Array.isArray(stimuli) ? stimuli : [];
         const myIds = getMySubjects().map(s => s.id);
-        return stimuli.filter(st => (st.schoolId ? st.schoolId === sId : myIds.includes(st.subjectId)));
+        return listStimuli.filter(st => (st.schoolId ? st.schoolId === sId : myIds.includes(st.subjectId)));
     };
 
     const getMyResults = () => {
         const sId = getActiveSchoolId();
-        const schoolResults = results.filter(r => (r.schoolId || 'sdn2palapi') === sId);
+        const listResults = Array.isArray(results) ? results : [];
+        const schoolResults = listResults.filter(r => (r.schoolId || 'sdn2palapi') === sId);
         if (role === 'admin') return schoolResults;
         if (role === 'guru' && currentUser) {
-            const currentTeacher = teachers.find(t => t.id === currentUser.id) || currentUser;
+            const listTeachers = Array.isArray(teachers) ? teachers : [];
+            const currentTeacher = listTeachers.find(t => t.id === currentUser.id) || currentUser;
             const tType = currentTeacher.teacherType || (currentTeacher.subjectName ? 'guru_mapel' : 'guru_kelas');
             const allowedClasses = getTeacherClasses(currentTeacher);
             const mySubjNames = getMySubjects().map(s => s.name.toLowerCase());
@@ -1229,7 +1305,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 return mySubjNames.includes((r.subject || '').toLowerCase());
             });
         }
-        return [];
+        return schoolResults;
     };
 
     const handleSystemLogin = (e) => {
@@ -1242,34 +1318,36 @@ export default function App({ defaultLogin = 'student', onBack }) {
         const masterUsernames = [
             'admin',
             'alfyarnaim@gmail.com',
-            (schoolData.adminUsername || 'admin').toLowerCase().trim(),
-            (schoolData.adminEmail || 'alfyarnaim@gmail.com').toLowerCase().trim()
+            'masfy',
+            ((schoolData && schoolData.adminUsername) || 'admin').toLowerCase().trim(),
+            ((schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com').toLowerCase().trim()
         ];
-        const isMasterPass = (rawP === 'masfy' || rawP === schoolData.adminPassword || rawP === 'admin');
+        const isMasterPass = (rawP === 'masfy' || rawP === 'admin' || (schoolData && rawP === schoolData.adminPassword));
 
         if (masterUsernames.includes(uLower) && isMasterPass) {
             const adminUser = {
-                name: schoolData.adminName || 'Administrator Pusat (Mas Alfy)',
+                name: (schoolData && schoolData.adminName) || 'Administrator Pusat (Mas Alfy)',
                 id: 0,
                 isSuperAdmin: true,
                 schoolId: selectedSchoolId || 'sdn2palapi',
-                email: schoolData.adminEmail || 'alfyarnaim@gmail.com'
+                email: (schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com'
             };
             setCurrentUser(adminUser);
             setSelectedSchoolId(adminUser.schoolId);
             setRole('admin');
+            setAdminMenu('dashboard');
             showToast("Login Super Admin Berhasil! Selamat Datang Mas Alfy.");
             return;
         }
 
         // 2. Verifikasi Administrator Sekolah Multi-Tenant
-        const matchedSchool = schools.find(s =>
+        const listSchools = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
+        const matchedSchool = listSchools.find(s =>
             (s.adminUsername?.toLowerCase().trim() === uLower || s.adminEmail?.toLowerCase().trim() === uLower) &&
             s.adminPassword === rawP
         );
 
         if (matchedSchool) {
-            // Kontrol Terpusat: Super Admin yang berhak menyetujui izin login!
             if (matchedSchool.status !== 'active') {
                 showToast("Akun sekolah ini dinonaktifkan atau belum disetujui oleh Super Admin. Hubungi Mas Alfy untuk aktivasi.", "error");
                 return;
@@ -1284,15 +1362,17 @@ export default function App({ defaultLogin = 'student', onBack }) {
             setCurrentUser(schoolAdmin);
             setSelectedSchoolId(matchedSchool.id);
             setRole('admin');
+            setAdminMenu('dashboard');
             showToast(`Login Berhasil! Selamat Datang di Panel ${matchedSchool.name}`);
             return;
         }
 
         // 3. Verifikasi Akun Guru Pengampu
-        const teacher = teachers.find(t => (t.username || '').toLowerCase().trim() === uLower && t.password === rawP);
+        const listTeachers = Array.isArray(teachers) ? teachers : INITIAL_TEACHERS;
+        const teacher = listTeachers.find(t => (t.username || '').toLowerCase().trim() === uLower && t.password === rawP);
         if (teacher) {
             const teacherSchoolId = teacher.schoolId || 'sdn2palapi';
-            const tSchool = schools.find(s => s.id === teacherSchoolId);
+            const tSchool = listSchools.find(s => s.id === teacherSchoolId);
             if (tSchool && tSchool.status !== 'active') {
                 showToast("Akses sekolah Anda sedang dinonaktifkan oleh Administrator Pusat.", "error");
                 return;
@@ -1304,6 +1384,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
             setCurrentUser(teacher);
             setSelectedSchoolId(teacherSchoolId);
             setRole('guru');
+            setAdminMenu('dashboard');
             showToast(`Selamat Datang, ${teacher.name}`);
             return;
         }
@@ -1673,6 +1754,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 id: schoolId,
                 name: (d.name || '').trim(),
                 npsn: (d.npsn || '').trim(),
+                referralCode: (d.referralCode || editingItem?.referralCode || ('EQ-' + Math.random().toString(36).substring(2, 6).toUpperCase())).trim().toUpperCase(),
                 address: (d.address || '').trim(),
                 dinasPendidikan: (d.dinasPendidikan || '').trim(),
                 kabupaten: (d.kabupaten || '').trim(),
@@ -2386,13 +2468,13 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                 {/* Header: Logo & School Identity */}
                 <div className="text-center mb-6">
                     <div className="w-16 h-16 sm:w-18 sm:h-18 bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-center mx-auto mb-3">
-                        <img src={schoolData.logo || EQUEST_LOGO} alt="Logo" className="w-full h-full object-contain" />
+                        <img src={schoolData?.logo || EQUEST_LOGO} alt="Logo" className="w-full h-full object-contain" />
                     </div>
                     <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
-                        e-<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600">Quest</span> CBT
+                        e-<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600">Quest</span> <span className="text-indigo-600 font-black">MfyTech</span>
                     </h2>
                     <p className="text-slate-500 text-xs font-semibold mt-0.5">
-                        {schoolData.name || "SD Negeri 2 Palapi"}
+                        Sistem Asesmen & Ujian Berbasis Komputer (CBT & TKA)
                     </p>
                 </div>
 
@@ -2535,12 +2617,59 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                 <ChevronRight size={17} />
                             </button>
                         </form>
+
+                        {/* KARTU AKTIVASI KODE REFERENSI SEKOLAH */}
+                        <div className="mt-5 pt-4 border-t border-slate-100 text-left">
+                            <button
+                                type="button"
+                                onClick={() => setShowReferralBox(!showReferralBox)}
+                                className="w-full flex items-center justify-between p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 hover:bg-amber-100/70 transition-all cursor-pointer group"
+                            >
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-2xs shrink-0">
+                                        <Key size={14} />
+                                    </div>
+                                    <span className="text-xs font-bold text-amber-950">
+                                        Punya Kode Referensi Sekolah?
+                                    </span>
+                                </div>
+                                <span className="text-[10px] font-extrabold text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded-full">
+                                    {showReferralBox ? 'Tutup' : 'Aktivasi'}
+                                </span>
+                            </button>
+
+                            {showReferralBox && (
+                                <div className="mt-3 p-3.5 bg-white rounded-2xl border border-amber-200/90 shadow-sm space-y-2.5 animate-fade-in">
+                                    <label className="block text-[10px] font-bold text-amber-800 uppercase tracking-wider">
+                                        Kode Referensi dari Super Admin:
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            value={referralCodeInput}
+                                            onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
+                                            placeholder="Contoh: EQ-PALAPI"
+                                            className="flex-1 p-2.5 bg-amber-50/50 border border-amber-300 rounded-xl font-mono font-black text-amber-900 text-xs tracking-wider uppercase outline-none focus:border-amber-500"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleClaimReferralCode(referralCodeInput)}
+                                            className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs shadow-xs transition-colors shrink-0 cursor-pointer"
+                                        >
+                                            Aktifkan
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                                        Data nama sekolah, kelas, mapel, dan kepsek akan otomatis disesuaikan dengan institusi Anda.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </motion.div>
 
             <div className="w-full text-center mt-8 text-[11px] font-semibold text-slate-400 z-10">
-                e-Quest Multi-Tenant CBT Platform &copy; {new Date().getFullYear()} • Solusi Terpadu Lintas Satuan Pendidikan
+                e-Quest MfyTech CBT Platform &copy; {new Date().getFullYear()} • Solusi Terpadu Lintas Satuan Pendidikan
             </div>
         </div>
     );
@@ -3271,9 +3400,9 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                     </div>
                     <div>
                         <h1 className="font-extrabold text-xs text-slate-800 leading-tight">
-                            e-<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Quest</span> CBT
+                            e-<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Quest</span> <span className="text-indigo-600 font-black">MfyTech</span>
                         </h1>
-                        <p className="text-[10px] text-slate-400 font-medium truncate max-w-[110px]">{currentUser?.name}</p>
+                        <p className="text-[10px] text-slate-400 font-medium truncate max-w-[110px]">{currentUser?.name || 'Edukator'}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -3293,7 +3422,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                         </select>
                     ) : (
                         <span className="text-[9px] font-extrabold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200/80 px-2 py-0.5 rounded-full truncate max-w-[120px]">
-                            {getActiveSchool().name}
+                            {getActiveSchool()?.name || 'e-Quest MfyTech'}
                         </span>
                     )}
                     <button
@@ -3314,9 +3443,9 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                     </div>
                     {sidebarExpanded && (
                         <div className="flex-1 min-w-0">
-                            <h2 className="font-bold text-slate-800 leading-tight text-sm truncate">{currentUser.name}</h2>
+                            <h2 className="font-bold text-slate-800 leading-tight text-sm truncate">{currentUser?.name || 'Edukator'}</h2>
                             <p className="text-[10px] text-indigo-500 uppercase font-bold tracking-wider mt-0.5">
-                                {currentUser?.isSuperAdmin ? 'Super Administrator' : role}
+                                {currentUser?.isSuperAdmin ? 'Super Administrator' : (role === 'admin' ? 'Administrator' : 'Guru')}
                             </p>
                         </div>
                     )}
@@ -3406,7 +3535,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100/90 rounded-xl border border-slate-200 text-xs">
                             <School size={15} className="text-indigo-600" />
                             <span className="font-semibold text-slate-500">Sekolah Aktif:</span>
-                            <span className="font-extrabold text-slate-900">{getActiveSchool().name}</span>
+                            <span className="font-extrabold text-slate-900">{getActiveSchool()?.name || 'e-Quest MfyTech'}</span>
                         </div>
                         {currentUser?.isSuperAdmin && (
                             <div className="flex items-center gap-2">
@@ -3492,7 +3621,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                 </span>
                                             </div>
                                             <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white leading-tight">
-                                                Halo, {currentUser.name} 👋
+                                                Halo, {currentUser?.name || 'Edukator'} 👋
                                             </h2>
                                             <p className="text-slate-300 text-xs sm:text-sm font-normal leading-relaxed">
                                                 Selamat datang di Dashboard Kontrol e-Quest. Pantau kesiapan bank soal TKA, administrasi ujian, dan perkembangan asesmen murid secara real-time.
@@ -3518,7 +3647,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                 <Smartphone size={16} className="text-indigo-300 shrink-0" />
                                                 <div>
                                                     <p className="text-[10px] uppercase tracking-wider font-bold text-slate-300">PWA Mobile Standar</p>
-                                                    <p className="text-xs font-bold text-white">{schoolData.name || 'SDN 2 Palapi'}</p>
+                                                    <p className="text-xs font-bold text-white">{getActiveSchool()?.name || 'e-Quest MfyTech'}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -5527,6 +5656,40 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                 </div>
                                             </div>
 
+                                            {/* KODE REFERENSI SEKOLAH */}
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3.5 bg-amber-50/70 border border-amber-200/90 rounded-2xl my-3">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shrink-0 shadow-2xs">
+                                                        <Key size={15} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900">
+                                                            Kode Referensi Sekolah (Kunci Aktivasi Guru / Admin)
+                                                        </p>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className="font-mono font-black text-xs text-amber-950 bg-white px-2 py-0.5 rounded-lg border border-amber-300 tracking-wider">
+                                                                {s.referralCode || ('EQ-' + (s.id || '').replace('school_', '').slice(-4).toUpperCase())}
+                                                            </span>
+                                                            <span className="text-[10px] text-amber-700 font-medium hidden sm:inline">
+                                                                Bagikan kode ini untuk aktivasi profil instansi mereka
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const refCode = s.referralCode || ('EQ-' + (s.id || '').replace('school_', '').slice(-4).toUpperCase());
+                                                        navigator.clipboard.writeText(refCode);
+                                                        showToast(`Kode Referensi "${refCode}" berhasil disalin!`);
+                                                    }}
+                                                    className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs shrink-0 cursor-pointer"
+                                                >
+                                                    <Copy size={13} />
+                                                    <span>Salin Kode</span>
+                                                </button>
+                                            </div>
+
                                             {/* Grid Detail Data Sekolah & Kredensial */}
                                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-4 border-b border-slate-100">
                                                 <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/60">
@@ -5870,7 +6033,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                         <img src={EQUEST_LOGO} alt="e-Quest" className="w-full h-full object-contain" />
                                     </div>
                                     <div>
-                                        <h3 className="font-extrabold text-sm text-slate-800 leading-tight">{currentUser.name}</h3>
+                                        <h3 className="font-extrabold text-sm text-slate-800 leading-tight">{currentUser?.name || 'Administrator'}</h3>
                                         <p className="text-[10px] text-slate-400 font-medium">
                                             {role === 'admin' ? 'Administrator Sekolah' : (currentUser?.teacherType === 'guru_kelas' ? `Wali ${currentUser?.assignedClass || ''}` : `Guru Mapel: ${currentUser?.subjectName || ''}`)}
                                         </p>
@@ -6063,6 +6226,38 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Nama Satuan Pendidikan (Sekolah)</label>
                                             <input name="name" defaultValue={editingItem?.name} placeholder="Contoh: SMP Negeri 1 Raha / SD IT Al-Qalam" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-indigo-400 font-bold text-slate-800 text-sm" required />
+                                        </div>
+
+                                        {/* KODE REFERENSI SEKOLAH */}
+                                        <div className="space-y-1.5 p-3.5 bg-amber-50/70 rounded-2xl border border-amber-200">
+                                            <div className="flex justify-between items-center">
+                                                <label className="text-[10px] font-black text-amber-900 uppercase tracking-wider">Kode Referensi Sekolah (Kunci Aktivasi Guru)</label>
+                                                <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">Aktivasi Otomatis</span>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    id="schoolReferralCodeInput"
+                                                    name="referralCode"
+                                                    defaultValue={editingItem?.referralCode || ('EQ-' + Math.random().toString(36).substring(2, 6).toUpperCase())}
+                                                    placeholder="Contoh: EQ-SMPN1"
+                                                    className="flex-1 p-2.5 bg-white border border-amber-300 rounded-xl font-mono font-black text-amber-900 text-sm outline-none uppercase"
+                                                    required
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const randomCode = 'EQ-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+                                                        const inp = document.getElementById('schoolReferralCodeInput');
+                                                        if (inp) inp.value = randomCode;
+                                                    }}
+                                                    className="px-3 py-2 bg-amber-200 hover:bg-amber-300 text-amber-900 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                                                >
+                                                    Acak Kode
+                                                </button>
+                                            </div>
+                                            <p className="text-[10px] text-amber-700 font-medium">
+                                                Guru/Admin sekolah ini dapat menggunakan kode ini untuk langsung mengaktifkan dan mengelola data sekolahnya.
+                                            </p>
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
