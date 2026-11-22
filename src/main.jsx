@@ -1,9 +1,10 @@
-import React, { Component, StrictMode, useState } from 'react'
+import React, { Component, StrictMode, useState, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
 import './index.css'
-import App from './App.jsx'
 import Landing from './pages/Landing.jsx'
+
+const App = lazy(() => import('./App.jsx'));
 
 // Auto register PWA service worker with auto reload on update
 registerSW({ immediate: true })
@@ -58,7 +59,18 @@ class ErrorBoundary extends Component {
 
 function Root() {
   const [appView, setAppView] = useState(null);
-  if (appView) return <App defaultLogin={appView} onBack={() => setAppView(null)} />;
+  if (appView) {
+    return (
+      <Suspense fallback={
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#090d16', color: '#ffffff', fontFamily: 'Inter, system-ui, sans-serif', gap: '16px' }}>
+          <div style={{ width: '40px', height: '40px', border: '3px solid #6366f1', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <p style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 600 }}>Membuka Portal Ujian e-Quest...</p>
+        </div>
+      }>
+        <App defaultLogin={appView} onBack={() => setAppView(null)} />
+      </Suspense>
+    );
+  }
   return <Landing onEnterApp={(view) => setAppView(view || 'student')} />;
 }
 

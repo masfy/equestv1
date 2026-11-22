@@ -85,6 +85,53 @@ const QUOTES = [
 
 // --- UTILITY COMPONENTS & SHEETJS LOADER ---
 
+const getCachedData = (key, fallback) => {
+    try {
+        const item = localStorage.getItem(`eq_cache_${key}`);
+        if (!item) return fallback;
+        const parsed = JSON.parse(item);
+        return parsed !== null && parsed !== undefined ? parsed : fallback;
+    } catch (e) {
+        return fallback;
+    }
+};
+
+const setCachedData = (key, data) => {
+    try {
+        localStorage.setItem(`eq_cache_${key}`, JSON.stringify(data));
+    } catch (e) {
+        // Silently catch quota limits if any
+    }
+};
+
+const compressImage = (file, maxWidth = 256, quality = 0.85) => {
+    return new Promise((resolve) => {
+        if (!file || !file.type.startsWith('image/')) return resolve('');
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width;
+                let h = img.height;
+                if (w > maxWidth) {
+                    h = Math.round((h * maxWidth) / w);
+                    w = maxWidth;
+                }
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/png', quality));
+            };
+            img.onerror = () => resolve(e.target.result);
+            img.src = e.target.result;
+        };
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(file);
+    });
+};
+
 const loadSheetJS = () => {
     return new Promise((resolve, reject) => {
         if (window.XLSX) return resolve(window.XLSX);
@@ -538,9 +585,9 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const dbLoadedKeys = useRef(new Set());
     const DB_TOTAL_COLLECTIONS = 11;
 
-    // State awal dengan fallback data awal — data asli otomatis disinkronkan dari Firestore
-    const [schoolData, setSchoolData] = useState(INITIAL_SCHOOL_DATA);
-    const [schools, setSchools] = useState(INITIAL_SCHOOLS);
+    // State awal dengan fallback cache lokal & data awal — data asli otomatis disinkronkan dari Firestore
+    const [schoolData, setSchoolData] = useState(() => getCachedData('schoolData', INITIAL_SCHOOL_DATA));
+    const [schools, setSchools] = useState(() => getCachedData('schools', INITIAL_SCHOOLS));
     const [selectedSchoolId, setSelectedSchoolId] = useState('sdn2palapi');
     const [showSystemPassword, setShowSystemPassword] = useState(false);
     const [showStudentPassword, setShowStudentPassword] = useState(false);
@@ -548,14 +595,14 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const [showReferralBox, setShowReferralBox] = useState(false);
     const [schoolSearch, setSchoolSearch] = useState('');
     const [schoolStatusFilter, setSchoolStatusFilter] = useState('all');
-    const [teachers, setTeachers] = useState(INITIAL_TEACHERS);
-    const [classes, setClasses] = useState(INITIAL_CLASSES);
-    const [subjects, setSubjects] = useState(INITIAL_SUBJECTS);
-    const [students, setStudents] = useState(INITIAL_STUDENTS);
-    const [questions, setQuestions] = useState(INITIAL_QUESTIONS);
-    const [stimuli, setStimuli] = useState(INITIAL_STIMULI);
-    const [results, setResults] = useState([]);
-    const [activeExams, setActiveExams] = useState([]);
+    const [teachers, setTeachers] = useState(() => getCachedData('teachers', INITIAL_TEACHERS));
+    const [classes, setClasses] = useState(() => getCachedData('classes', INITIAL_CLASSES));
+    const [subjects, setSubjects] = useState(() => getCachedData('subjects', INITIAL_SUBJECTS));
+    const [students, setStudents] = useState(() => getCachedData('students', INITIAL_STUDENTS));
+    const [questions, setQuestions] = useState(() => getCachedData('questions', INITIAL_QUESTIONS));
+    const [stimuli, setStimuli] = useState(() => getCachedData('stimuli', INITIAL_STIMULI));
+    const [results, setResults] = useState(() => getCachedData('results', []));
+    const [activeExams, setActiveExams] = useState(() => getCachedData('activeExams', []));
     const [liveStatus, setLiveStatus] = useState({});
 
     const getActiveSchoolId = () => {
@@ -794,6 +841,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
             const keys = Object.keys(updates);
             for (let key of keys) {
                 let payload = updates[key];
+                setCachedData(key, payload);
                 // Firestore menolak nested array langsung; lakukan serialisasi JSON aman jika key === 'stimuli'
                 if (key === 'stimuli' && Array.isArray(payload)) {
                     payload = payload.map(s => ({
@@ -869,7 +917,9 @@ export default function App({ defaultLogin = 'student', onBack }) {
                                 data = { ...INITIAL_SCHOOL_DATA, ...data };
                             }
                         }
-                        setter(data !== undefined && data !== null ? data : init);
+                        const finalData = data !== undefined && data !== null ? data : init;
+                        setCachedData(key, finalData);
+                        setter(finalData);
                     } else {
                         console.warn(`[Firestore] Collection '${key}' belum ada, melakukan seed awal...`);
                         let seedData = init;
@@ -2230,18 +2280,29 @@ Perhatian:
         });
     };
 
-    const handleQuestionImageUpload = (e) => {
+    const handleQuestionImageUpload = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => setEditingItem(prev => ({ ...prev, image: reader.result }));
-            reader.readAsDataURL(file);
+            const compressed = await compressImage(file, 600, 0.85);
+            setEditingItem(prev => ({ ...prev, image: compressed }));
         }
     };
 
-    const handleLogoUpload = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => setTempLogo(reader.result); reader.readAsDataURL(file); } };
+    const handleLogoUpload = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const compressed = await compressImage(file, 256, 0.85);
+            setTempLogo(compressed);
+        }
+    };
     const [tempSchoolLogo, setTempSchoolLogo] = useState(null);
-    const handleSchoolLogoUpload = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => setTempSchoolLogo(reader.result); reader.readAsDataURL(file); } };
+    const handleSchoolLogoUpload = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const compressed = await compressImage(file, 256, 0.85);
+            setTempSchoolLogo(compressed);
+        }
+    };
     const handleSaveSchool = (e) => {
         e.preventDefault();
         const d = Object.fromEntries(new FormData(e.target).entries());
@@ -2470,15 +2531,15 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
     if (printData) return <PrintLayout type={printData.type} data={printData} schoolData={getActiveSchool()} onBack={() => setPrintData(null)} />;
 
-    // Tampilkan loading screen selama data dari Firestore belum selesai dimuat
-    if (!dbLoaded) return (
+    // Hanya tampilkan loading screen jika pengguna SUDAH login namun data esensial belum siap sama sekali
+    if (role && !dbLoaded && (!schools || schools.length === 0)) return (
         <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-6">
             <div className="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center">
                 <img src={EQUEST_LOGO} alt="Logo" className="w-14 h-14 object-contain" />
             </div>
             <div className="flex flex-col items-center gap-3">
-                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-slate-400 text-sm font-semibold">Menghubungkan ke database...</p>
+                <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-slate-400 text-sm font-semibold">Memuat sesi data sekolah...</p>
             </div>
         </div>
     );
@@ -3649,7 +3710,8 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                         const myClasses = getMyClasses();
                         const mySubjects = getMySubjects();
-                        const totalStudents = getMyStudents().length;
+                        const myStudents = getMyStudents();
+                        const totalStudents = myStudents.length;
 
                         const myResults = getMyResults();
                         const avgScore = myResults.length > 0
