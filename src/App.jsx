@@ -1254,15 +1254,20 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const getMyQuestions = () => {
         const sId = getActiveSchoolId();
         const listQuestions = Array.isArray(questions) ? questions : [];
-        const myIds = getMySubjects().map(s => s.id);
-        return listQuestions.filter(q => (q.schoolId ? q.schoolId === sId : myIds.includes(q.subjectId)));
+        const myIds = new Set(getMySubjects().map(s => s.id));
+        return listQuestions.filter(q => (q.schoolId || 'sdn2palapi') === sId && myIds.has(q.subjectId));
     };
 
     const getMyStimuli = () => {
         const sId = getActiveSchoolId();
         const listStimuli = Array.isArray(stimuli) ? stimuli : [];
-        const myIds = getMySubjects().map(s => s.id);
-        return listStimuli.filter(st => (st.schoolId ? st.schoolId === sId : myIds.includes(st.subjectId)));
+        const myIds = new Set(getMySubjects().map(s => s.id));
+        return listStimuli.filter(st => {
+            const stSchool = st.schoolId || 'sdn2palapi';
+            if (stSchool !== sId) return false;
+            if (!st.subjectId) return true;
+            return myIds.has(st.subjectId);
+        });
     };
 
     const getMyResults = () => {
@@ -1513,7 +1518,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const handleStudentFinish = (answers) => {
         const examSem = currentExamSubject?.semester || activeSemester;
         const examYr = currentExamSubject?.academicYear || activeAcademicYear;
-        const examQuestions = shuffledExamQuestions.length > 0 ? shuffledExamQuestions : questions.filter(q => q.subjectId === currentExamSubject.id && ((q.semester || activeSemester).toLowerCase() === examSem.toLowerCase()));
+        const examQuestions = shuffledExamQuestions.length > 0 ? shuffledExamQuestions : getMyQuestions().filter(q => q.subjectId === currentExamSubject.id && ((q.semester || activeSemester).toLowerCase() === examSem.toLowerCase()));
         let earned = 0; let max = 0;
 
         let earnedScores = {};
@@ -2172,8 +2177,8 @@ Perhatian:
 
     const availableClassYears = Array.from(new Set([
         activeAcademicYear,
-        ...classes.map(c => c.academicYear).filter(Boolean),
-        ...subjects.map(s => s.academicYear).filter(Boolean)
+        ...getMyClasses().map(c => c.academicYear).filter(Boolean),
+        ...getMySubjects().map(s => s.academicYear).filter(Boolean)
     ])).filter(Boolean).sort().reverse();
 
     const filteredSchoolsList = schools.filter(s => {
@@ -2281,7 +2286,7 @@ Perhatian:
         const selectedSubjObj = mySubjects.find(s => String(s.id) === String(printForm.subject) || s.name === printForm.subject);
         const teacherName = (role === 'guru' && currentUser?.name)
             ? currentUser.name
-            : (teachers.find(t => t.id === selectedSubjObj?.teacherId)?.name || activeSc.adminName || 'Pengampu');
+            : (getMyTeachers().find(t => t.id === selectedSubjObj?.teacherId)?.name || activeSc.adminName || 'Pengampu');
 
         setPrintData({
             type,
@@ -2290,7 +2295,7 @@ Perhatian:
             date: printForm.date,
             students: classStudents,
             teacherName: teacherName,
-            questions: questions.filter(q => (q.schoolId ? q.schoolId === sId : true) && String(q.subjectId) === String(selectedSubjObj?.id || printForm.subject)),
+            questions: getMyQuestions().filter(q => String(q.subjectId) === String(selectedSubjObj?.id || printForm.subject)),
             printForm: printForm
         });
     };
@@ -2807,7 +2812,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
     if (role === 'student') {
         const activeExamSemester = currentExamSubject?.semester || activeSemester;
         const activeExamYear = currentExamSubject?.academicYear || activeAcademicYear;
-        const stdQuestions = studentStep === 'exam' ? shuffledExamQuestions : questions.filter(q => q.subjectId === currentExamSubject?.id && ((q.semester || activeSemester).toLowerCase() === activeExamSemester.toLowerCase()));
+        const stdQuestions = studentStep === 'exam' ? shuffledExamQuestions : getMyQuestions().filter(q => q.subjectId === currentExamSubject?.id && ((q.semester || activeSemester).toLowerCase() === activeExamSemester.toLowerCase()));
         return (
             <div className="min-h-screen bg-slate-50 font-sans">
                 <div className="fixed top-4 right-4 z-[999] flex flex-col gap-2">{toasts.map(t => <Toast key={t.id} {...t} onClose={() => removeToast(t.id)} />)}</div>
@@ -2841,7 +2846,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                 ) : studentStep === 'biodata' ? (
                     <div className="min-h-screen flex items-center justify-center p-6"><div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-100"><div className="bg-indigo-600 p-6 text-white flex justify-between items-center"><div><h1 className="text-lg font-bold">Konfirmasi Data</h1><p className="text-indigo-200 text-xs mt-1">Cek data sebelum ujian</p></div><User className="w-10 h-10 bg-indigo-500/50 p-2 rounded-xl" /></div><div className="p-6 space-y-6"><div className="bg-slate-50 rounded-xl p-5 space-y-3 border border-slate-100"><div className="flex justify-between border-b border-slate-200 pb-2"><span className="text-slate-500 text-sm">Nama</span><span className="font-bold text-slate-800">{currentUser.name}</span></div><div className="flex justify-between border-b border-slate-200 pb-2"><span className="text-slate-500 text-sm">Kelas</span><span className="font-bold text-slate-800">{currentUser.class}</span></div><div className="flex justify-between border-b border-slate-200 pb-2"><span className="text-slate-500 text-sm">Ujian Aktif</span><span className="font-bold text-indigo-600">{currentExamSubject?.name}</span></div><div className="flex justify-between"><span className="text-slate-500 text-sm">Semester Ujian</span><span className="font-bold text-purple-700">Semester {activeExamSemester} ({activeExamYear})</span></div></div><button onClick={() => {
                         const targetSemester = activeExamSemester.toLowerCase();
-                        const baseQ = questions.filter(q => {
+                        const baseQ = getMyQuestions().filter(q => {
                             const matchSubject = q.subjectId === currentExamSubject?.id;
                             const qSem = (q.semester || activeSemester).toLowerCase();
                             return matchSubject && (qSem === targetSemester);
@@ -3500,10 +3505,10 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             setAiWizardOpen(false);
                                             setPrintData({
                                                 type: 'kisi-kisi',
-                                                class: subjects.find(s => s.id === parseInt(aiParams.subject))?.class,
-                                                subjectName: subjects.find(s => s.id === parseInt(aiParams.subject))?.name,
+                                                class: getMySubjects().find(s => s.id === parseInt(aiParams.subject))?.class,
+                                                subjectName: getMySubjects().find(s => s.id === parseInt(aiParams.subject))?.name,
                                                 teacherName: currentUser.name,
-                                                questions: questions.filter(q => q.subjectId === parseInt(aiParams.subject))
+                                                questions: getMyQuestions().filter(q => q.subjectId === parseInt(aiParams.subject))
                                             });
                                         }} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-sm hover:bg-indigo-700 transition-all text-sm">
                                             <FileSpreadsheet size={16} /> Lihat Kisi-kisi
@@ -3868,7 +3873,9 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                 </span>
                                             </div>
                                             <div className="flex items-baseline gap-2">
-                                                <p className="text-2xl sm:text-3xl font-black tracking-tight">{activeExams.length}</p>
+                                                <p className="text-2xl sm:text-3xl font-black tracking-tight">
+                                                    {activeExams.filter(e => (e.schoolId || 'sdn2palapi') === getActiveSchoolId()).length}
+                                                </p>
                                                 <span className="text-[10px] text-emerald-100 font-bold">Sesi Aktif</span>
                                             </div>
                                             <p className="text-[10px] text-emerald-100 font-semibold mt-1">Token & Pengawasan</p>
@@ -4857,7 +4864,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                                     {filteredSubjectsList.map(i => {
                                         const isArchived = i.academicYear && i.academicYear !== activeAcademicYear;
-                                        const qCount = questions.filter(q => q.subjectId === i.id).length;
+                                        const qCount = getMyQuestions().filter(q => q.subjectId === i.id).length;
                                         return (
                                             <div key={i.id} className="bg-white border border-slate-200 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all relative flex flex-col justify-between group">
                                                 {(role === 'admin' || (role === 'guru' && (i.teacherId === currentUser.id || currentUser?.teacherType === 'guru_kelas'))) && (
@@ -4978,8 +4985,8 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                 ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                                         {filteredBankSubjects.map((s, idx) => {
-                                            const qCountActive = questions.filter(q => q.subjectId === s.id && (!q.semester || q.semester.toLowerCase() === activeSemester.toLowerCase())).length;
-                                            const qCountTotal = questions.filter(q => q.subjectId === s.id).length;
+                                            const qCountActive = getMyQuestions().filter(q => q.subjectId === s.id && (!q.semester || q.semester.toLowerCase() === activeSemester.toLowerCase())).length;
+                                            const qCountTotal = getMyQuestions().filter(q => q.subjectId === s.id).length;
                                             const colors = [
                                                 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-blue-500/20',
                                                 'bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-emerald-500/20',
@@ -5035,12 +5042,12 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                     </div>
                                     <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
                                         <button
-                                            onClick={() => { setPrintData({ type: 'kisi-kisi', class: selectedSubjectForQuestions.class, subjectName: selectedSubjectForQuestions.name, teacherName: currentUser.name, questions: questions.filter(q => q.subjectId === selectedSubjectForQuestions.id && (questionSemesterFilter === 'all' || (q.semester || activeSemester).toLowerCase() === (questionSemesterFilter === 'active' ? activeSemester : questionSemesterFilter).toLowerCase())) }) }}
+                                            onClick={() => { setPrintData({ type: 'kisi-kisi', class: selectedSubjectForQuestions.class, subjectName: selectedSubjectForQuestions.name, teacherName: currentUser.name, questions: getMyQuestions().filter(q => q.subjectId === selectedSubjectForQuestions.id && (questionSemesterFilter === 'all' || (q.semester || activeSemester).toLowerCase() === (questionSemesterFilter === 'active' ? activeSemester : questionSemesterFilter).toLowerCase())) }) }}
                                             className="flex-1 sm:flex-none bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                                         >
                                             <FileSpreadsheet size={15} /> Kisi-kisi
                                         </button>
-                                        {questions.filter(q => q.subjectId === selectedSubjectForQuestions.id).length > 0 && (
+                                        {getMyQuestions().filter(q => q.subjectId === selectedSubjectForQuestions.id).length > 0 && (
                                             <button
                                                 onClick={() => initiateDelete('clear_subject', selectedSubjectForQuestions.id)}
                                                 className="bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 px-3 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
@@ -5079,7 +5086,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                         <FileText size={17} />
                                         <span>Daftar Soal</span>
                                         <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-bold">
-                                            {questions.filter(q => q.subjectId === selectedSubjectForQuestions.id).length}
+                                            {getMyQuestions().filter(q => q.subjectId === selectedSubjectForQuestions.id).length}
                                         </span>
                                     </button>
                                     <button
@@ -5090,7 +5097,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                         <BookOpen size={17} />
                                         <span>Daftar Stimulus</span>
                                         <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full text-xs font-bold">
-                                            {stimuli.filter(s => !s.subjectId || s.subjectId === selectedSubjectForQuestions.id).length}
+                                            {getMyStimuli().filter(s => !s.subjectId || s.subjectId === selectedSubjectForQuestions.id).length}
                                         </span>
                                     </button>
                                 </div>
@@ -5134,7 +5141,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             </div>
                                             <div className="text-xs font-semibold text-slate-500">
                                                 Menampilkan: <span className="font-extrabold text-indigo-700">{
-                                                    questions.filter(q => {
+                                                    getMyQuestions().filter(q => {
                                                         if (q.subjectId !== selectedSubjectForQuestions.id) return false;
                                                         if (questionSemesterFilter === 'all') return true;
                                                         const targetFilter = questionSemesterFilter === 'active' ? activeSemester : questionSemesterFilter;
@@ -5144,7 +5151,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             </div>
                                         </div>
 
-                                        {questions.filter(q => {
+                                        {getMyQuestions().filter(q => {
                                             if (q.subjectId !== selectedSubjectForQuestions.id) return false;
                                             if (questionSemesterFilter === 'all') return true;
                                             const targetFilter = questionSemesterFilter === 'active' ? activeSemester : questionSemesterFilter;
@@ -5157,7 +5164,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             </div>
                                         ) : (
                                             <div className="grid grid-cols-1 gap-4 sm:gap-5">
-                                                {questions.filter(q => {
+                                                {getMyQuestions().filter(q => {
                                                     if (q.subjectId !== selectedSubjectForQuestions.id) return false;
                                                     if (questionSemesterFilter === 'all') return true;
                                                     const targetFilter = questionSemesterFilter === 'active' ? activeSemester : questionSemesterFilter;
@@ -5295,7 +5302,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                     </button>
                                 </div>
 
-                                {stimuli.filter(s => !s.subjectId || s.subjectId === selectedSubjectForQuestions.id).length === 0 ? (
+                                {getMyStimuli().filter(s => !s.subjectId || s.subjectId === selectedSubjectForQuestions.id).length === 0 ? (
                                     <div className="text-center py-16 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
                                         <BookOpen size={48} className="mx-auto text-slate-300 mb-3" />
                                         <p className="text-lg font-bold text-slate-500">Belum Ada Stimulus</p>
@@ -5309,8 +5316,8 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                        {stimuli.filter(s => !s.subjectId || s.subjectId === selectedSubjectForQuestions.id).map((stim) => {
-                                            const linkedCount = questions.filter(q => q.stimulusId === stim.id).length;
+                                        {getMyStimuli().filter(s => !s.subjectId || s.subjectId === selectedSubjectForQuestions.id).map((stim) => {
+                                            const linkedCount = getMyQuestions().filter(q => q.stimulusId === stim.id).length;
                                             return (
                                                 <div key={stim.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
                                                     <div>
@@ -5581,7 +5588,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                             <div className="max-h-96 overflow-y-auto custom-scrollbar p-2 flex-1">
                                                                 {getMyStudents().filter(st => st.class === sub?.class).map(st => {
                                                                     const ls = liveStatus[st.id] || { status: 'Offline' };
-                                                                    const hasFinished = results.some(r => r.studentName === st.name && r.subject === sub?.name && r.token === exam.token);
+                                                                    const hasFinished = getMyResults().some(r => r.studentName === st.name && r.subject === sub?.name && r.token === exam.token);
                                                                     const displayStatus = hasFinished ? 'Selesai' : ls.status;
                                                                     return (
                                                                         <div key={st.id} className="flex justify-between items-center p-3 text-sm border-b border-slate-100 last:border-0 hover:bg-white transition-colors rounded-lg">
@@ -6374,62 +6381,18 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 shrink-0">
                                                 <BookOpen size={18} />
                                             </div>
-                                            <span className="text-xs">Mata Pelajaran</span>
+                                            <span className="text-xs">{role === 'admin' ? 'Mata Pelajaran' : 'Mapel Diampu'}</span>
                                         </button>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Evaluasi & Laporan</p>
-                                    <div className="grid grid-cols-2 gap-2.5">
-                                        {(role === 'admin' || role === 'guru') && (
-                                            <button
-                                                onClick={() => { setAdminMenu('token'); setMobileAdminDrawerOpen(false); }}
-                                                className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'token' ? 'bg-rose-50 border-rose-200 text-rose-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
-                                            >
-                                                <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-rose-600 shrink-0">
-                                                    <MonitorPlay size={18} />
-                                                </div>
-                                                <span className="text-xs">Pusat Ujian</span>
-                                            </button>
-                                        )}
 
                                         <button
-                                            onClick={() => { setAdminMenu('analysis'); setMobileAdminDrawerOpen(false); }}
-                                            className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'analysis' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
+                                            onClick={() => { setAdminMenu('documents'); setMobileAdminDrawerOpen(false); }}
+                                            className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'documents' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
                                         >
                                             <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 shrink-0">
-                                                <BarChart2 size={18} />
+                                                <ClipboardList size={18} />
                                             </div>
-                                            <span className="text-xs">Analisis Nilai</span>
+                                            <span className="text-xs">Administrasi</span>
                                         </button>
-
-                                        {role === 'admin' && currentUser?.isSuperAdmin && (
-                                            <button
-                                                onClick={() => { setAdminMenu('schools'); setMobileAdminDrawerOpen(false); }}
-                                                className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'schools' ? 'bg-indigo-600 border-indigo-600 text-white font-bold' : 'bg-indigo-50/70 border-indigo-200/80 text-indigo-900 font-bold hover:bg-indigo-100'}`}
-                                            >
-                                                <div className={`w-8 h-8 rounded-xl shadow-2xs flex items-center justify-center shrink-0 ${adminMenu === 'schools' ? 'bg-white text-indigo-600' : 'bg-indigo-600 text-white'}`}>
-                                                    <Building size={18} />
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs">Kelola Sekolah</span>
-                                                    <span className="text-[9px] opacity-80">{schools.length} Tenant</span>
-                                                </div>
-                                            </button>
-                                        )}
-
-                                        {(role === 'admin' || role === 'guru') && (
-                                            <button
-                                                onClick={() => { setAdminMenu('documents'); setMobileAdminDrawerOpen(false); }}
-                                                className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'documents' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
-                                            >
-                                                <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 shrink-0">
-                                                    <ClipboardList size={18} />
-                                                </div>
-                                                <span className="text-xs">Administrasi</span>
-                                            </button>
-                                        )}
 
                                         {role === 'admin' && (
                                             <button
@@ -7133,8 +7096,8 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                         {role === 'admin' ? (
                                             <div className="space-y-1.5">
                                                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Guru Pengampu Mata Pelajaran</label>
-                                                <select name="teacherId" defaultValue={editingItem?.teacherId || teachers[0]?.id} className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-indigo-400 font-semibold text-slate-700 text-sm">
-                                                    {teachers.map(t => <option key={t.id} value={t.id}>{t.name} ({t.teacherType === 'guru_mapel' ? `Mapel: ${t.subjectName || '-'}` : `Wali: ${t.assignedClass || '-'}`})</option>)}
+                                                <select name="teacherId" defaultValue={editingItem?.teacherId || getMyTeachers()[0]?.id} className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-indigo-400 font-semibold text-slate-700 text-sm">
+                                                    {getMyTeachers().map(t => <option key={t.id} value={t.id}>{t.name} ({t.teacherType === 'guru_mapel' ? `Mapel: ${t.subjectName || '-'}` : `Wali: ${t.assignedClass || '-'}`})</option>)}
                                                 </select>
                                             </div>
                                         ) : (
@@ -7205,7 +7168,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                             const checked = e.target.checked;
                                                             setQuestionUseStimulus(checked);
                                                             if (checked && !questionStimulusId) {
-                                                                const available = stimuli.filter(s => !s.subjectId || s.subjectId === (editingItem?.subjectId || selectedSubjectForQuestions?.id));
+                                                                const available = getMyStimuli().filter(s => !s.subjectId || s.subjectId === (editingItem?.subjectId || selectedSubjectForQuestions?.id));
                                                                 if (available.length > 0) {
                                                                     setQuestionStimulusId(String(available[0].id));
                                                                 }
@@ -7237,7 +7200,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                             className="w-full p-2.5 border border-indigo-200 rounded-xl bg-white font-semibold text-sm outline-none focus:border-indigo-500 text-slate-700 cursor-pointer shadow-2xs"
                                                         >
                                                             <option value="">-- Pilih Stimulus --</option>
-                                                            {stimuli.map(stim => (
+                                                            {getMyStimuli().map(stim => (
                                                                 <option key={stim.id} value={stim.id}>
                                                                     [{stim.type === 'text' ? 'Teks' : stim.type === 'table' ? 'Tabel' : stim.type === 'image' ? 'Gambar' : 'Gabungan'}] {stim.title}
                                                                 </option>
@@ -7247,7 +7210,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                                                     {/* Pratinjau Cepat Stimulus Terpilih */}
                                                     {(() => {
-                                                        const selectedStim = stimuli.find(s => String(s.id) === String(questionStimulusId));
+                                                        const selectedStim = getMyStimuli().find(s => String(s.id) === String(questionStimulusId));
                                                         if (!selectedStim) return null;
                                                         return (
                                                             <div className="p-3 bg-white/90 rounded-xl border border-indigo-100 text-xs">
@@ -7524,7 +7487,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             <p className="text-xs font-bold text-slate-500 uppercase mt-1">Mapel: <span className="text-indigo-600">{editingItem.subject}</span></p>
                                         </div>
                                         <div className="space-y-6">
-                                            {questions.filter(q => subjects.find(s => s.name === editingItem.subject)?.id === q.subjectId).map((q, i) => {
+                                            {getMyQuestions().filter(q => getMySubjects().find(s => s.name === editingItem.subject)?.id === q.subjectId).map((q, i) => {
                                                 const formatAnswer = (type, ans, options) => {
                                                     if (ans === undefined || ans === null || ans === '') return 'Tidak dijawab';
                                                     if (type === 'single') {
@@ -7644,7 +7607,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                         <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
                             <span className="text-xs text-slate-400">
-                                Digunakan pada <strong className="text-indigo-600 font-bold">{questions.filter(q => q.stimulusId === activeStimulusModal.id).length}</strong> butir soal
+                                Digunakan pada <strong className="text-indigo-600 font-bold">{getMyQuestions().filter(q => q.stimulusId === activeStimulusModal.id).length}</strong> butir soal
                             </span>
                             <button
                                 onClick={() => setActiveStimulusModal(null)}

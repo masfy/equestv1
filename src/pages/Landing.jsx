@@ -122,11 +122,11 @@ const ecosystemLogos = [
 ];
 
 const catchyHeadlines = [
-  "Redefining the Future of Digital Examination.",
-  "Satu Platform, Semua Kebutuhan Ujian.",
-  "Transformasi Ujian Sekolah ke Era Digital.",
-  "Ujian Modern dengan Teknologi yang Lebih Cerdas.",
-  "The Smarter Way to Test, Evaluate & Learn."
+  "Melangkah Lebih Jauh Menuju Era Asesmen Digital.",
+  "Rethinking the Way We Assess Education.",
+  "Ketika Teknologi dan Pendidikan Bertemu dalam Satu Inovasi.",
+  "Transformasi Asesmen Pendidikan dalam Satu Ekosistem Digital.",
+  "Smarter Exams. Smarter Evaluation. Smarter Education."
 ];
 
 export default function Landing({ onEnterApp }) {
@@ -329,10 +329,10 @@ export default function Landing({ onEnterApp }) {
             >
               <Sparkles size={14} className="text-indigo-600 animate-pulse" />
               <span className="text-[10.5px] sm:text-xs font-black tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-900">
-                NEXT GENERATION DIGITAL ASSESSMENT
+                e-Quest Enterprise
               </span>
               <span className="text-[9px] font-extrabold text-white bg-gradient-to-r from-indigo-600 to-purple-600 px-2 py-0.5 rounded-full shadow-2xs">
-                v3.0 NextGen
+                v3.2 NextGen
               </span>
             </motion.div>
 
@@ -368,7 +368,7 @@ export default function Landing({ onEnterApp }) {
                 transition={{ duration: 0.5, delay: 0.05 }}
                 className="inline-block"
               >
-                Ujian Digital Masa Depan,
+                Wujudkan Asesmen Cerdas
               </motion.span>{' '}
               <br className="hidden sm:inline" />
               <motion.span
@@ -377,24 +377,27 @@ export default function Landing({ onEnterApp }) {
                 transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
                 className="inline-block text-transparent bg-clip-text bg-[linear-gradient(90deg,#4f46e5,#7c3aed,#ec4899,#4f46e5)] bg-[length:200%_auto] animate-gradient-x drop-shadow-xs"
               >
-                Lebih Cerdas dan Terintegrasi.
+                untuk Pendidikan yang Lebih Berkualitas.
               </motion.span>
             </motion.h1>
           </div>
 
-          {/* 3. DESKRIPSI SINGKAT E-QUEST */}
+          {/* 3. DESKRIPSI RESMI E-QUEST */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-xs sm:text-sm md:text-base text-slate-600 max-w-3xl mx-auto leading-relaxed mb-7 sm:mb-8 font-normal px-2"
+            className="text-xs sm:text-sm md:text-base text-slate-600 max-w-3xl mx-auto leading-relaxed mb-7 sm:mb-8 font-normal px-2 space-y-2.5"
           >
             <p>
-              Hadirkan pengalaman asesmen pendidikan yang modern melalui <strong className="text-slate-900 font-bold">e-Quest</strong> (Electronic Question, Evaluation & Examination System). Platform ujian berbasis Computer Based Test (CBT) yang mengintegrasikan teknologi AI untuk pembuatan soal, penyusunan stimulus literasi dan numerasi, pelaksanaan ujian, hingga evaluasi hasil belajar secara otomatis.
+              Masa depan evaluasi pendidikan dimulai dari sini. <strong className="text-slate-900 font-bold">e-Quest</strong> menghadirkan ekosistem ujian digital terintegrasi yang memadukan kecerdasan buatan (AI) dan teknologi Computer Based Test (CBT) untuk menciptakan, mengelola, dan mengevaluasi asesmen secara lebih efektif, efisien, dan inovatif.
+            </p>
+            <p className="text-slate-500">
+              Dari penyusunan soal berbasis AI hingga analisis hasil ujian, seluruh proses terhubung dalam satu platform untuk menghadirkan pengalaman asesmen yang lebih cerdas dan bermakna.
             </p>
           </motion.div>
 
-          {/* 4. CTA (MASUK PORTAL, JELAJAHI FITUR, PASANG APLIKASI DI HP / LAPTOP AUTO PASANG) */}
+          {/* 4. CTA (MULAI SEKARANG, JELAJAHI FITUR, PASANG APLIKASI DI HP / LAPTOP AUTO PASANG) */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -406,7 +409,7 @@ export default function Landing({ onEnterApp }) {
               className="w-full sm:w-auto px-7 py-3.5 sm:px-8 sm:py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-slate-900/15 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-95"
             >
               <LogIn size={17} className="text-indigo-400" />
-              <span>Masuk ke Portal Ujian</span>
+              <span>Mulai Sekarang</span>
               <ArrowRight size={16} />
             </button>
 
@@ -425,50 +428,67 @@ export default function Landing({ onEnterApp }) {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-slate-500 mb-8 sm:mb-10 px-3.5 py-1 rounded-full bg-slate-100/70 border border-slate-200/60"
+            transition={{ delay: 0.25 }}
+            className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-slate-600 mb-8 sm:mb-10 px-4 py-1.5 rounded-full bg-slate-100/80 border border-slate-200/80 shadow-2xs"
           >
-            <CheckCircle size={14} className="text-emerald-500" />
-            <span>Satu Platform untuk Seluruh Kebutuhan Asesmen Digital.</span>
+            <Sparkles size={14} className="text-indigo-600" />
+            <span className="font-bold text-slate-700">Smarter Assessment.</span>
+            <span className="text-slate-400">•</span>
+            <span className="font-bold text-indigo-700">Better Education.</span>
+            <span className="text-slate-400">•</span>
+            <span className="font-bold text-purple-700">Brighter Future.</span>
           </motion.div>
 
-          {/* 6. FITUR UNGGULAN: AI, CBT, AUTO SCORING, TKA */}
+          {/* 6. TIGA KEUNGGULAN SINGKAT (3 PILAR UTAMA) */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto mb-10 sm:mb-14 text-left"
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4 max-w-4xl mx-auto mb-10 sm:mb-14 text-left"
           >
-            <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-sm hover:border-indigo-300 transition-all group">
-              <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform shadow-2xs">
-                <Brain size={18} />
+            <div className="bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl p-4 shadow-2xs hover:shadow-sm hover:border-purple-300 transition-all flex items-start gap-3.5 group">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-2xs">
+                <Brain size={20} />
               </div>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">AI-Powered Question Generator</h4>
-              <p className="text-[11px] text-slate-500 mt-1 leading-snug">Generasi soal LOTS/HOTS & stimulus otomatis</p>
+              <div>
+                <h4 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <span>AI-Powered</span>
+                  <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200/60">Cerdas</span>
+                </h4>
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 leading-snug">
+                  Pembuatan soal lebih cerdas dengan dukungan AI.
+                </p>
+              </div>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-sm hover:border-indigo-300 transition-all group">
-              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform shadow-2xs">
-                <MonitorPlay size={18} />
+            <div className="bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl p-4 shadow-2xs hover:shadow-sm hover:border-indigo-300 transition-all flex items-start gap-3.5 group">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-2xs">
+                <MonitorPlay size={20} />
               </div>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">Smart Exam & Digital CBT</h4>
-              <p className="text-[11px] text-slate-500 mt-1 leading-snug">Ujian responsif, fullscreen & anti-curang</p>
+              <div>
+                <h4 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <span>Seamless Examination</span>
+                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/60">Praktis</span>
+                </h4>
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 leading-snug">
+                  Pengalaman ujian digital yang praktis dan interaktif.
+                </p>
+              </div>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-sm hover:border-indigo-300 transition-all group">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform shadow-2xs">
-                <CheckCircle size={18} />
+            <div className="bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl p-4 shadow-2xs hover:shadow-sm hover:border-emerald-300 transition-all flex items-start gap-3.5 group">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-2xs">
+                <CheckCircle size={20} />
               </div>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">Automatic Scoring & Evaluation</h4>
-              <p className="text-[11px] text-slate-500 mt-1 leading-snug">Hasil nilai detik itu juga & rekap cetak</p>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-sm hover:border-indigo-300 transition-all group">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform shadow-2xs">
-                <Target size={18} />
+              <div>
+                <h4 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <span>Automated Evaluation</span>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">Efisien</span>
+                </h4>
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-1 leading-snug">
+                  Penilaian dan evaluasi hasil ujian lebih efisien.
+                </p>
               </div>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">TKA-Based Literacy & Numeracy</h4>
-              <p className="text-[11px] text-slate-500 mt-1 leading-snug">Standar Tes Kemampuan Akademik nasional</p>
             </div>
           </motion.div>
 
@@ -704,7 +724,10 @@ export default function Landing({ onEnterApp }) {
       </section>
 
       {/* BENTO GRID: KEUNGGULAN EKOSISTEM (JAVAPIXA + APPLE CLEAN) */}
-      <section id="features" className="relative z-10 py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto">
+      <section id="features" className="relative z-10 py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto overflow-hidden">
+        {/* Subtle Alternating Grid Background */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f080_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f080_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none -z-10" />
+
         <div className="text-center mb-12 sm:mb-16">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200/80 text-[11px] font-bold text-indigo-700 uppercase tracking-wider mb-3">
             <Sparkle size={13} />
@@ -819,7 +842,10 @@ export default function Landing({ onEnterApp }) {
       </section>
 
       {/* QUESTION FORMATS (STANDAR TKA) */}
-      <section id="formats" className="relative z-10 py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto">
+      <section id="formats" className="relative z-10 py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto overflow-hidden">
+        {/* Subtle Alternating Grid Background */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f080_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f080_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none -z-10" />
+
         <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-12">
           <div className="max-w-2xl">
             <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2 block">Format Soal Variatif</span>
