@@ -310,49 +310,76 @@ export default function Landing({ onEnterApp }) {
         )}
       </AnimatePresence>
 
-      {/* HERO SECTION DENGAN TEKS BERANIMASI & UKURAN PROPORSIONAL */}
-      <section id="hero" className="relative z-10 pt-28 pb-14 sm:pt-36 sm:pb-18 md:pt-42 md:pb-20 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto text-center">
+      {/* HERO SECTION DENGAN BACKGROUND GRID, TEKS BERANIMASI KEKINIAN & UKURAN PROPORSIONAL */}
+      <section id="hero" className="relative z-10 pt-28 pb-14 sm:pt-36 sm:pb-18 md:pt-42 md:pb-20 px-4 sm:px-6 overflow-hidden">
+        {/* BACKGROUND GARIS KOTAK-KOTAK (GRID PATTERN) TEKNOLOGI MODERN */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#cbd5e135_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e135_1px,transparent_1px)] bg-[size:36px_36px] [mask-image:radial-gradient(ellipse_80%_65%_at_50%_35%,#000_65%,transparent_100%)]" />
+        </div>
 
-          {/* 1. BADGE KECIL: NEXT GENERATION DIGITAL ASSESSMENT */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/90 backdrop-blur-md border border-indigo-200/80 shadow-[0_2px_12px_rgba(79,70,229,0.08)] mb-5 sm:mb-6"
-          >
-            <Sparkles size={14} className="text-indigo-600 animate-pulse" />
-            <span className="text-[11px] sm:text-xs font-black tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-900">
-              NEXT GENERATION DIGITAL ASSESSMENT
-            </span>
-            <span className="text-[9px] font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">v2.5</span>
-          </motion.div>
+        <div className="max-w-5xl mx-auto text-center relative z-10">
 
-          {/* 2. HEADLINE RESMI & ALTERNATIF CATCHY */}
-          <div className="mb-4 sm:mb-5">
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-[1.18] sm:leading-[1.14] mb-3 sm:mb-4">
-              Ujian Digital Masa Depan, <br className="hidden sm:inline" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600">
-                Lebih Cerdas dan Terintegrasi.
+          {/* 1. BADGE & ANIMASI TAGLINE DI BAGIAN ATAS (VERSI TERBARU) */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 mb-5 sm:mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-indigo-200/80 shadow-[0_2px_14px_rgba(79,70,229,0.08)]"
+            >
+              <Sparkles size={14} className="text-indigo-600 animate-pulse" />
+              <span className="text-[10.5px] sm:text-xs font-black tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-900">
+                NEXT GENERATION DIGITAL ASSESSMENT
               </span>
-            </h1>
+              <span className="text-[9px] font-extrabold text-white bg-gradient-to-r from-indigo-600 to-purple-600 px-2 py-0.5 rounded-full shadow-2xs">
+                v3.0 NextGen
+              </span>
+            </motion.div>
 
-            {/* Alternatif Headline Catchy (Animasi Bergantian) */}
+            {/* ANIMASI TAGLINE BERGANTIAN (DI ATAS) */}
             <div className="h-7 sm:h-8 flex items-center justify-center">
               <AnimatePresence mode="wait">
-                <motion.p
+                <motion.div
                   key={wordIndex}
-                  initial={{ opacity: 0, y: 8, filter: "blur(2px)" }}
+                  initial={{ opacity: 0, y: 6, filter: "blur(3px)" }}
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  exit={{ opacity: 0, y: -8, filter: "blur(2px)" }}
+                  exit={{ opacity: 0, y: -6, filter: "blur(3px)" }}
                   transition={{ duration: 0.35, ease: "easeOut" }}
-                  className="text-[11px] sm:text-xs md:text-sm font-bold text-indigo-700/90 tracking-wide inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-50/90 border border-indigo-200/80 shadow-2xs"
+                  className="text-[11px] sm:text-xs font-bold text-indigo-700/95 tracking-wide inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-50/90 border border-indigo-200/80 shadow-2xs"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-ping" />
                   <span>{catchyHeadlines[wordIndex]}</span>
-                </motion.p>
+                </motion.div>
               </AnimatePresence>
             </div>
+          </div>
+
+          {/* 2. HEADLINE RESMI DENGAN ANIMASI KEKINIAN */}
+          <div className="mb-4 sm:mb-6">
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-[1.18] sm:leading-[1.14] mb-3 sm:mb-4"
+            >
+              <motion.span
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.05 }}
+                className="inline-block"
+              >
+                Ujian Digital Masa Depan,
+              </motion.span>{' '}
+              <br className="hidden sm:inline" />
+              <motion.span
+                initial={{ opacity: 0, scale: 0.96, filter: "blur(6px)" }}
+                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+                className="inline-block text-transparent bg-clip-text bg-[linear-gradient(90deg,#4f46e5,#7c3aed,#ec4899,#4f46e5)] bg-[length:200%_auto] animate-gradient-x drop-shadow-xs"
+              >
+                Lebih Cerdas dan Terintegrasi.
+              </motion.span>
+            </motion.h1>
           </div>
 
           {/* 3. DESKRIPSI SINGKAT E-QUEST */}

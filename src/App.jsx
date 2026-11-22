@@ -678,6 +678,13 @@ export default function App({ defaultLogin = 'student', onBack }) {
 
     const [teacherSearch, setTeacherSearch] = useState('');
     const [teacherTypeFilter, setTeacherTypeFilter] = useState('all');
+    const [teacherSchoolFilter, setTeacherSchoolFilter] = useState('current'); // 'current' | 'all' | schoolId
+
+    const getSchoolName = (sId) => {
+        const list = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
+        const found = list.find(s => s && s.id === (sId || 'sdn2palapi'));
+        return found?.name || 'SD Negeri 2 Palapi';
+    };
     const [classSearch, setClassSearch] = useState('');
     const [classLevelFilter, setClassLevelFilter] = useState('all');
     const [studentFilterClass, setStudentFilterClass] = useState('');
@@ -1077,13 +1084,14 @@ export default function App({ defaultLogin = 'student', onBack }) {
         }
         if (type === 'teacher') {
             const tType = item?.teacherType || (item?.subjectName ? 'guru_mapel' : 'guru_kelas');
+            const mySchoolClasses = getMyClasses();
             setTeacherFormType(tType);
-            setTeacherAssignedClass(item?.assignedClass || item?.assignedClasses?.[0] || classes[0]?.name || '');
+            setTeacherAssignedClass(item?.assignedClass || item?.assignedClasses?.[0] || mySchoolClasses[0]?.name || '');
             setTeacherSubjectName(item?.subjectName || '');
             setTeacherSelectedClasses(
                 Array.isArray(item?.assignedClasses) && item.assignedClasses.length > 0
                     ? item.assignedClasses
-                    : (item?.assignedClass ? [item.assignedClass] : (classes[0]?.name ? [classes[0].name] : []))
+                    : (item?.assignedClass ? [item.assignedClass] : (mySchoolClasses[0]?.name ? [mySchoolClasses[0].name] : []))
             );
         }
         if (type === 'subject') {
@@ -1198,6 +1206,12 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const getMyTeachers = () => {
         const sId = getActiveSchoolId();
         const listTeachers = Array.isArray(teachers) ? teachers : [];
+        if (role === 'admin' && currentUser?.isSuperAdmin) {
+            if (teacherSchoolFilter === 'all') return listTeachers;
+            if (teacherSchoolFilter && teacherSchoolFilter !== 'current') {
+                return listTeachers.filter(t => (t.schoolId || 'sdn2palapi') === teacherSchoolFilter);
+            }
+        }
         return listTeachers.filter(t => (t.schoolId || 'sdn2palapi') === sId);
     };
 
@@ -1630,6 +1644,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
             }
 
             const currentSchoolId = getActiveSchoolId();
+            const chosenSchoolId = d.schoolId || (editingItem ? (editingItem.schoolId || currentSchoolId) : currentSchoolId) || 'sdn2palapi';
             const lockedUsername = editingItem ? (editingItem.username || d.username || '').trim() : (d.username || '').trim();
             const teacherRecord = {
                 name: (d.name || '').trim(),
@@ -1639,7 +1654,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 assignedClass,
                 assignedClasses,
                 subjectName,
-                schoolId: editingItem?.schoolId || currentSchoolId,
+                schoolId: chosenSchoolId,
                 apiKey: (d.apiKey !== undefined ? d.apiKey : (editingItem?.apiKey || '')).trim()
             };
 
@@ -4133,10 +4148,14 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                             {/* Header */}
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-5">
                                 <div>
-                                    <div className="flex items-center gap-2 mb-1">
+                                    <div className="flex flex-wrap items-center gap-2 mb-1">
                                         <h3 className="font-extrabold text-xl sm:text-2xl text-slate-900">Manajemen Akun Guru</h3>
                                         <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold px-2.5 py-0.5 rounded-full text-xs">
-                                            {teachers.length} Edukator
+                                            {filteredTeachersList.length} Edukator
+                                        </span>
+                                        <span className="text-[10px] sm:text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5">
+                                            <Building size={12} className="text-indigo-600" />
+                                            {currentUser?.isSuperAdmin && teacherSchoolFilter === 'all' ? 'Semua Unit Sekolah' : getActiveSchool().name}
                                         </span>
                                     </div>
                                     <p className="text-slate-500 font-medium text-xs">
@@ -4163,6 +4182,19 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                         className="w-full pl-10 pr-3 py-2 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-medium text-slate-700 outline-none focus:border-indigo-500 shadow-2xs"
                                     />
                                 </div>
+                                {currentUser?.isSuperAdmin && schools.length > 1 && (
+                                    <select
+                                        value={teacherSchoolFilter}
+                                        onChange={e => setTeacherSchoolFilter(e.target.value)}
+                                        className="p-2 bg-white rounded-xl border border-indigo-200 text-xs font-bold text-indigo-900 outline-none shadow-2xs"
+                                    >
+                                        <option value="current">Unit Aktif: {getActiveSchool().name}</option>
+                                        <option value="all">Semua Sekolah ({teachers.length} Guru)</option>
+                                        {schools.map(sc => (
+                                            <option key={sc.id} value={sc.id}>{sc.name}</option>
+                                        ))}
+                                    </select>
+                                )}
                                 <select
                                     value={teacherTypeFilter}
                                     onChange={e => setTeacherTypeFilter(e.target.value)}
@@ -4176,10 +4208,16 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
                             {/* Empty state */}
                             {filteredTeachersList.length === 0 ? (
-                                <div className="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                                <div className="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 p-4">
                                     <UserCog size={40} className="mx-auto text-slate-300 mb-2" />
-                                    <p className="text-base font-bold text-slate-500">Data guru tidak ditemukan</p>
-                                    <p className="text-xs text-slate-400 mt-1">Coba sesuaikan kata kunci pencarian atau ganti filter peran guru.</p>
+                                    <p className="text-base font-bold text-slate-700">
+                                        Belum ada akun guru di {currentUser?.isSuperAdmin && teacherSchoolFilter === 'all' ? 'semua sekolah' : getActiveSchool().name}
+                                    </p>
+                                    <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                                        {currentUser?.isSuperAdmin && teacherSchoolFilter === 'current'
+                                            ? 'Unit sekolah aktif saat ini belum memiliki akun guru. Anda dapat beralih ke "Semua Sekolah" pada filter di atas, atau klik "Tambah Guru Baru" untuk mendaftarkan akun di sekolah ini.'
+                                            : 'Klik tombol "Tambah Guru Baru" di atas untuk mendaftarkan akun wali kelas atau guru mata pelajaran.'}
+                                    </p>
                                 </div>
                             ) : (
                                 <>
@@ -4201,7 +4239,13 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                             </div>
                                                             <div>
                                                                 <h4 className="font-extrabold text-sm text-slate-900 leading-tight">{t.name}</h4>
-                                                                <span className="text-[10px] text-slate-400 font-mono">ID: #{t.id}</span>
+                                                                <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                                                    <span className="text-[10px] text-slate-400 font-mono">ID: #{t.id}</span>
+                                                                    <span className="text-[9.5px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded inline-flex items-center gap-1">
+                                                                        <Building size={9} className="text-indigo-600" />
+                                                                        {getSchoolName(t.schoolId)}
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         {isGuruKelas ? (
@@ -4306,7 +4350,13 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                                     </div>
                                                                     <div>
                                                                         <span className="block font-bold text-slate-900">{t.name}</span>
-                                                                        <span className="text-[10px] text-slate-400 font-mono">ID: #{t.id}</span>
+                                                                        <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                                                            <span className="text-[10px] text-slate-400 font-mono">ID: #{t.id}</span>
+                                                                            <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded inline-flex items-center gap-1">
+                                                                                <Building size={10} className="text-indigo-600" />
+                                                                                {getSchoolName(t.schoolId)}
+                                                                            </span>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </td>
@@ -6580,6 +6630,51 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                 {/* TEACHER FORM */}
                                 {modalType === 'teacher' && (
                                     <div className="space-y-5">
+                                        {/* PILIHAN SEKOLAH PENUGASAN GURU */}
+                                        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-1.5">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                                    <Building size={14} className="text-indigo-600" /> Unit Sekolah Penugasan
+                                                </label>
+                                                {currentUser?.isSuperAdmin ? (
+                                                    <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                                                        Hak Super Admin
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[9px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                                                        Terkunci Otomatis
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {currentUser?.isSuperAdmin ? (
+                                                <div>
+                                                    <select
+                                                        name="schoolId"
+                                                        defaultValue={editingItem?.schoolId || getActiveSchoolId()}
+                                                        className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-indigo-400 shadow-2xs cursor-pointer"
+                                                    >
+                                                        {schools.map(sc => (
+                                                            <option key={sc.id} value={sc.id}>
+                                                                {sc.name} ({sc.referralCode || sc.id})
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <p className="text-[10.5px] text-slate-400 mt-1 font-medium">
+                                                        Pilih sekolah tempat guru ini mengajar agar data guru, soal, dan kelasnya otomatis terhubung ke unit tersebut.
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
+                                                    <span className="font-bold text-xs text-slate-800 flex items-center gap-2">
+                                                        <School size={15} className="text-indigo-600" />
+                                                        {getActiveSchool().name}
+                                                    </span>
+                                                    <input type="hidden" name="schoolId" value={getActiveSchoolId()} />
+                                                    <span className="text-[10px] text-slate-400 font-semibold">Terkunci ke Sekolah Anda</span>
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Nama Lengkap & Gelar</label>
                                             <input name="name" defaultValue={editingItem?.name} placeholder="Contoh: Budi Santoso, S.Pd" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-indigo-400 font-semibold text-slate-800 text-sm" required />
