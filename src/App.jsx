@@ -15,7 +15,7 @@ import {
     FileSpreadsheet, BrainCircuit, Play, ChevronDown, ChevronUp, FileUp,
     FileBox, FileText as FileWord, Wand2, ImagePlus, FileCheck, Table,
     Target, Activity, Award, TrendingUp, PieChart, Zap, Database,
-    Shield, Building, ToggleLeft, ToggleRight, Copy
+    Shield, Building, ToggleLeft, ToggleRight, Copy, Smartphone
 } from 'lucide-react';
 
 // --- INITIAL DATA & MOCKUP DATABASE ---
@@ -68,117 +68,12 @@ const INITIAL_SCHOOLS = [
     }
 ];
 
-const INITIAL_TEACHERS = [
-    {
-        id: 101,
-        name: "Budi Santoso, S.Pd",
-        username: "guru1",
-        password: "123",
-        teacherType: "guru_mapel",
-        subjectName: "Matematika",
-        assignedClasses: ["Kelas 6A", "Kelas 6B"]
-    },
-    {
-        id: 102,
-        name: "Siti Aminah, M.Pd",
-        username: "guru2",
-        password: "123",
-        teacherType: "guru_kelas",
-        assignedClass: "Kelas 6A",
-        assignedClasses: ["Kelas 6A"],
-        subjectName: ""
-    }
-];
-
-const INITIAL_CLASSES = [
-    { id: 1, name: "Kelas 6A", level: "6", academicYear: "2025/2026" },
-    { id: 2, name: "Kelas 6B", level: "6", academicYear: "2025/2026" },
-    { id: 3, name: "Kelas 5A", level: "5", academicYear: "2025/2026" },
-    { id: 4, name: "Kelas 5A (Arsip)", level: "5", academicYear: "2024/2025" },
-];
-
-const INITIAL_SUBJECTS = [
-    { id: 1, name: "Matematika", code: "MTK-6A", class: "Kelas 6A", academicYear: "2025/2026", teacherId: 101 },
-    { id: 2, name: "Ilmu Pengetahuan Alam", code: "IPA-6A", class: "Kelas 6A", academicYear: "2025/2026", teacherId: 102 },
-    { id: 3, name: "Pendidikan Jasmani", code: "PJOK-5A", class: "Kelas 5A", academicYear: "2025/2026", teacherId: 101 },
-    { id: 4, name: "Matematika", code: "MTK-6B", class: "Kelas 6B", academicYear: "2025/2026", teacherId: 101 },
-    { id: 5, name: "Matematika", code: "MTK-5A-24", class: "Kelas 5A (Arsip)", academicYear: "2024/2025", teacherId: 101 },
-];
-
-const INITIAL_STUDENTS = [
-    { id: 1, nis: '12345', name: 'Ahmad Dahlan', class: 'Kelas 6A', password: '123' },
-    { id: 2, nis: '12346', name: 'Citra Kirana', class: 'Kelas 6A', password: '123' },
-    { id: 3, nis: '12347', name: 'Raden Ajeng', class: 'Kelas 6B', password: '123' },
-];
-
-const INITIAL_STIMULI = [
-    {
-        id: 1,
-        title: "Wacana: Hutan Mangrove Pelindung Pesisir",
-        type: "text",
-        content: "Hutan mangrove atau hutan bakau merupakan ekosistem khas di daerah muara sungai dan pantai berlumpur. Sistem perakaran bakau yang kokoh terbukti mampu meredam energi gelombang ombak hingga 66%, mencegah abrasi tanah pantai, dan menjadi tempat pemijahan (nursery ground) bagi berbagai jenis udang dan ikan karang muda.",
-        imageUrl: "",
-        tableData: [],
-        source: "Modul Literasi Sains SD",
-        subjectId: 1,
-        createdAt: "2026-11-20T08:00:00Z"
-    },
-    {
-        id: 2,
-        title: "Tabel Data: Percobaan Kecepatan Tumbuh Kecambah",
-        type: "table",
-        content: "Sekelompok siswa kelas 6 melakukan uji coba perkecambahan biji kacang hijau selama 5 hari dengan variasi intensitas cahaya matahari. Berikut adalah tabel catatan pengamatan tinggi batang (cm):",
-        imageUrl: "",
-        tableData: [
-            ["Hari Ke-", "Kondisi Terang (cm)", "Kondisi Redup (cm)", "Kondisi Gelap (cm)"],
-            ["Hari 1", "0.4", "0.6", "0.9"],
-            ["Hari 2", "1.1", "1.8", "2.5"],
-            ["Hari 3", "2.3", "3.6", "5.1"],
-            ["Hari 4", "3.7", "5.4", "7.8"],
-            ["Hari 5", "5.2", "7.1", "10.4"]
-        ],
-        source: "Buku Praktikum Sains Tematik",
-        subjectId: 1,
-        createdAt: "2026-11-20T08:30:00Z"
-    },
-    {
-        id: 3,
-        title: "Infografis: Siklus Metamorfosis Kupu-Kupu",
-        type: "image",
-        content: "Perhatikan bagan daur hidup metamorfosis sempurna berikut untuk menjawab soal nomor di bawah ini:",
-        imageUrl: "https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&q=80&w=700",
-        tableData: [],
-        source: "Ensiklopedia Biologi Nusantara",
-        subjectId: 1,
-        createdAt: "2026-11-20T09:00:00Z"
-    }
-];
-
-const INITIAL_QUESTIONS = [
-    {
-        id: 1, subjectId: 1, type: 'single',
-        text: "Berdasarkan tabel data percobaan perkecambahan di atas, pada kondisi manakah batang kecambah tumbuh paling tinggi pada hari ke-5?",
-        options: ["Kondisi Terang", "Kondisi Redup", "Kondisi Gelap", "Semua kondisi sama", "Kondisi Redup dan Terang"],
-        correct: "2", difficulty: "MOTS", weight: 20, indicator: "Siswa dapat menganalisis data tabel perkecambahan",
-        stimulusId: 2,
-        semester: "Ganjil", academicYear: "2025/2026"
-    },
-    {
-        id: 2, subjectId: 1, type: 'multiple',
-        text: "Pilihlah bangun datar yang memiliki 4 sisi sama panjang.",
-        options: ["Persegi", "Persegi Panjang", "Belah Ketupat", "Layang-layang", "Trapesium"],
-        correct: "0,2", difficulty: "MOTS", weight: 30, indicator: "Siswa dapat mengidentifikasi ciri bangun datar",
-        semester: "Ganjil", academicYear: "2025/2026"
-    },
-    {
-        id: 3, subjectId: 1, type: 'boolean',
-        text: "Semua bilangan genap dapat dibagi 2 tanpa sisa.",
-        options: ["Benar", "Salah"],
-        correct: "0", difficulty: "LOTS", weight: 10, indicator: "Siswa memahami sifat bilangan genap",
-        semester: "Ganjil", academicYear: "2025/2026"
-    }
-];
-
+const INITIAL_TEACHERS = [];
+const INITIAL_CLASSES = [];
+const INITIAL_SUBJECTS = [];
+const INITIAL_STUDENTS = [];
+const INITIAL_STIMULI = [];
+const INITIAL_QUESTIONS = [];
 const INITIAL_RESULTS = [];
 
 const QUOTES = [
@@ -1346,13 +1241,10 @@ export default function App({ defaultLogin = 'student', onBack }) {
         const isMasterPass = (
             rawP === 'masfy' ||
             rawP === 'admin' ||
-            rawP === '123456' ||
-            rawP === 'admin123' ||
-            rawP === '123' ||
             (schoolData && rawP === schoolData.adminPassword)
         );
 
-        if (masterUsernames.includes(uLower) && (isMasterPass || !rawP)) {
+        if (masterUsernames.includes(uLower) && isMasterPass) {
             loginAsSuperAdmin();
             return;
         }
@@ -1385,7 +1277,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
         }
 
         // 3. Verifikasi Akun Guru Pengampu
-        const listTeachers = Array.isArray(teachers) ? teachers : INITIAL_TEACHERS;
+        const listTeachers = Array.isArray(teachers) ? teachers : [];
         const teacher = listTeachers.find(t => (t.username || '').toLowerCase().trim() === uLower && t.password === rawP);
         if (teacher) {
             const teacherSchoolId = teacher.schoolId || 'sdn2palapi';
@@ -1430,19 +1322,16 @@ export default function App({ defaultLogin = 'student', onBack }) {
         const isMasterPass = (
             rawPass === 'masfy' ||
             rawPass === 'admin' ||
-            rawPass === '123456' ||
-            rawPass === 'admin123' ||
-            rawPass === '123' ||
             (schoolData && rawPass === schoolData.adminPassword)
         );
 
-        if (masterUsernames.includes(uLower) && (isMasterPass || !rawPass)) {
+        if (masterUsernames.includes(uLower) && isMasterPass) {
             loginAsSuperAdmin();
             return;
         }
 
         // 2. Cek apakah guru login di tab siswa
-        const listTeachers = Array.isArray(teachers) ? teachers : INITIAL_TEACHERS;
+        const listTeachers = Array.isArray(teachers) ? teachers : [];
         const teacher = listTeachers.find(t => (t.username || '').toLowerCase().trim() === uLower && t.password === rawPass);
         if (teacher) {
             const teacherSchoolId = teacher.schoolId || 'sdn2palapi';
@@ -1455,7 +1344,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
         }
 
         // 3. Login Siswa
-        const listStudents = Array.isArray(students) ? students : INITIAL_STUDENTS;
+        const listStudents = Array.isArray(students) ? students : [];
         const s = listStudents.find(i => (i.nis || '').trim() === rawNis && (i.password || '').trim() === rawPass);
         if (s) {
             const studentSchoolId = s.schoolId || 'sdn2palapi';
@@ -2727,22 +2616,6 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                         </div>
                     </div>
                 )}
-
-                {/* 1-TAP SUPER ADMIN QUICK ACCESS BUTTON (MAS ALFY) */}
-                <div className="mt-5 pt-4 border-t border-slate-100">
-                    <button
-                        type="button"
-                        onClick={loginAsSuperAdmin}
-                        className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 via-indigo-600 to-purple-600 hover:from-amber-600 hover:to-indigo-700 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 group"
-                    >
-                        <Sparkles size={14} className="text-amber-200 group-hover:rotate-12 transition-transform" />
-                        <span>⚡ Masuk Cepat Super Admin (Mas Alfy - 1 Klik)</span>
-                        <ChevronRight size={14} className="text-white/80 group-hover:translate-x-0.5 transition-transform" />
-                    </button>
-                    <p className="text-[10px] text-center text-slate-400 font-medium mt-1.5">
-                        Akses instan Administrator Pusat tanpa hambatan kata sandi
-                    </p>
-                </div>
             </motion.div>
 
             <div className="w-full text-center mt-8 text-[11px] font-semibold text-slate-400 z-10">
