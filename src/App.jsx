@@ -238,9 +238,9 @@ const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey, aiMod
                 ];
             } else if (type === 'Data Murid') {
                 data = [
-                    ["Nama Lengkap", "Kelas", "NIS", "Password"],
-                    ["Budi Santoso", "Kelas 6A", "1001", "123"],
-                    ["Siti Aminah", "Kelas 6A", "1002", "123"]
+                    ["Nama Lengkap", "Kelas", "NISN", "Password"],
+                    ["Budi Santoso", "Kelas 6A", "0012345678", "123"],
+                    ["Siti Aminah", "Kelas 6A", "0012345679", "123"]
                 ];
             } else if (type === 'Data Kelas') {
                 data = [
@@ -429,45 +429,111 @@ const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey, aiMod
 const PrintLayout = ({ type, data, schoolData, onBack }) => {
     const formatDate = (ds) => ds ? new Date(ds).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "-";
     const getDayName = (ds) => ds ? new Date(ds).toLocaleDateString('id-ID', { weekday: 'long' }) : "-";
+    const activeLogo = schoolData?.schoolLogo || '';
+    const kabRaw = (schoolData?.kabupaten || '').trim();
+    const pemdaHeader = kabRaw
+        ? (kabRaw.toUpperCase().startsWith('KABUPATEN') || kabRaw.toUpperCase().startsWith('KOTA') || kabRaw.toUpperCase().startsWith('PEMERINTAH')
+            ? (kabRaw.toUpperCase().startsWith('PEMERINTAH') ? kabRaw.toUpperCase() : `PEMERINTAH ${kabRaw.toUpperCase()}`)
+            : `PEMERINTAH KABUPATEN ${kabRaw.toUpperCase()}`)
+        : '';
+    const tempatTtd = kabRaw ? kabRaw.replace(/^kabupaten\s+/i, '').replace(/^kota\s+/i, '').trim() : 'Tempat';
+    const tahunAjaranText = schoolData?.academicYear
+        ? `${schoolData.academicYear} (Semester ${schoolData.semester || 'Ganjil'})`
+        : '2026/2027 (Semester Ganjil)';
+
+    const formatKeyLabel = (q) => {
+        if (!q) return '-';
+        if (q.type === 'single') {
+            const idx = Number(q.correct);
+            return !isNaN(idx) ? String.fromCharCode(65 + idx) : String(q.correct || '-');
+        }
+        if (q.type === 'multiple') {
+            return String(q.correct || '')
+                .split(',')
+                .filter(x => x !== '')
+                .map(x => (!isNaN(Number(x)) ? String.fromCharCode(65 + Number(x)) : x))
+                .join(', ') || '-';
+        }
+        if (q.type === 'boolean') {
+            return String(q.correct) === '0' ? 'Benar' : 'Salah';
+        }
+        return String(q.correct || '-').slice(0, 40);
+    };
+
+    const findStudentNisn = (studentName, studentId) => {
+        const list = Array.isArray(data?.students) ? data.students : [];
+        const found = list.find(st => (studentId && st.id === studentId) || st.name === studentName);
+        return found?.nisn || found?.nis || '-';
+    };
 
     return (
-        <div className="min-h-screen bg-white text-black p-8 font-serif max-w-5xl mx-auto print:p-0 print:max-w-full z-[1000] relative">
-            <div className="mb-8 flex justify-between items-center print:hidden bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <button onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold text-sm"><ArrowLeft size={16} /> Kembali</button>
-                <button onClick={() => window.print()} className="bg-indigo-600 text-white px-5 py-2 rounded-lg flex items-center gap-2 font-semibold text-sm hover:bg-indigo-700 shadow-sm"><Printer size={16} /> Cetak Dokumen</button>
+        <div className="min-h-screen bg-white text-black p-6 sm:p-8 font-serif max-w-5xl mx-auto print:p-0 print:max-w-full z-[1000] relative">
+            <div className="mb-8 flex flex-wrap justify-between items-center gap-3 print:hidden bg-slate-50 p-4 rounded-xl border border-slate-200 font-sans">
+                <div className="flex items-center gap-3">
+                    <button onClick={onBack} className="flex items-center gap-2 text-slate-700 hover:text-slate-900 bg-white px-3.5 py-2 rounded-lg border border-slate-200 font-semibold text-sm cursor-pointer shadow-2xs">
+                        <ArrowLeft size={16} /> Kembali
+                    </button>
+                    <span className="text-xs font-bold text-slate-500 hidden sm:inline">
+                        Pratinjau Cetak: <strong className="text-indigo-700">{schoolData?.name}</strong>
+                    </span>
+                </div>
+                <button onClick={() => window.print()} className="bg-indigo-600 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 font-bold text-sm hover:bg-indigo-700 shadow-sm cursor-pointer">
+                    <Printer size={16} /> Cetak / Simpan PDF
+                </button>
             </div>
 
-            <div className="border-b-[3px] border-black pb-4 mb-6 flex items-center gap-6">
-                {(schoolData.schoolLogo || schoolData.logo) ? (
-                    <img src={schoolData.schoolLogo || schoolData.logo} alt="Logo Sekolah" className="w-20 h-20 object-contain" />
+            {/* KOP SURAT RESMI SEKOLAH (MURNI SESUAI SEKOLAH MASING-MASING) */}
+            <div className="border-b-[3px] border-double border-black pb-4 mb-6 flex items-center gap-5">
+                {activeLogo ? (
+                    <img src={activeLogo} alt={`Logo ${schoolData?.name}`} className="w-20 h-20 object-contain shrink-0" />
                 ) : (
-                    <div className="w-20 h-20 border border-slate-300 rounded flex items-center justify-center text-xs font-bold text-slate-400">LOGO</div>
+                    <div className="w-20 h-20 border border-dashed border-slate-300 rounded flex items-center justify-center text-[10px] font-bold text-slate-400 text-center p-1 print:hidden shrink-0">
+                        Belum Ada Logo
+                    </div>
                 )}
-                <div className="text-center flex-1">
-                    <h1 className="text-xl font-bold uppercase tracking-wider mb-1">{schoolData.dinasPendidikan || "PEMERINTAH DAERAH SETEMPAT"}</h1>
-                    <h2 className="text-2xl font-bold uppercase mb-1">{schoolData.name}</h2>
-                    <p className="text-sm">{schoolData.address} {schoolData.kabupaten ? `- ${schoolData.kabupaten}` : ''}</p>
+                <div className={`text-center flex-1 ${activeLogo ? 'pr-4 sm:pr-14' : ''}`}>
+                    {pemdaHeader && <h1 className="text-base font-bold uppercase tracking-wider leading-snug">{pemdaHeader}</h1>}
+                    <h2 className="text-lg font-bold uppercase tracking-wider leading-snug">{schoolData?.dinasPendidikan || "DINAS PENDIDIKAN DAN KEBUDAYAAN"}</h2>
+                    <h3 className="text-2xl font-black uppercase tracking-wide mt-0.5 leading-tight">{schoolData?.name || "SATUAN PENDIDIKAN"}</h3>
+                    {schoolData?.npsn && <p className="text-xs font-bold mt-0.5">NPSN: {schoolData.npsn}</p>}
+                    {schoolData?.address && <p className="text-xs mt-0.5 leading-relaxed">{schoolData.address}</p>}
                 </div>
             </div>
 
             {type === 'kartu_login' && (
-                <div className="grid grid-cols-2 gap-6 print:grid-cols-2">
-                    {data.students.map(s => (
-                        <div key={s.id} className="border-2 border-black rounded-lg p-4 relative">
-                            <div className="text-center border-b-2 border-black pb-2 mb-3">
-                                <h3 className="font-bold uppercase text-sm">{schoolData.name}</h3>
-                                <p className="text-xs font-bold bg-black text-white py-1 mt-1 uppercase">{data.printForm?.activityName || 'KARTU LOGIN UJIAN'}</p>
-                            </div>
-                            <table className="w-full text-xs font-bold">
-                                <tbody>
-                                    <tr><td className="py-1 w-24">Nama Peserta</td><td>: {s.name}</td></tr>
-                                    <tr><td className="py-1">Kelas</td><td>: {s.class}</td></tr>
-                                    <tr><td className="py-1">Username (NIS)</td><td>: <span className="font-black text-sm">{s.nis}</span></td></tr>
-                                    <tr><td className="py-1">Password</td><td>: <span className="font-black text-sm">{s.password}</span></td></tr>
-                                </tbody>
-                            </table>
+                <div>
+                    {(!data.students || data.students.length === 0) ? (
+                        <div className="border border-black p-8 text-center text-sm font-bold">
+                            Belum ada data murid pada kelas yang dipilih ({data.class || '-'}). Silakan tambahkan murid terlebih dahulu di menu Data Murid.
                         </div>
-                    ))}
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 print:grid-cols-2">
+                            {data.students.map(s => (
+                                <div key={s.id} className="border-2 border-black rounded-lg p-4 relative print-avoid-break">
+                                    <div className="flex items-center gap-2.5 border-b-2 border-black pb-2 mb-3">
+                                        {activeLogo && (
+                                            <img src={activeLogo} alt="Logo" className="w-10 h-10 object-contain shrink-0" />
+                                        )}
+                                        <div className="text-center flex-1">
+                                            <h3 className="font-bold uppercase text-xs leading-tight">{schoolData?.name}</h3>
+                                            <p className="text-[10px] font-semibold">TP {schoolData?.academicYear || '2026/2027'} • Semester {schoolData?.semester || 'Ganjil'}</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-[11px] font-bold bg-black text-white text-center py-1 mb-2.5 uppercase tracking-wide">
+                                        {data.printForm?.activityName || 'KARTU PESERTA UJIAN CBT'}
+                                    </p>
+                                    <table className="w-full text-xs font-bold">
+                                        <tbody>
+                                            <tr><td className="py-1 w-28">Nama Peserta</td><td>: {s.name}</td></tr>
+                                            <tr><td className="py-1">Kelas</td><td>: {s.class}</td></tr>
+                                            <tr><td className="py-1">Username (NISN)</td><td>: <span className="font-black text-sm font-mono">{s.nisn || s.nis}</span></td></tr>
+                                            <tr><td className="py-1">Password</td><td>: <span className="font-black text-sm font-mono">{s.password}</span></td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -475,24 +541,49 @@ const PrintLayout = ({ type, data, schoolData, onBack }) => {
                 <div>
                     <h3 className="text-center text-lg font-bold underline mb-6 uppercase">KISI-KISI & BLUEPRINT SOAL TES KEMAMPUAN AKADEMIK (TKA)</h3>
                     <div className="grid grid-cols-2 gap-4 mb-6 text-sm font-medium">
-                        <div><p><span className="inline-block w-32">Mata Pelajaran</span>: {data.subjectName}</p><p><span className="inline-block w-32">Kelas</span>: {data.class}</p></div>
-                        <div><p><span className="inline-block w-32">Guru Pengampu</span>: {data.teacherName || schoolData.adminName}</p><p><span className="inline-block w-32">Tahun Ajaran</span>: {schoolData.academicYear ? `${schoolData.academicYear} (Semester ${schoolData.semester || 'Ganjil'})` : (schoolData.term || '2025/2026')}</p></div>
+                        <div>
+                            <p><span className="inline-block w-32">Satuan Pendidikan</span>: {schoolData?.name}</p>
+                            <p><span className="inline-block w-32">Mata Pelajaran</span>: {data.subjectName}</p>
+                            <p><span className="inline-block w-32">Kelas</span>: {data.class}</p>
+                        </div>
+                        <div>
+                            <p><span className="inline-block w-32">Guru Pengampu</span>: {data.teacherName || schoolData?.adminName || '-'}</p>
+                            <p><span className="inline-block w-32">Tahun Pelajaran</span>: {tahunAjaranText}</p>
+                            <p><span className="inline-block w-32">Jumlah Soal</span>: {(data.questions || []).length} Butir</p>
+                        </div>
                     </div>
-                    <table className="w-full border-collapse border border-black text-sm text-left">
-                        <thead><tr className="bg-slate-100"><th className="border border-black p-2 text-center w-10">No</th><th className="border border-black p-2">Indikator Soal</th><th className="border border-black p-2 text-center w-24">Level Kognitif</th><th className="border border-black p-2 text-center w-24">Bentuk Soal</th><th className="border border-black p-2 text-center w-16">Bobot</th><th className="border border-black p-2 text-center w-16">Kunci</th></tr></thead>
+                    <table className="w-full border-collapse border border-black text-sm text-left mb-10">
+                        <thead><tr className="bg-slate-100"><th className="border border-black p-2 text-center w-10">No</th><th className="border border-black p-2">Indikator / Pokok Materi Soal</th><th className="border border-black p-2 text-center w-24">Level Kognitif</th><th className="border border-black p-2 text-center w-24">Bentuk Soal</th><th className="border border-black p-2 text-center w-16">Bobot</th><th className="border border-black p-2 text-center w-24">Kunci</th></tr></thead>
                         <tbody>
-                            {data.questions.map((q, i) => (
-                                <tr key={q.id}>
+                            {(data.questions || []).length > 0 ? data.questions.map((q, i) => (
+                                <tr key={q.id || i} className="print-avoid-break">
                                     <td className="border border-black p-2 text-center">{i + 1}</td>
-                                    <td className="border border-black p-2">{q.indicator || "-"}</td>
+                                    <td className="border border-black p-2">{q.indicator || (q.text ? String(q.text).slice(0, 90) : "-")}</td>
                                     <td className="border border-black p-2 text-center font-bold">{q.difficulty || "MOTS"}</td>
-                                    <td className="border border-black p-2 text-center uppercase">{q.type}</td>
+                                    <td className="border border-black p-2 text-center uppercase text-xs font-semibold">{q.type}</td>
                                     <td className="border border-black p-2 text-center">{q.weight || 10}</td>
-                                    <td className="border border-black p-2 text-center font-bold text-indigo-600">{q.type === 'single' && !isNaN(q.correct) ? String.fromCharCode(65 + Number(q.correct)) : "Simulasi"}</td>
+                                    <td className="border border-black p-2 text-center font-bold">{formatKeyLabel(q)}</td>
                                 </tr>
-                            ))}
+                            )) : (
+                                <tr><td colSpan="6" className="border border-black p-4 text-center">Belum ada butir soal untuk mata pelajaran ini.</td></tr>
+                            )}
                         </tbody>
                     </table>
+                    <div className="grid grid-cols-2 gap-8 text-center mt-10 print-avoid-break">
+                        <div>
+                            <p>Mengetahui,</p>
+                            <p>Kepala {schoolData?.name}</p>
+                            <div className="h-20"></div>
+                            <p className="font-bold underline">{schoolData?.kepsekName || '.......................................'}</p>
+                            <p>NIP. {schoolData?.kepsekNip || '-'}</p>
+                        </div>
+                        <div>
+                            <p>{tempatTtd}, {formatDate(data.date || new Date().toISOString())}</p>
+                            <p>Guru Pengampu</p>
+                            <div className="h-20"></div>
+                            <p className="font-bold underline">{data.teacherName || schoolData?.adminName || '.......................................'}</p>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -500,20 +591,30 @@ const PrintLayout = ({ type, data, schoolData, onBack }) => {
                 <div>
                     <h3 className="text-center text-lg font-bold underline mb-6 uppercase">DAFTAR HADIR PESERTA UJIAN</h3>
                     <div className="grid grid-cols-2 gap-4 mb-6 text-sm font-medium">
-                        <div><p><span className="inline-block w-32">Mata Pelajaran</span>: {data.subjectName}</p><p><span className="inline-block w-32">Kelas</span>: {data.class}</p><p><span className="inline-block w-32">Kegiatan</span>: {data.printForm?.activityName || 'Ujian'}</p></div>
-                        <div><p><span className="inline-block w-32">Hari / Tanggal</span>: {getDayName(data.date)}, {formatDate(data.date)}</p><p><span className="inline-block w-32">Pengawas</span>: {data.printForm?.pengawas || '................................'}</p></div>
+                        <div>
+                            <p><span className="inline-block w-32">Kegiatan</span>: {data.printForm?.activityName || 'Ujian Berbasis Komputer'}</p>
+                            <p><span className="inline-block w-32">Mata Pelajaran</span>: {data.subjectName}</p>
+                            <p><span className="inline-block w-32">Kelas</span>: {data.class}</p>
+                        </div>
+                        <div>
+                            <p><span className="inline-block w-32">Hari / Tanggal</span>: {getDayName(data.date)}, {formatDate(data.date)}</p>
+                            <p><span className="inline-block w-32">Tahun Pelajaran</span>: {tahunAjaranText}</p>
+                            <p><span className="inline-block w-32">Pengawas Ruang</span>: {data.printForm?.pengawas || '................................'}</p>
+                        </div>
                     </div>
                     <table className="w-full border-collapse border border-black text-sm mb-10">
-                        <thead><tr className="bg-slate-100"><th className="border border-black p-2 w-12">NO</th><th className="border border-black p-2 w-32">NIS</th><th className="border border-black p-2">NAMA PESERTA</th><th className="border border-black p-2 w-48">TANDA TANGAN</th><th className="border border-black p-2 w-24">KET</th></tr></thead>
+                        <thead><tr className="bg-slate-100"><th className="border border-black p-2 w-12 text-center">NO</th><th className="border border-black p-2 w-36 text-center">NISN</th><th className="border border-black p-2">NAMA PESERTA</th><th className="border border-black p-2 w-48 text-center">TANDA TANGAN</th><th className="border border-black p-2 w-24 text-center">KET</th></tr></thead>
                         <tbody>
-                            {data.students.map((s, idx) => (
-                                <tr key={s.id}><td className="border border-black p-3 text-center">{idx + 1}</td><td className="border border-black p-3 text-center">{s.nis}</td><td className="border border-black p-3 font-bold">{s.name}</td><td className="border border-black p-3"><div className={`text-xs text-slate-500 ${idx % 2 === 0 ? 'text-left pl-2' : 'text-center pl-8'}`}>{idx + 1}. ...........</div></td><td className="border border-black p-3"></td></tr>
-                            ))}
+                            {(data.students || []).length > 0 ? data.students.map((s, idx) => (
+                                <tr key={s.id} className="print-avoid-break"><td className="border border-black p-2.5 text-center">{idx + 1}</td><td className="border border-black p-2.5 text-center font-mono">{s.nisn || s.nis}</td><td className="border border-black p-2.5 font-bold">{s.name}</td><td className="border border-black p-2.5"><div className={`text-xs text-slate-600 ${idx % 2 === 0 ? 'text-left pl-2' : 'text-center pl-8'}`}>{idx + 1}. ..............</div></td><td className="border border-black p-2.5"></td></tr>
+                            )) : (
+                                <tr><td colSpan="5" className="border border-black p-4 text-center">Belum ada peserta terdaftar di kelas {data.class}.</td></tr>
+                            )}
                         </tbody>
                     </table>
-                    <div className="grid grid-cols-2 gap-8 text-center mt-12">
-                        <div><p>Mengetahui,</p><p>Kepala Sekolah</p><div className="h-24"></div><p className="font-bold underline">{schoolData.kepsekName || schoolData.adminName || 'Kepala Sekolah'}</p><p>NIP. {schoolData.kepsekNip || '-'}</p></div>
-                        <div><p>&nbsp;</p><p>Pengawas Ujian</p><div className="h-24"></div><p className="font-bold underline">{data.printForm?.pengawas || "......................................."}</p><p>NIP. .......................................</p></div>
+                    <div className="grid grid-cols-2 gap-8 text-center mt-12 print-avoid-break">
+                        <div><p>Mengetahui,</p><p>Kepala {schoolData?.name}</p><div className="h-20"></div><p className="font-bold underline">{schoolData?.kepsekName || '.......................................'}</p><p>NIP. {schoolData?.kepsekNip || '-'}</p></div>
+                        <div><p>{tempatTtd}, {formatDate(data.date)}</p><p>Pengawas Ujian</p><div className="h-20"></div><p className="font-bold underline">{data.printForm?.pengawas || "......................................."}</p><p>NIP. .......................................</p></div>
                     </div>
                 </div>
             )}
@@ -521,49 +622,84 @@ const PrintLayout = ({ type, data, schoolData, onBack }) => {
             {type === 'report' && (
                 <div className="leading-relaxed text-justify">
                     <h3 className="text-center text-lg font-bold underline mb-8 uppercase">BERITA ACARA PELAKSANAAN UJIAN</h3>
-                    <p className="mb-6">Pada hari ini <strong>{getDayName(data.date)}</strong> tanggal <strong>{formatDate(data.date)}</strong>, telah dilaksanakan {data.printForm?.activityName || 'Ujian'} Tahun Pelajaran {schoolData.academicYear ? `${schoolData.academicYear} Semester ${schoolData.semester || 'Ganjil'}` : (schoolData.term || '2025/2026')} di {schoolData.name}.</p>
-                    <table className="w-full mb-8" style={{ border: 'none' }}><tbody><tr><td className="w-48 py-1">Mata Pelajaran</td><td className="py-1">: <strong>{data.subjectName}</strong></td></tr><tr><td className="w-48 py-1">Kelas / Ruang</td><td className="py-1">: <strong>{data.class}</strong></td></tr><tr><td className="w-48 py-1">Waktu Pelaksanaan</td><td className="py-1">: {data.printForm?.waktuMulai || '07:30'} s.d {data.printForm?.waktuSelesai || '09:30'} WIB</td></tr><tr><td className="w-48 py-1">Jumlah Seharusnya</td><td className="py-1">: {data.printForm?.seharusnya || data.students.length} Orang</td></tr><tr><td className="w-48 py-1">Hadir</td><td className="py-1">: {data.printForm?.hadir || '........'} Orang</td></tr><tr><td className="w-48 py-1">Tidak Hadir</td><td className="py-1">: {data.printForm?.tidakHadir || '........'} Orang</td></tr><tr><td className="w-48 py-1 align-top">Catatan Pelaksanaan</td><td className="py-1">: {data.printForm?.catatan || '-'}</td></tr></tbody></table>
-                    <div className="grid grid-cols-2 gap-8 text-center mt-12">
-                        <div><p>Mengetahui,</p><p>Kepala Sekolah</p><div className="h-24"></div><p className="font-bold underline">{schoolData.kepsekName || schoolData.adminName || 'Kepala Sekolah'}</p><p>NIP. {schoolData.kepsekNip || '-'}</p></div>
-                        <div><p>&nbsp;</p><p>Pengawas Ujian</p><div className="h-24"></div><p className="font-bold underline">{data.printForm?.pengawas || "......................................."}</p><p>NIP. .......................................</p></div>
+                    <p className="mb-6">Pada hari ini <strong>{getDayName(data.date)}</strong> tanggal <strong>{formatDate(data.date)}</strong>, telah dilaksanakan <strong>{data.printForm?.activityName || 'Ujian Sekolah Berbasis Komputer'}</strong> Tahun Pelajaran <strong>{schoolData?.academicYear || '2026/2027'}</strong> Semester <strong>{schoolData?.semester || 'Ganjil'}</strong> bertempat di <strong>{schoolData?.name}</strong>, dengan rincian sebagai berikut:</p>
+                    <table className="w-full mb-8" style={{ border: 'none' }}>
+                        <tbody>
+                            <tr><td className="w-52 py-1.5">Satuan Pendidikan</td><td className="py-1.5">: <strong>{schoolData?.name}</strong></td></tr>
+                            <tr><td className="w-52 py-1.5">Mata Pelajaran</td><td className="py-1.5">: <strong>{data.subjectName}</strong></td></tr>
+                            <tr><td className="w-52 py-1.5">Kelas / Ruang</td><td className="py-1.5">: <strong>{data.class}</strong></td></tr>
+                            <tr><td className="w-52 py-1.5">Waktu Pelaksanaan</td><td className="py-1.5">: Pukul {data.printForm?.waktuMulai || '07:30'} s.d. {data.printForm?.waktuSelesai || '09:30'}</td></tr>
+                            <tr><td className="w-52 py-1.5">Jumlah Peserta Seharusnya</td><td className="py-1.5">: {data.printForm?.seharusnya !== '' && data.printForm?.seharusnya !== undefined ? data.printForm.seharusnya : (data.students?.length || 0)} Orang</td></tr>
+                            <tr><td className="w-52 py-1.5">Jumlah Peserta Hadir</td><td className="py-1.5">: {data.printForm?.hadir !== '' && data.printForm?.hadir !== undefined ? data.printForm.hadir : '........'} Orang</td></tr>
+                            <tr><td className="w-52 py-1.5">Jumlah Peserta Tidak Hadir</td><td className="py-1.5">: {data.printForm?.tidakHadir !== '' && data.printForm?.tidakHadir !== undefined ? data.printForm.tidakHadir : '........'} Orang</td></tr>
+                            <tr><td className="w-52 py-1.5 align-top">Catatan Selama Pelaksanaan</td><td className="py-1.5">: {data.printForm?.catatan || 'Pelaksanaan ujian berjalan dengan tertib dan lancar.'}</td></tr>
+                        </tbody>
+                    </table>
+                    <p className="mb-8">Demikian Berita Acara Pelaksanaan Ujian ini dibuat dengan sesungguhnya untuk dapat dipergunakan sebagaimana mestinya.</p>
+                    <div className="grid grid-cols-2 gap-8 text-center mt-10 print-avoid-break">
+                        <div><p>Mengetahui,</p><p>Kepala {schoolData?.name}</p><div className="h-20"></div><p className="font-bold underline">{schoolData?.kepsekName || '.......................................'}</p><p>NIP. {schoolData?.kepsekNip || '-'}</p></div>
+                        <div><p>{tempatTtd}, {formatDate(data.date)}</p><p>Pengawas Ujian</p><div className="h-20"></div><p className="font-bold underline">{data.printForm?.pengawas || "......................................."}</p><p>NIP. .......................................</p></div>
                     </div>
                 </div>
             )}
             {type === 'results' && (
                 <div>
-                    <h3 className="text-center text-lg font-bold underline mb-6 uppercase">LAPORAN HASIL UJIAN</h3>
+                    <h3 className="text-center text-lg font-bold underline mb-6 uppercase">DAFTAR REKAPITULASI NILAI HASIL UJIAN</h3>
                     <div className="grid grid-cols-2 gap-4 mb-6 text-sm font-medium">
-                        <div><p><span className="inline-block w-32">Mata Pelajaran</span>: {data.subjectName}</p><p><span className="inline-block w-32">Kelas</span>: {data.className}</p></div>
-                        <div><p><span className="inline-block w-32">Tanggal Cetak</span>: {formatDate(data.date)}</p><p><span className="inline-block w-32">Tahun Ajaran</span>: {schoolData.academicYear ? `${schoolData.academicYear} (Semester ${schoolData.semester || 'Ganjil'})` : (schoolData.term || '2025/2026')}</p></div>
+                        <div>
+                            <p><span className="inline-block w-32">Satuan Pendidikan</span>: {schoolData?.name}</p>
+                            <p><span className="inline-block w-32">Mata Pelajaran</span>: {data.subjectName}</p>
+                            <p><span className="inline-block w-32">Kelas</span>: {data.className}</p>
+                        </div>
+                        <div>
+                            <p><span className="inline-block w-32">Tahun Pelajaran</span>: {tahunAjaranText}</p>
+                            <p><span className="inline-block w-32">Tanggal Cetak</span>: {formatDate(data.date)}</p>
+                            <p><span className="inline-block w-32">Jumlah Peserta</span>: {(data.results || []).length} Siswa</p>
+                        </div>
                     </div>
                     <table className="w-full border-collapse border border-black text-sm text-left">
                         <thead>
                             <tr className="bg-slate-100">
                                 <th className="border border-black p-2 text-center w-12">Rank</th>
+                                <th className="border border-black p-2 text-center w-32">NISN</th>
                                 <th className="border border-black p-2">Nama Peserta</th>
                                 <th className="border border-black p-2 text-center">Kelas</th>
-                                <th className="border border-black p-2 text-center">Nilai Akhir</th>
-                                <th className="border border-black p-2 text-center">Status</th>
+                                <th className="border border-black p-2 text-center">Mata Pelajaran</th>
+                                <th className="border border-black p-2 text-center w-20">Nilai</th>
+                                <th className="border border-black p-2 text-center w-24">Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {data.results.map((r, i) => (
-                                <tr key={r.id}>
+                            {(data.results || []).map((r, i) => (
+                                <tr key={r.id || i} className="print-avoid-break">
                                     <td className="border border-black p-2 text-center font-bold">{i + 1}</td>
+                                    <td className="border border-black p-2 text-center font-mono">{r.nisn || r.nis || findStudentNisn(r.studentName, r.studentId)}</td>
                                     <td className="border border-black p-2 font-semibold">{r.studentName}</td>
                                     <td className="border border-black p-2 text-center">{r.class}</td>
-                                    <td className="border border-black p-2 text-center font-bold">{r.score.toFixed(0)}</td>
-                                    <td className="border border-black p-2 text-center font-bold">{r.score >= 75 ? 'LULUS' : 'REMEDIAL'}</td>
+                                    <td className="border border-black p-2 text-center">{r.subject}</td>
+                                    <td className="border border-black p-2 text-center font-bold">{Number(r.score || 0).toFixed(0)}</td>
+                                    <td className="border border-black p-2 text-center font-bold">{Number(r.score || 0) >= 75 ? 'LULUS' : 'REMEDIAL'}</td>
                                 </tr>
                             ))}
-                            {data.results.length === 0 && (
-                                <tr><td colSpan="5" className="border border-black p-4 text-center">Belum ada data nilai pada mata pelajaran ini.</td></tr>
+                            {(!data.results || data.results.length === 0) && (
+                                <tr><td colSpan="7" className="border border-black p-4 text-center">Belum ada data nilai ujian pada filter ini.</td></tr>
                             )}
                         </tbody>
                     </table>
-                    <div className="grid grid-cols-2 gap-8 text-center mt-12">
-                        <div></div>
-                        <div><p>{schoolData.kabupaten || 'Tempat'}, {formatDate(data.date)}</p><p>Guru / Pengampu</p><div className="h-24"></div><p className="font-bold underline">{data.teacherName || schoolData.adminName || '..........................'}</p></div>
+                    <div className="grid grid-cols-2 gap-8 text-center mt-12 print-avoid-break">
+                        <div>
+                            <p>Mengetahui,</p>
+                            <p>Kepala {schoolData?.name}</p>
+                            <div className="h-20"></div>
+                            <p className="font-bold underline">{schoolData?.kepsekName || '.......................................'}</p>
+                            <p>NIP. {schoolData?.kepsekNip || '-'}</p>
+                        </div>
+                        <div>
+                            <p>{tempatTtd}, {formatDate(data.date)}</p>
+                            <p>Guru / Pengampu</p>
+                            <div className="h-20"></div>
+                            <p className="font-bold underline">{data.teacherName || schoolData?.adminName || '.......................................'}</p>
+                        </div>
                     </div>
                 </div>
             )}
@@ -620,27 +756,43 @@ export default function App({ defaultLogin = 'student', onBack }) {
         const list = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
         const matched = list.find(s => s && s.id === sId);
         if (matched) {
+            const isMasterSchool = matched.id === 'sdn2palapi';
             return {
-                ...schoolData,
+                ...(isMasterSchool ? schoolData : {}),
                 ...matched,
-                name: matched.name || schoolData?.name || 'SD Negeri 2 Palapi',
-                schoolLogo: matched.schoolLogo || schoolData?.schoolLogo || '',
-                kepsekName: matched.kepsekName || schoolData?.kepsekName || '',
-                kepsekNip: matched.kepsekNip || schoolData?.kepsekNip || '',
-                semester: matched.semester || schoolData?.semester || 'Ganjil',
-                academicYear: matched.academicYear || schoolData?.academicYear || '2025/2026',
-                dinasPendidikan: matched.dinasPendidikan || schoolData?.dinasPendidikan || 'Dinas Pendidikan',
-                kabupaten: matched.kabupaten || schoolData?.kabupaten || '',
-                address: matched.address || schoolData?.address || ''
+                name: matched.name || (isMasterSchool ? schoolData?.name : '') || 'Satuan Pendidikan',
+                logo: EQUEST_LOGO,
+                schoolLogo: matched.schoolLogo || (isMasterSchool ? (schoolData?.schoolLogo || '') : ''),
+                kepsekName: matched.kepsekName ?? (isMasterSchool ? (schoolData?.kepsekName || '') : ''),
+                kepsekNip: matched.kepsekNip ?? (isMasterSchool ? (schoolData?.kepsekNip || '') : ''),
+                semester: matched.semester || (isMasterSchool ? schoolData?.semester : '') || 'Ganjil',
+                academicYear: matched.academicYear || (isMasterSchool ? schoolData?.academicYear : '') || '2026/2027',
+                dinasPendidikan: matched.dinasPendidikan ?? (isMasterSchool ? (schoolData?.dinasPendidikan || '') : 'Dinas Pendidikan dan Kebudayaan'),
+                kabupaten: matched.kabupaten ?? (isMasterSchool ? (schoolData?.kabupaten || '') : ''),
+                address: matched.address ?? (isMasterSchool ? (schoolData?.address || '') : ''),
+                npsn: matched.npsn ?? '',
+                adminName: matched.adminName ?? (isMasterSchool ? (schoolData?.adminName || '') : ''),
+                adminUsername: matched.adminUsername ?? (isMasterSchool ? (schoolData?.adminUsername || 'admin') : ''),
+                adminPassword: matched.adminPassword ?? (isMasterSchool ? (schoolData?.adminPassword || '') : ''),
+                apiKey: matched.apiKey ?? (isMasterSchool ? (schoolData?.apiKey || '') : ''),
+                aiModel: matched.aiModel || (isMasterSchool ? schoolData?.aiModel : '') || 'gemini-1.5-flash',
+                availableAiModels: matched.availableAiModels || (isMasterSchool ? schoolData?.availableAiModels : []) || [],
+                optionCount: Number(matched.optionCount || (isMasterSchool ? schoolData?.optionCount : 5)) || 5
             };
         }
-        return schoolData || INITIAL_SCHOOL_DATA;
+        const isMasterFallback = sId === 'sdn2palapi';
+        return {
+            ...INITIAL_SCHOOL_DATA,
+            ...(isMasterFallback ? schoolData : { name: 'Satuan Pendidikan', address: '', kabupaten: '', kepsekName: '', kepsekNip: '', apiKey: '' }),
+            logo: EQUEST_LOGO,
+            schoolLogo: isMasterFallback ? (schoolData?.schoolLogo || '') : ''
+        };
     };
 
     // Akses Semester & Tahun Pelajaran yang Aktif Berdasarkan Sekolah yang Dipilih
     const currentActiveSchool = getActiveSchool();
-    const activeSemester = currentActiveSchool.semester || (schoolData && schoolData.semester) || 'Ganjil';
-    const activeAcademicYear = currentActiveSchool.academicYear || (schoolData && schoolData.academicYear) || '2025/2026';
+    const activeSemester = currentActiveSchool.semester || 'Ganjil';
+    const activeAcademicYear = currentActiveSchool.academicYear || '2026/2027';
 
     // Model AI Generator & Filter Soal
     const [availableAiModels, setAvailableAiModels] = useState([]);
@@ -722,16 +874,16 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const [showTeacherKeyBox, setShowTeacherKeyBox] = useState(false);
     const [isVerifyingTeacherKey, setIsVerifyingTeacherKey] = useState(false);
 
-    // Dynamic Effective AI Key & Model
+    // Dynamic Effective AI Key & Model (Terisolasi per Sekolah / Guru)
     const effectiveApiKey = (role === 'guru' && currentUser?.apiKey?.trim())
         ? currentUser.apiKey.trim()
-        : (schoolData.apiKey?.trim() || '');
+        : (currentActiveSchool.apiKey?.trim() || '');
     const effectiveAiModel = (role === 'guru' && currentUser?.aiModel)
         ? currentUser.aiModel
-        : (schoolData.aiModel || 'gemini-1.5-flash');
+        : (currentActiveSchool.aiModel || 'gemini-1.5-flash');
     const effectiveAvailableModels = (role === 'guru' && currentUser?.availableAiModels?.length > 0)
         ? currentUser.availableAiModels
-        : (availableAiModels?.length > 0 ? availableAiModels : (schoolData.availableAiModels || []));
+        : (availableAiModels?.length > 0 ? availableAiModels : (currentActiveSchool.availableAiModels || []));
 
     const [printForm, setPrintForm] = useState({ class: '', subject: '', date: new Date().toISOString().split('T')[0], activityName: 'Ujian Sekolah Berbasis Komputer (CBT)', pengawas: '', waktuMulai: '07:30', waktuSelesai: '09:30', hadir: '', tidakHadir: '', seharusnya: '', catatan: '' });
     const [printData, setPrintData] = useState(null);
@@ -748,7 +900,9 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const [aiDrafts, setAiDrafts] = useState([]);
 
     const handleDetectAiModels = async (keyToTest, autoNotify = true) => {
-        const key = (keyToTest !== undefined ? keyToTest : schoolData.apiKey) || '';
+        const activeSId = getActiveSchoolId();
+        const curSc = getActiveSchool();
+        const key = (keyToTest !== undefined ? keyToTest : curSc.apiKey) || '';
         if (!key.trim()) {
             if (autoNotify) showToast("Masukkan API Key Gemini terlebih dahulu!", "error");
             setAiKeyStatus({ type: 'error', message: "API Key belum diisi." });
@@ -766,16 +920,23 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 });
                 if (autoNotify) showToast(`Berhasil mendeteksi ${res.models.length} model Google AI!`, "success");
 
-                const modelExists = res.models.some(m => m.id === schoolData.aiModel);
-                let chosen = schoolData.aiModel;
+                const modelExists = res.models.some(m => m.id === curSc.aiModel);
+                let chosen = curSc.aiModel;
                 if (!chosen || !modelExists) {
                     chosen = res.models[0].id;
                 }
-                setSchoolData(prev => {
-                    const next = { ...prev, apiKey: key.trim(), aiModel: chosen, availableAiModels: res.models };
-                    updateGlobalState({ schoolData: next });
+                setSchools(prev => {
+                    const next = prev.map(s => s.id === activeSId ? { ...s, apiKey: key.trim(), aiModel: chosen, availableAiModels: res.models } : s);
+                    updateGlobalState({ schools: next });
                     return next;
                 });
+                if (activeSId === 'sdn2palapi') {
+                    setSchoolData(prev => {
+                        const next = { ...prev, apiKey: key.trim(), aiModel: chosen, availableAiModels: res.models };
+                        updateGlobalState({ schoolData: next });
+                        return next;
+                    });
+                }
             } else {
                 setAiKeyStatus({
                     type: 'error',
@@ -1069,6 +1230,9 @@ export default function App({ defaultLogin = 'student', onBack }) {
 
     const openModal = (type, item = null) => {
         setModalType(type); setEditingItem(item);
+        if (type === 'school') {
+            setTempSchoolLogo(null);
+        }
         if (type === 'question') {
             setQuestionFormType(item?.type || 'single');
             setQuestionUseStimulus(Boolean(item?.stimulusId));
@@ -1291,15 +1455,19 @@ export default function App({ defaultLogin = 'student', onBack }) {
     };
 
     const loginAsSuperAdmin = () => {
+        const listSchools = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
+        const masterSchool = listSchools.find(s => s.isMaster || s.id === 'sdn2palapi') || listSchools[0];
         const adminUser = {
-            name: (schoolData && schoolData.adminName) || 'Administrator Pusat (Mas Alfy)',
+            name: masterSchool?.adminName || (schoolData && schoolData.adminName) || 'Masfy (Super Admin)',
             id: 0,
             isSuperAdmin: true,
-            schoolId: selectedSchoolId || 'sdn2palapi',
-            email: (schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com'
+            schoolId: selectedSchoolId || masterSchool?.id || 'sdn2palapi',
+            email: masterSchool?.adminEmail || (schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com'
         };
         setCurrentUser(adminUser);
         setSelectedSchoolId(adminUser.schoolId);
+        setTeacherSchoolFilter('current');
+        setTempSchoolLogo(null);
         setRole('admin');
         setAdminMenu('dashboard');
         showToast("Login Super Admin Berhasil! Selamat Datang Mas Alfy.");
@@ -1318,13 +1486,80 @@ export default function App({ defaultLogin = 'student', onBack }) {
 
         const listSchools = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
         const listTeachers = Array.isArray(teachers) ? teachers : [];
+        const masterSchool = listSchools.find(s => s.isMaster || s.id === 'sdn2palapi') || listSchools[0];
+        const superAdminTeacher = listTeachers.find(t =>
+            t.isSuperAdmin ||
+            (t.username || '').toLowerCase().trim() === 'alfy' ||
+            (t.name || '').toLowerCase().trim() === 'masfy'
+        );
 
-        // 1. Verifikasi Akun Guru Pengampu Terlebih Dahulu (Cek username, nama, atau email)
+        // 1. Verifikasi Super Admin Terlebih Dahulu (Akun Mas Alfy / Administrator Pusat)
+        const masterUsernames = [
+            'admin',
+            'alfy',
+            'masfy',
+            'alfyarnaim',
+            'alfyarnaim@gmail.com',
+            'administrator',
+            'superadmin',
+            ((schoolData && schoolData.adminUsername) || 'admin').toLowerCase().trim(),
+            ((schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com').toLowerCase().trim(),
+            ((masterSchool && masterSchool.adminUsername) || 'admin').toLowerCase().trim(),
+            ((masterSchool && masterSchool.adminEmail) || 'alfyarnaim@gmail.com').toLowerCase().trim()
+        ];
+        const isMasterPass = (
+            rawP === 'masfy' ||
+            rawP === 'admin' ||
+            rawP === '123' ||
+            rawP === '123456' ||
+            rawP === 'admin123' ||
+            (schoolData && String(schoolData.adminPassword || '').trim() === rawP) ||
+            (masterSchool && String(masterSchool.adminPassword || '').trim() === rawP) ||
+            (superAdminTeacher && String(superAdminTeacher.password || '').trim() === rawP)
+        );
+
+        if (masterUsernames.includes(uLower) && isMasterPass) {
+            loginAsSuperAdmin();
+            return;
+        }
+
+        // 2. Verifikasi Administrator Sekolah Multi-Tenant (Hanya akses sekolahnya masing-masing)
+        const matchedSchool = listSchools.find(s =>
+            !s.isMaster && s.id !== 'sdn2palapi' &&
+            (s.adminUsername?.toLowerCase().trim() === uLower ||
+             s.adminEmail?.toLowerCase().trim() === uLower) &&
+            String(s.adminPassword || '').trim() === rawP
+        );
+
+        if (matchedSchool) {
+            if (matchedSchool.status === 'suspended') {
+                showToast("Akun sekolah ini sedang dibekukan oleh Super Admin. Hubungi Mas Alfy untuk aktivasi.", "error");
+                return;
+            }
+            const schoolAdmin = {
+                name: matchedSchool.adminName || `Admin ${matchedSchool.name}`,
+                id: matchedSchool.id,
+                isSuperAdmin: false,
+                schoolId: matchedSchool.id,
+                email: matchedSchool.adminEmail || ''
+            };
+            setCurrentUser(schoolAdmin);
+            setSelectedSchoolId(matchedSchool.id);
+            setTeacherSchoolFilter('current');
+            setTempSchoolLogo(null);
+            setRole('admin');
+            setAdminMenu('dashboard');
+            showToast(`Login Berhasil! Selamat Datang di Panel ${matchedSchool.name}`);
+            return;
+        }
+
+        // 3. Verifikasi Akun Guru Pengampu (Cek username, nama, atau email)
         const matchedTeacher = listTeachers.find(t =>
+            !t.isSuperAdmin &&
             ((t.username || '').toLowerCase().trim() === uLower ||
              (t.name || '').toLowerCase().trim() === uLower ||
              (t.email || '').toLowerCase().trim() === uLower) &&
-            (String(t.password || '').trim() === rawP || (rawP === '123' && String(t.password || '').trim() === '123'))
+            String(t.password || '').trim() === rawP
         );
 
         if (matchedTeacher) {
@@ -1338,67 +1573,13 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 showToast("Akun guru ini dinonaktifkan oleh Administrator Sekolah.", "error");
                 return;
             }
-            setCurrentUser(matchedTeacher);
+            setCurrentUser({ ...matchedTeacher, isSuperAdmin: false });
             setSelectedSchoolId(teacherSchoolId);
+            setTeacherSchoolFilter('current');
+            setTempSchoolLogo(null);
             setRole('guru');
             setAdminMenu('dashboard');
             showToast(`Selamat Datang, ${matchedTeacher.name}!`);
-            return;
-        }
-
-        // 2. Verifikasi Super Admin (Mas Alfy / Administrator Pusat)
-        const masterUsernames = [
-            'admin',
-            'alfy',
-            'masfy',
-            'alfyarnaim',
-            'alfyarnaim@gmail.com',
-            'administrator',
-            'superadmin',
-            ((schoolData && schoolData.adminUsername) || 'admin').toLowerCase().trim(),
-            ((schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com').toLowerCase().trim(),
-            ((listSchools[0] && listSchools[0].adminUsername) || 'admin').toLowerCase().trim()
-        ];
-        const isMasterPass = (
-            rawP === 'masfy' ||
-            rawP === 'admin' ||
-            rawP === '123' ||
-            rawP === '123456' ||
-            rawP === 'admin123' ||
-            (schoolData && String(schoolData.adminPassword || '').trim() === rawP) ||
-            (listSchools[0] && String(listSchools[0].adminPassword || '').trim() === rawP)
-        );
-
-        if (masterUsernames.includes(uLower) && isMasterPass) {
-            loginAsSuperAdmin();
-            return;
-        }
-
-        // 3. Verifikasi Administrator Sekolah Multi-Tenant
-        const matchedSchool = listSchools.find(s =>
-            (s.adminUsername?.toLowerCase().trim() === uLower ||
-             s.adminEmail?.toLowerCase().trim() === uLower ||
-             (s.name && s.name.toLowerCase().trim() === uLower)) &&
-            (String(s.adminPassword || '').trim() === rawP || rawP === '123' || rawP === 'admin')
-        );
-
-        if (matchedSchool) {
-            if (matchedSchool.status === 'suspended') {
-                showToast("Akun sekolah ini sedang dibekukan oleh Super Admin. Hubungi Mas Alfy untuk aktivasi.", "error");
-                return;
-            }
-            const schoolAdmin = {
-                name: matchedSchool.adminName || `Admin ${matchedSchool.name}`,
-                id: matchedSchool.id,
-                isSuperAdmin: matchedSchool.id === 'sdn2palapi' && (rawP === 'masfy' || rawP === 'admin'),
-                schoolId: matchedSchool.id,
-                email: matchedSchool.adminEmail || ''
-            };
-            setCurrentUser(schoolAdmin);
-            setSelectedSchoolId(matchedSchool.id);
-            setRole('admin');
-            setAdminMenu('dashboard');
-            showToast(`Login Berhasil! Selamat Datang di Panel ${matchedSchool.name}`);
             return;
         }
 
@@ -1420,6 +1601,15 @@ export default function App({ defaultLogin = 'student', onBack }) {
         const rawPass = (e.target.password?.value || '').trim();
         const uLower = rawNis.toLowerCase();
 
+        const listSchools = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
+        const listTeachers = Array.isArray(teachers) ? teachers : [];
+        const masterSchool = listSchools.find(s => s.isMaster || s.id === 'sdn2palapi') || listSchools[0];
+        const superAdminTeacher = listTeachers.find(t =>
+            t.isSuperAdmin ||
+            (t.username || '').toLowerCase().trim() === 'alfy' ||
+            (t.name || '').toLowerCase().trim() === 'masfy'
+        );
+
         // 1. FAILSAFE SUPER ADMIN: Jika Mas Alfy memasukkan username admin di tab Portal Siswa
         const masterUsernames = [
             'admin',
@@ -1430,14 +1620,17 @@ export default function App({ defaultLogin = 'student', onBack }) {
             'administrator',
             'superadmin',
             ((schoolData && schoolData.adminUsername) || 'admin').toLowerCase().trim(),
-            ((schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com').toLowerCase().trim()
+            ((schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com').toLowerCase().trim(),
+            ((masterSchool && masterSchool.adminUsername) || 'admin').toLowerCase().trim()
         ];
         const isMasterPass = (
             rawPass === 'masfy' ||
             rawPass === 'admin' ||
             rawPass === '123' ||
             rawPass === '123456' ||
-            (schoolData && String(schoolData.adminPassword || '').trim() === rawPass)
+            (schoolData && String(schoolData.adminPassword || '').trim() === rawPass) ||
+            (masterSchool && String(masterSchool.adminPassword || '').trim() === rawPass) ||
+            (superAdminTeacher && String(superAdminTeacher.password || '').trim() === rawPass)
         );
 
         if (masterUsernames.includes(uLower) && isMasterPass) {
@@ -1446,28 +1639,29 @@ export default function App({ defaultLogin = 'student', onBack }) {
         }
 
         // 2. Cek apakah guru login di tab siswa
-        const listTeachers = Array.isArray(teachers) ? teachers : [];
         const teacher = listTeachers.find(t => 
+            !t.isSuperAdmin &&
             ((t.username || '').toLowerCase().trim() === uLower ||
              (t.name || '').toLowerCase().trim() === uLower) &&
-            (String(t.password || '').trim() === rawPass || rawPass === '123')
+            String(t.password || '').trim() === rawPass
         );
         if (teacher) {
             const teacherSchoolId = teacher.schoolId || 'sdn2palapi';
-            setCurrentUser(teacher);
+            setCurrentUser({ ...teacher, isSuperAdmin: false });
             setSelectedSchoolId(teacherSchoolId);
+            setTeacherSchoolFilter('current');
+            setTempSchoolLogo(null);
             setRole('guru');
             setAdminMenu('dashboard');
             showToast(`Selamat Datang, ${teacher.name}`);
             return;
         }
 
-        // 3. Login Siswa
+        // 3. Login Siswa (Berdasarkan NISN)
         const listStudents = Array.isArray(students) ? students : [];
-        const s = listStudents.find(i => (i.nis || '').trim() === rawNis && (i.password || '').trim() === rawPass);
+        const s = listStudents.find(i => ((i.nisn || i.nis || '').trim() === rawNis) && (i.password || '').trim() === rawPass);
         if (s) {
             const studentSchoolId = s.schoolId || 'sdn2palapi';
-            const listSchools = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
             const sSchool = listSchools.find(sc => sc.id === studentSchoolId);
             if (sSchool && sSchool.status !== 'active') {
                 showToast("Akses ujian sekolah Anda sedang dinonaktifkan oleh Administrator Pusat.", "error");
@@ -1479,7 +1673,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
             setStudentStep('token');
             showToast("Login Siswa Berhasil!");
         } else {
-            showToast("NIS atau Password salah! Periksa kembali input Anda.", "error");
+            showToast("NISN atau Password salah! Periksa kembali input Anda.", "error");
         }
     };
 
@@ -1716,10 +1910,11 @@ export default function App({ defaultLogin = 'student', onBack }) {
             setModalOpen(false);
         } else if (modalType === 'student') {
             const currentSchoolId = getActiveSchoolId();
-            const lockedNis = editingItem ? (editingItem.nis || d.nis || '').trim() : (d.nis || '').trim();
+            const lockedNis = editingItem ? (editingItem.nisn || editingItem.nis || d.nis || '').trim() : (d.nis || '').trim();
             const studentRecord = {
                 ...d,
                 nis: lockedNis,
+                nisn: lockedNis,
                 password: (d.password || editingItem?.password || '123').trim(),
                 schoolId: editingItem?.schoolId || currentSchoolId
             };
@@ -1748,7 +1943,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
             const sName = (d.name || '').trim();
             const sCode = ((d.code || sName.substring(0, 3)).toUpperCase()).trim();
             const sYear = (d.academicYear || subjectAcademicYear || activeAcademicYear).trim();
-            const targetTeacherId = parseInt(d.teacherId) || (role === 'guru' && currentUser?.id ? currentUser.id : (teachers[0]?.id || 101));
+            const targetTeacherId = parseInt(d.teacherId) || (role === 'guru' && currentUser?.id ? currentUser.id : (getMyTeachers()[0]?.id || 0));
 
             if (editingItem) {
                 setSubjects(p => {
@@ -1864,6 +2059,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
             showToast(`Stimulus "${newStimulus.title}" berhasil disimpan!`);
         } else if (modalType === 'school') {
             const schoolId = editingItem ? editingItem.id : ('school_' + Date.now());
+            const resolvedLogo = tempSchoolLogo !== null ? tempSchoolLogo : (editingItem?.schoolLogo || '');
             const schoolRecord = {
                 id: schoolId,
                 name: (d.name || '').trim(),
@@ -1880,8 +2076,9 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 adminPassword: (d.adminPassword || editingItem?.adminPassword || '123').trim(),
                 status: d.status || 'active',
                 semester: d.semester || 'Ganjil',
-                academicYear: d.academicYear || '2025/2026',
+                academicYear: d.academicYear || '2026/2027',
                 optionCount: parseInt(d.optionCount) || 5,
+                schoolLogo: resolvedLogo,
                 isMaster: editingItem?.isMaster || false,
                 createdAt: editingItem?.createdAt || new Date().toISOString()
             };
@@ -1892,6 +2089,14 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 updateGlobalState({ schools: next });
                 return next;
             });
+            if (schoolId === 'sdn2palapi') {
+                setSchoolData(prev => {
+                    const next = { ...prev, ...schoolRecord, logo: EQUEST_LOGO, schoolLogo: resolvedLogo };
+                    updateGlobalState({ schoolData: next });
+                    return next;
+                });
+            }
+            setTempSchoolLogo(null);
             showToast(`Data Sekolah "${schoolRecord.name}" Berhasil Disimpan!`);
             setModalOpen(false);
             setEditingItem(null);
@@ -2021,12 +2226,12 @@ export default function App({ defaultLogin = 'student', onBack }) {
         const chosenModel = effectiveAiModel || "gemini-1.5-flash";
         const targetSem = aiParams.semester || activeSemester;
         const targetYear = aiParams.academicYear || activeAcademicYear;
-        const subObj = subjects.find(s => s.id === parseInt(aiParams.subject));
+        const subObj = getMySubjects().find(s => s.id === parseInt(aiParams.subject));
 
         const promptText = `Anda adalah pembuat soal CBT profesional. Buatlah ${totalQ} butir soal ujian untuk mata pelajaran "${subObj?.name || 'Mata Pelajaran'}" (Kelas ${subObj?.class || ''}) pada Semester ${targetSem} Tahun Pelajaran ${targetYear} dengan topik: "${aiParams.topic}".
 ${aiParams.cptp ? `Capaian / Tujuan Pembelajaran: ${aiParams.cptp}` : ''}
 Ketentuan:
-- Opsi Pilihan Ganda (single / multiple): Maksimal ${schoolData.optionCount || 5} opsi.
+- Opsi Pilihan Ganda (single / multiple): Maksimal ${currentActiveSchool.optionCount || 5} opsi.
 - Jumlah Soal Pilihan Ganda (single): ${aiParams.counts.single}
 - Jumlah Soal PG Kompleks (multiple): ${aiParams.counts.multiple}
 - Jumlah Soal Benar/Salah (boolean): ${aiParams.counts.boolean}
@@ -2235,7 +2440,9 @@ Perhatian:
             if (!allowedClasses.includes(s.class)) return false;
         }
         const matchClass = studentFilterClass ? s.class === studentFilterClass : true;
-        const matchSearch = s.name.toLowerCase().includes(studentSearch.toLowerCase()) || (s.nis && s.nis.includes(studentSearch));
+        const sNisn = String(s.nisn || s.nis || '').toLowerCase();
+        const qLower = studentSearch.toLowerCase();
+        const matchSearch = s.name.toLowerCase().includes(qLower) || sNisn.includes(qLower);
         return matchClass && matchSearch;
     });
     const filteredResultsList = getMyResults().filter(res => {
@@ -2253,49 +2460,82 @@ Perhatian:
     };
 
     const handlePrintResults = () => {
-        if (!analysisFilterSubject) return showToast("Silakan filter berdasarkan Mata Pelajaran terlebih dahulu!", "error");
+        const activeSc = getActiveSchool();
+        const mySubjects = getMySubjects();
+        const matchedSub = analysisFilterSubject ? mySubjects.find(s => s.name === analysisFilterSubject) : null;
+        const teacherName = (role === 'guru' && currentUser?.name)
+            ? currentUser.name
+            : (matchedSub ? (getMyTeachers().find(t => t.id === matchedSub.teacherId)?.name || activeSc.adminName) : activeSc.adminName);
 
         setPrintData({
             type: 'results',
-            subjectName: analysisFilterSubject,
+            subjectName: analysisFilterSubject || 'Semua Mata Pelajaran',
             className: analysisFilterClass || 'Semua Kelas',
-            results: filteredResultsList.sort((a, b) => b.score - a.score),
+            results: [...filteredResultsList].sort((a, b) => Number(b.score || 0) - Number(a.score || 0)),
+            students: getMyStudents(),
+            teacherName: teacherName || 'Guru Pengampu',
             date: new Date().toISOString()
         });
     };
 
     const handlePrintExcel = () => {
-        const headers = ["Rank,Nama,Kelas,Mata Pelajaran,Waktu,Nilai,Status"];
-        const rows = filteredResultsList.sort((a, b) => b.score - a.score).map((res, idx) => {
-            const status = res.score >= 75 ? "LULUS" : "REMEDIAL";
-            return `${idx + 1},"${res.studentName}","${res.class}","${res.subject}",${res.submittedAt},${res.score},${status}`;
+        const activeSc = getActiveSchool();
+        const myStudentsList = getMyStudents();
+        const sorted = [...filteredResultsList].sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+        const escapeCsv = (val) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+        const metaRows = [
+            `${escapeCsv('SATUAN PENDIDIKAN')},${escapeCsv(activeSc.name)}`,
+            `${escapeCsv('TAHUN PELAJARAN')},${escapeCsv(`${activeSc.academicYear || activeAcademicYear} - Semester ${activeSc.semester || activeSemester}`)}`,
+            ""
+        ];
+        const headers = "Rank,NISN,Nama Peserta,Kelas,Mata Pelajaran,Waktu Selesai,Nilai,Status";
+        const rows = sorted.map((res, idx) => {
+            const stObj = myStudentsList.find(st => st.id === res.studentId || st.name === res.studentName);
+            const nisnVal = res.nisn || res.nis || stObj?.nisn || stObj?.nis || '-';
+            const status = Number(res.score || 0) >= 75 ? "LULUS" : "REMEDIAL";
+            return `${idx + 1},${escapeCsv(nisnVal)},${escapeCsv(res.studentName)},${escapeCsv(res.class)},${escapeCsv(res.subject)},${escapeCsv(res.submittedAt || '-')},${Number(res.score || 0).toFixed(0)},${status}`;
         });
-        const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", `Nilai_Ujian.csv`);
-        document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast("Data Excel Diunduh!");
+        const csvString = "\uFEFF" + [...metaRows, headers, ...rows].join("\n");
+        const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const safeSchool = (activeSc.name || 'Sekolah').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Rekap_Nilai_${safeSchool}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast(`Rekap nilai ${activeSc.name} berhasil diunduh!`);
     };
 
     const handleOpenPrintPreview = (type) => {
-        if (!printForm.class || !printForm.subject || !printForm.date) return showToast("Lengkapi form administrasi!", "error");
-        const sId = getActiveSchoolId();
+        if (!printForm.class) {
+            return showToast("Silakan pilih Kelas terlebih dahulu!", "error");
+        }
+        if (type !== 'kartu_login' && !printForm.date) {
+            return showToast("Silakan pilih Tanggal Pelaksanaan!", "error");
+        }
         const activeSc = getActiveSchool();
-        const myStudents = getMyStudents();
-        const classStudents = myStudents.filter(s => s.class === printForm.class);
+        const myStudentsList = getMyStudents();
+        const classStudents = printForm.class === 'ALL'
+            ? myStudentsList
+            : myStudentsList.filter(s => s.class === printForm.class);
         const mySubjects = getMySubjects();
-        const selectedSubjObj = mySubjects.find(s => String(s.id) === String(printForm.subject) || s.name === printForm.subject);
+        const selectedSubjObj = mySubjects.find(s => String(s.id) === String(printForm.subject) || (s.name === printForm.subject && (printForm.class === 'ALL' || s.class === printForm.class)))
+            || mySubjects.find(s => s.name === printForm.subject);
         const teacherName = (role === 'guru' && currentUser?.name)
             ? currentUser.name
             : (getMyTeachers().find(t => t.id === selectedSubjObj?.teacherId)?.name || activeSc.adminName || 'Pengampu');
 
         setPrintData({
             type,
-            class: printForm.class,
-            subjectName: selectedSubjObj?.name || printForm.subject || 'Mata Pelajaran',
-            date: printForm.date,
+            class: printForm.class === 'ALL' ? 'Semua Kelas' : printForm.class,
+            subjectName: selectedSubjObj?.name || printForm.subject || 'Semua Mata Pelajaran',
+            date: printForm.date || new Date().toISOString().split('T')[0],
             students: classStudents,
             teacherName: teacherName,
-            questions: getMyQuestions().filter(q => String(q.subjectId) === String(selectedSubjObj?.id || printForm.subject)),
+            questions: selectedSubjObj ? getMyQuestions().filter(q => String(q.subjectId) === String(selectedSubjObj.id)) : [],
             printForm: printForm
         });
     };
@@ -2327,13 +2567,14 @@ Perhatian:
         e.preventDefault();
         const d = Object.fromEntries(new FormData(e.target).entries());
         const curSc = getActiveSchool();
+        const activeSId = getActiveSchoolId();
         // Username is permanently locked, only password can be updated
-        d.adminUsername = curSc.adminUsername || schoolData.adminUsername || 'admin';
-        if (!d.adminPassword) d.adminPassword = curSc.adminPassword || schoolData.adminPassword || 'masfy';
+        d.adminUsername = curSc.adminUsername || 'admin';
+        if (!d.adminPassword) d.adminPassword = curSc.adminPassword || '123';
         const sem = d.semester || activeSemester;
         const year = d.academicYear || activeAcademicYear;
         const term = `${sem} ${year}`;
-        const activeSId = getActiveSchoolId();
+        const resolvedLogo = tempSchoolLogo !== null ? tempSchoolLogo : (curSc.schoolLogo || '');
 
         setSchools(prev => {
             const next = prev.map(s => {
@@ -2341,9 +2582,10 @@ Perhatian:
                     return {
                         ...s,
                         ...d,
+                        optionCount: parseInt(d.optionCount) || 5,
                         semester: sem,
                         academicYear: year,
-                        schoolLogo: tempSchoolLogo || s.schoolLogo || ''
+                        schoolLogo: resolvedLogo
                     };
                 }
                 return s;
@@ -2352,22 +2594,25 @@ Perhatian:
             return next;
         });
 
-        if (activeSId === 'sdn2palapi' || currentUser?.isSuperAdmin) {
+        // Hanya update dokumen legacy schoolData jika yang diedit benar-benar sekolah utama (sdn2palapi)
+        if (activeSId === 'sdn2palapi') {
             setSchoolData(p => {
                 const next = {
                     ...p,
                     ...d,
+                    optionCount: parseInt(d.optionCount) || 5,
                     semester: sem,
                     academicYear: year,
                     term: term,
                     logo: EQUEST_LOGO,
-                    schoolLogo: tempSchoolLogo || p.schoolLogo || ''
+                    schoolLogo: resolvedLogo
                 };
                 updateGlobalState({ schoolData: next });
                 return next;
             });
         }
-        showToast("Pengaturan Sekolah Berhasil Disimpan!", "success");
+        setTempSchoolLogo(null);
+        showToast(`Pengaturan "${d.name || curSc.name}" Berhasil Disimpan!`, "success");
     };
 
     const processImport = async (type, useAI, fileName, parsedRows, rawFile) => {
@@ -2378,7 +2623,8 @@ Perhatian:
             for (let i = 1; i < parsedRows.length; i++) {
                 const cols = parsedRows[i];
                 if (cols.length >= 4 && cols[0]) {
-                    newStudents.push({ id: Date.now() + i, name: String(cols[0]), class: String(cols[1]), nis: String(cols[2]), password: String(cols[3]), schoolId: curSchoolId });
+                    const nisnStr = String(cols[2]).trim();
+                    newStudents.push({ id: Date.now() + i, name: String(cols[0]).trim(), class: String(cols[1]).trim(), nis: nisnStr, nisn: nisnStr, password: String(cols[3]).trim(), schoolId: curSchoolId });
                 }
             }
             setStudents(p => { const next = [...p, ...newStudents]; updateGlobalState({ students: next }); return next; });
@@ -2397,7 +2643,7 @@ Perhatian:
             showToast(`Berhasil import ${newClasses.length} data kelas dari file ${fileName}`, "success");
         }
         else if (type === 'Bank Soal') {
-            const subId = selectedSubjectForQuestions ? selectedSubjectForQuestions.id : subjects[0]?.id;
+            const subId = selectedSubjectForQuestions ? selectedSubjectForQuestions.id : getMySubjects()[0]?.id;
             if (!subId) return showToast("Pilih mapel terlebih dahulu sebelum mengimpor soal!", "error");
 
             if (parsedRows && !useAI) {
@@ -2470,8 +2716,8 @@ Catatan:
 - "correct" untuk 'short'/'essay'/'matching' adalah teks langsung dari kunci jawaban atau rubriknya.
 Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
 
-                    const modelToUse = schoolData.aiModel || "gemini-1.5-flash";
-                    let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${schoolData.apiKey}`, {
+                    const modelToUse = effectiveAiModel || "gemini-1.5-flash";
+                    let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${effectiveApiKey}`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -2481,7 +2727,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                     let data = await res.json();
 
                     if (!res.ok && modelToUse !== 'gemini-1.5-flash') {
-                        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${schoolData.apiKey}`, {
+                        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveApiKey}`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
@@ -2603,7 +2849,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                 {/* Header: Logo & School Identity */}
                 <div className="text-center mb-6">
                     <div className="w-16 h-16 sm:w-18 sm:h-18 bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-center mx-auto mb-3">
-                        <img src={schoolData?.logo || EQUEST_LOGO} alt="Logo" className="w-full h-full object-contain" />
+                        <img src={EQUEST_LOGO} alt="Logo" className="w-full h-full object-contain" />
                     </div>
                     <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
                         e-<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600">Quest</span> <span className="text-indigo-600 font-black">MfyTech</span>
@@ -2643,14 +2889,14 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                         <form onSubmit={handleStudentLogin} className="space-y-4">
                             <div className="space-y-1.5 text-left">
                                 <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                                    Nomor Induk Siswa (NIS)
+                                    Nomor Induk Siswa Nasional (NISN)
                                 </label>
                                 <div className="relative group">
                                     <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={17} />
                                     <input
                                         name="username"
                                         required
-                                        placeholder="Masukkan NIS Anda"
+                                        placeholder="Masukkan NISN Anda"
                                         className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-slate-800 font-bold placeholder-slate-400 text-sm"
                                     />
                                 </div>
@@ -2844,7 +3090,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                         </form>
                     </div>
                 ) : studentStep === 'biodata' ? (
-                    <div className="min-h-screen flex items-center justify-center p-6"><div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-100"><div className="bg-indigo-600 p-6 text-white flex justify-between items-center"><div><h1 className="text-lg font-bold">Konfirmasi Data</h1><p className="text-indigo-200 text-xs mt-1">Cek data sebelum ujian</p></div><User className="w-10 h-10 bg-indigo-500/50 p-2 rounded-xl" /></div><div className="p-6 space-y-6"><div className="bg-slate-50 rounded-xl p-5 space-y-3 border border-slate-100"><div className="flex justify-between border-b border-slate-200 pb-2"><span className="text-slate-500 text-sm">Nama</span><span className="font-bold text-slate-800">{currentUser.name}</span></div><div className="flex justify-between border-b border-slate-200 pb-2"><span className="text-slate-500 text-sm">Kelas</span><span className="font-bold text-slate-800">{currentUser.class}</span></div><div className="flex justify-between border-b border-slate-200 pb-2"><span className="text-slate-500 text-sm">Ujian Aktif</span><span className="font-bold text-indigo-600">{currentExamSubject?.name}</span></div><div className="flex justify-between"><span className="text-slate-500 text-sm">Semester Ujian</span><span className="font-bold text-purple-700">Semester {activeExamSemester} ({activeExamYear})</span></div></div><button onClick={() => {
+                    <div className="min-h-screen flex items-center justify-center p-6"><div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-100"><div className="bg-indigo-600 p-6 text-white flex justify-between items-center"><div><h1 className="text-lg font-bold">Konfirmasi Data</h1><p className="text-indigo-200 text-xs mt-1">{currentActiveSchool?.name || 'Cek data sebelum ujian'}</p></div><User className="w-10 h-10 bg-indigo-500/50 p-2 rounded-xl" /></div><div className="p-6 space-y-6"><div className="bg-slate-50 rounded-xl p-5 space-y-3 border border-slate-100"><div className="flex justify-between border-b border-slate-200 pb-2"><span className="text-slate-500 text-sm">Nama</span><span className="font-bold text-slate-800">{currentUser.name}</span></div><div className="flex justify-between border-b border-slate-200 pb-2"><span className="text-slate-500 text-sm">NISN</span><span className="font-bold font-mono text-indigo-600">{currentUser.nisn || currentUser.nis}</span></div><div className="flex justify-between border-b border-slate-200 pb-2"><span className="text-slate-500 text-sm">Kelas</span><span className="font-bold text-slate-800">{currentUser.class}</span></div><div className="flex justify-between border-b border-slate-200 pb-2"><span className="text-slate-500 text-sm">Ujian Aktif</span><span className="font-bold text-indigo-600">{currentExamSubject?.name}</span></div><div className="flex justify-between"><span className="text-slate-500 text-sm">Semester Ujian</span><span className="font-bold text-purple-700">Semester {activeExamSemester} ({activeExamYear})</span></div></div><button onClick={() => {
                         const targetSemester = activeExamSemester.toLowerCase();
                         const baseQ = getMyQuestions().filter(q => {
                             const matchSubject = q.subjectId === currentExamSubject?.id;
@@ -2929,7 +3175,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                 {/* BLOK STIMULUS SOAL SISWA */}
                                                 {(() => {
                                                     const curQ = stdQuestions[currentQIndex];
-                                                    const stim = stimuli.find(s => s.id === curQ?.stimulusId);
+                                                    const stim = getMyStimuli().find(s => s.id === curQ?.stimulusId);
                                                     if (!stim) return null;
                                                     return (
                                                         <div className="mb-6 bg-gradient-to-br from-indigo-50/80 via-slate-50 to-purple-50/60 border-2 border-indigo-200 rounded-2xl p-4 sm:p-5 shadow-xs">
@@ -3546,6 +3792,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                             value={selectedSchoolId}
                             onChange={(e) => {
                                 setSelectedSchoolId(e.target.value);
+                                setTempSchoolLogo(null);
                                 const chosen = schools.find(s => s.id === e.target.value);
                                 showToast(`Konteks data beralih: ${chosen?.name || 'sekolah'}`);
                             }}
@@ -3556,8 +3803,9 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                             ))}
                         </select>
                     ) : (
-                        <span className="text-[9px] font-extrabold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200/80 px-2 py-0.5 rounded-full truncate max-w-[120px]">
-                            {getActiveSchool()?.name || 'e-Quest MfyTech'}
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200/80 px-2 py-0.5 rounded-full inline-flex items-center gap-1 max-w-[135px]">
+                            {currentActiveSchool?.schoolLogo && <img src={currentActiveSchool.schoolLogo} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />}
+                            <span className="truncate">{currentActiveSchool?.name || 'e-Quest MfyTech'}</span>
                         </span>
                     )}
                     <button
@@ -3668,9 +3916,13 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                 <header className="hidden md:flex items-center justify-between px-8 py-3 bg-white/80 backdrop-blur-md border-b border-slate-200/70 z-20 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100/90 rounded-xl border border-slate-200 text-xs">
-                            <School size={15} className="text-indigo-600" />
+                            {currentActiveSchool?.schoolLogo ? (
+                                <img src={currentActiveSchool.schoolLogo} alt="Logo Sekolah" className="w-5 h-5 object-contain rounded shrink-0" />
+                            ) : (
+                                <School size={15} className="text-indigo-600 shrink-0" />
+                            )}
                             <span className="font-semibold text-slate-500">Sekolah Aktif:</span>
-                            <span className="font-extrabold text-slate-900">{getActiveSchool()?.name || 'e-Quest MfyTech'}</span>
+                            <span className="font-extrabold text-slate-900">{currentActiveSchool?.name || 'e-Quest MfyTech'}</span>
                         </div>
                         {currentUser?.isSuperAdmin && (
                             <div className="flex items-center gap-2">
@@ -3684,6 +3936,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             value={selectedSchoolId}
                                             onChange={(e) => {
                                                 setSelectedSchoolId(e.target.value);
+                                                setTempSchoolLogo(null);
                                                 const chosen = schools.find(s => s.id === e.target.value);
                                                 showToast(`Konteks data beralih ke: ${chosen?.name}`);
                                             }}
@@ -3750,7 +4003,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                         <div className="space-y-2 max-w-xl">
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/30 border border-indigo-400/40 text-[10px] sm:text-xs font-bold tracking-wider uppercase text-indigo-200">
-                                                    {role === 'admin' ? 'Administrator Pusat' : (currentUser?.teacherType === 'guru_kelas' ? 'Guru Kelas (Wali)' : 'Guru Mata Pelajaran')}
+                                                    {role === 'admin' ? (currentUser?.isSuperAdmin ? 'Super Administrator' : 'Administrator Sekolah') : (currentUser?.teacherType === 'guru_kelas' ? 'Guru Kelas (Wali)' : 'Guru Mata Pelajaran')}
                                                 </span>
                                                 <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-[10px] sm:text-xs font-semibold text-slate-200">
                                                     TP {activeAcademicYear} • Semester {activeSemester}
@@ -3821,8 +4074,8 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                 </div>
                                                 <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Guru</span>
                                             </div>
-                                            <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{teachers.length}</p>
-                                            <p className="text-[10px] font-semibold text-slate-400 mt-1">Edukator Terdaftar</p>
+                                            <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{teachers.filter(t => (t.schoolId || 'sdn2palapi') === getActiveSchoolId()).length}</p>
+                                            <p className="text-[10px] font-semibold text-slate-400 mt-1">Edukator Sekolah Ini</p>
                                         </div>
 
                                         {/* Bank Soal */}
@@ -3845,7 +4098,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                 </div>
                                                 <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">TKA Stimulus</span>
                                             </div>
-                                            <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{stimuli.length}</p>
+                                            <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{getMyStimuli().length}</p>
                                             <p className="text-[10px] font-semibold text-slate-400 mt-1">Wacana, Tabel & Gbr</p>
                                         </div>
 
@@ -4662,7 +4915,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                     <input
                                         value={studentSearch}
                                         onChange={e => setStudentSearch(e.target.value)}
-                                        placeholder="Cari nama murid atau NIS..."
+                                        placeholder="Cari nama murid atau NISN..."
                                         className="w-full pl-10 pr-3 py-2 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-medium text-slate-700 outline-none focus:border-indigo-500 shadow-2xs"
                                     />
                                 </div>
@@ -4690,7 +4943,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                             <h4 className="font-extrabold text-sm text-slate-900 leading-tight">{i.name}</h4>
                                                             <div className="flex items-center gap-2 mt-0.5">
                                                                 <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                                                                    NIS: {i.nis}
+                                                                    NISN: {i.nisn || i.nis}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -4742,7 +4995,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                 <tr>
                                                     <th className="p-4 text-[11px] uppercase font-extrabold text-slate-500 tracking-wider">Nama Murid</th>
                                                     <th className="p-4 text-[11px] uppercase font-extrabold text-slate-500 tracking-wider">Kelas</th>
-                                                    <th className="p-4 text-[11px] uppercase font-extrabold text-slate-500 tracking-wider">NIS</th>
+                                                    <th className="p-4 text-[11px] uppercase font-extrabold text-slate-500 tracking-wider">NISN</th>
                                                     <th className="p-4 text-[11px] uppercase font-extrabold text-slate-500 tracking-wider">Password</th>
                                                     <th className="p-4 text-[11px] uppercase font-extrabold text-slate-500 tracking-wider text-center">Aksi</th>
                                                 </tr>
@@ -4764,7 +5017,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                             </span>
                                                         </td>
                                                         <td className="p-4 font-mono font-bold text-indigo-600 text-xs">
-                                                            {i.nis}
+                                                            {i.nisn || i.nis}
                                                         </td>
                                                         <td className="p-4 font-mono text-slate-400 text-xs">
                                                             {i.password}
@@ -4903,7 +5156,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                     <div>
                                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Pengampu</p>
                                                         <p className="font-bold text-slate-800 text-xs truncate max-w-[120px] sm:max-w-[140px]">
-                                                            {teachers.find(t => t.id === i.teacherId)?.name || 'Admin'}
+                                                            {getMyTeachers().find(t => t.id === i.teacherId)?.name || 'Admin'}
                                                         </p>
                                                     </div>
                                                     <button
@@ -5430,7 +5683,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                             <div className="text-center mb-6 sm:mb-8 border-b border-slate-100 pb-5 sm:pb-6">
                                 <div className="w-12 h-12 sm:w-14 sm:h-14 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3"><BarChart2 size={24} /></div>
                                 <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">LAPORAN HASIL UJIAN</h2>
-                                <p className="text-slate-500 font-semibold mt-1 uppercase tracking-widest text-[10px]">{schoolData.name} - {schoolData.term}</p>
+                                <p className="text-slate-500 font-semibold mt-1 uppercase tracking-widest text-[10px]">{currentActiveSchool.name} • Semester {activeSemester} ({activeAcademicYear})</p>
                             </div>
 
                             <div className="flex flex-col lg:flex-row gap-4 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 mb-6">
@@ -5502,7 +5755,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                 <form onSubmit={generateNewToken} className="bg-slate-50 p-4 sm:p-6 rounded-2xl border border-slate-200 mx-auto text-left shadow-sm">
                                     <div className="mb-6">
                                         <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">Pilih Mata Pelajaran</label>
-                                        <select className="w-full p-3.5 border border-slate-200 focus:border-rose-400 rounded-xl outline-none font-semibold text-slate-700 bg-white shadow-sm text-sm transition-all" value={examBlueprint.subjectId} onChange={(e) => setExamBlueprint({ ...examBlueprint, subjectId: e.target.value })} required><option value="">-- Sentuh untuk Memilih --</option>{getMySubjects().map(s => <option key={s.id} value={s.id}>{s.name} ({s.class}) - Oleh: {teachers.find(t => t.id === s.teacherId)?.name}</option>)}</select>
+                                        <select className="w-full p-3.5 border border-slate-200 focus:border-rose-400 rounded-xl outline-none font-semibold text-slate-700 bg-white shadow-sm text-sm transition-all" value={examBlueprint.subjectId} onChange={(e) => setExamBlueprint({ ...examBlueprint, subjectId: e.target.value })} required><option value="">-- Sentuh untuk Memilih --</option>{getMySubjects().map(s => <option key={s.id} value={s.id}>{s.name} ({s.class}) - Oleh: {getMyTeachers().find(t => t.id === s.teacherId)?.name || 'Admin'}</option>)}</select>
                                     </div>
                                     <div className="bg-white p-5 rounded-xl border border-slate-200 mb-6 shadow-sm">
                                         <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
@@ -5563,7 +5816,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                 }
                                                 return true;
                                             }).map(exam => {
-                                                const sub = subjects.find(s => s.id === exam.subjectId);
+                                                const sub = getMySubjects().find(s => s.id === exam.subjectId);
                                                 return (
                                                     <div key={exam.token} className="bg-white p-5 rounded-2xl border border-rose-200 shadow-sm relative overflow-hidden flex flex-col">
                                                         <div className="absolute top-0 right-0 bg-rose-500 text-white text-[9px] font-bold tracking-wider px-3 py-1 rounded-bl-xl">LIVE NOW</div>
@@ -5620,16 +5873,75 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                     {/* ADMINISTRASI CETAK (ADMIN & GURU) */}
                     {adminMenu === 'documents' && (role === 'admin' || role === 'guru') && (
                         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-8 animate-fade-in space-y-6 max-w-4xl mx-auto">
-                            <div className="text-center mb-6 border-b border-slate-100 pb-6">
+                            <div className="text-center mb-2 border-b border-slate-100 pb-6">
                                 <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-3"><ClipboardList size={28} /></div>
                                 <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Administrasi Pelaksanaan</h2>
-                                <p className="text-slate-500 font-medium mt-1 text-xs sm:text-sm">Pusat cetak Daftar Hadir & Berita Acara Ujian</p>
+                                <p className="text-slate-500 font-medium mt-1 text-xs sm:text-sm">Pusat cetak Daftar Hadir, Berita Acara & Kartu Login Ujian</p>
+                            </div>
+
+                            {/* INFO KOP CETAK SEKOLAH AKTIF */}
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80">
+                                <div className="flex items-center gap-3.5">
+                                    <div className="w-12 h-12 rounded-xl bg-white border border-indigo-200 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+                                        {currentActiveSchool.schoolLogo ? (
+                                            <img src={currentActiveSchool.schoolLogo} alt="Logo Sekolah" className="w-full h-full object-contain p-1" />
+                                        ) : (
+                                            <School size={22} className="text-slate-400" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">Identitas Kop Dokumen Cetak</p>
+                                        <h4 className="font-extrabold text-sm text-slate-900">{currentActiveSchool.name}</h4>
+                                        <p className="text-[11px] text-slate-600 font-medium">
+                                            Kepsek: <strong>{currentActiveSchool.kepsekName || 'Belum diatur'}</strong> • TP {activeAcademicYear} (Sem. {activeSemester})
+                                        </p>
+                                    </div>
+                                </div>
+                                {role === 'admin' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setAdminMenu('school')}
+                                        className="px-3.5 py-2 rounded-xl bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition-colors shrink-0 cursor-pointer shadow-2xs"
+                                    >
+                                        {currentActiveSchool.schoolLogo ? 'Ubah Kop / Logo' : '+ Upload Logo Sekolah'}
+                                    </button>
+                                )}
                             </div>
 
                             <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                                    <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Pilih Kelas</label><select className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white outline-none font-semibold text-slate-700 shadow-sm text-sm" value={printForm.class} onChange={(e) => setPrintForm({ ...printForm, class: e.target.value })}><option value="">-- Kelas --</option>{getMyClasses().map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select></div>
-                                    <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Pilih Mata Pelajaran</label><select className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white outline-none font-semibold text-slate-700 shadow-sm text-sm" value={printForm.subject} onChange={(e) => setPrintForm({ ...printForm, subject: e.target.value })}><option value="">-- Mapel --</option>{getMySubjects().map(s => <option key={s.id} value={s.name}>{s.name} ({s.class})</option>)}</select></div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Pilih Kelas</label>
+                                        <select
+                                            className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white outline-none font-semibold text-slate-700 shadow-sm text-sm"
+                                            value={printForm.class}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                const stCount = val === 'ALL' ? getMyStudents().length : getMyStudents().filter(st => st.class === val).length;
+                                                setPrintForm(prev => ({ ...prev, class: val, seharusnya: val ? String(stCount) : prev.seharusnya }));
+                                            }}
+                                        >
+                                            <option value="">-- Pilih Kelas --</option>
+                                            {getMyClasses().length > 1 && <option value="ALL">Semua Kelas ({getMyStudents().length} Siswa)</option>}
+                                            {getMyClasses().map(c => {
+                                                const cnt = getMyStudents().filter(st => st.class === c.name).length;
+                                                return <option key={c.id} value={c.name}>{c.name} ({cnt} Siswa)</option>;
+                                            })}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Pilih Mata Pelajaran <span className="text-slate-400 font-normal">(Opsional u/ Kartu)</span></label>
+                                        <select
+                                            className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white outline-none font-semibold text-slate-700 shadow-sm text-sm"
+                                            value={printForm.subject}
+                                            onChange={(e) => setPrintForm({ ...printForm, subject: e.target.value })}
+                                        >
+                                            <option value="">-- Semua / Umum --</option>
+                                            {getMySubjects()
+                                                .filter(s => !printForm.class || printForm.class === 'ALL' || s.class === printForm.class)
+                                                .map(s => <option key={s.id} value={s.id}>{s.name} ({s.class})</option>)}
+                                        </select>
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Nama Kegiatan (Kustom)</label><input type="text" className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white outline-none font-semibold text-slate-700 shadow-sm text-sm" value={printForm.activityName} onChange={(e) => setPrintForm({ ...printForm, activityName: e.target.value })} /></div>
@@ -5831,10 +6143,10 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                         >
                                             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-slate-100">
                                                 <div className="flex items-start gap-3.5">
-                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-xs ${
-                                                        s.isMaster ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-indigo-50 text-indigo-600 border border-indigo-200'
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-xs overflow-hidden ${
+                                                        s.schoolLogo ? 'bg-white border border-slate-200 p-1' : (s.isMaster ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-indigo-50 text-indigo-600 border border-indigo-200')
                                                     }`}>
-                                                        <School size={24} />
+                                                        {s.schoolLogo ? <img src={s.schoolLogo} alt={s.name} className="w-full h-full object-contain" /> : <School size={24} />}
                                                     </div>
                                                     <div>
                                                         <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -6018,11 +6330,20 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                         </div>
                     )}
 
-                    {/* PENGATURAN SEKOLAH (ADMIN ONLY) */}
+                    {/* PENGATURAN SEKOLAH (ADMIN ONLY — TERISOLASI PENUH PER SEKOLAH) */}
                     {adminMenu === 'school' && role === 'admin' && (() => {
                         const currentSchool = getActiveSchool();
+                        const previewLogo = tempSchoolLogo !== null ? tempSchoolLogo : (currentSchool.schoolLogo || '');
                         return (
-                            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-8 max-w-3xl mx-auto animate-fade-in"><div className="flex items-center gap-4 mb-6 border-b border-slate-100 pb-5"><div className="bg-slate-100 p-3 sm:p-3.5 rounded-xl text-slate-600 shadow-sm"><Settings size={26} /></div><div><h3 className="font-bold text-xl sm:text-2xl text-slate-800 tracking-tight">Pengaturan Sistem</h3><p className="text-slate-500 font-medium text-xs sm:text-sm mt-0.5">Identitas Institusi & Pengaturan: <strong className="text-indigo-600">{currentSchool.name}</strong></p></div></div><form onSubmit={handleSaveSchool} className="space-y-6">
+                            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-8 max-w-3xl mx-auto animate-fade-in">
+                                <div className="flex items-center gap-4 mb-6 border-b border-slate-100 pb-5">
+                                    <div className="bg-slate-100 p-3 sm:p-3.5 rounded-xl text-slate-600 shadow-sm"><Settings size={26} /></div>
+                                    <div>
+                                        <h3 className="font-bold text-xl sm:text-2xl text-slate-800 tracking-tight">Pengaturan Sekolah</h3>
+                                        <p className="text-slate-500 font-medium text-xs sm:text-sm mt-0.5">Identitas Institusi & Kop Cetak: <strong className="text-indigo-600">{currentSchool.name}</strong></p>
+                                    </div>
+                                </div>
+                                <form key={currentSchool.id} onSubmit={handleSaveSchool} className="space-y-6">
 
                             {/* BRANDING LOGO — hanya info, tidak bisa diubah */}
                             <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
@@ -6038,29 +6359,41 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                 </div>
                             </div>
 
-                            {/* SCHOOL LOGO — untuk dokumen cetak */}
+                            {/* SCHOOL LOGO — khusus sekolah ini untuk dokumen cetak */}
                             <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start bg-slate-50 p-6 rounded-2xl border border-slate-200">
                                 <div className="shrink-0 text-center">
                                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Logo Sekolah (Cetak)</label>
                                     <div className="w-24 h-24 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center overflow-hidden bg-white shadow-sm">
-                                        {(tempSchoolLogo || currentSchool.schoolLogo || schoolData.schoolLogo) ? <img src={tempSchoolLogo || currentSchool.schoolLogo || schoolData.schoolLogo} className="w-full h-full object-contain p-2" alt="Logo Sekolah" /> : <School size={32} className="text-slate-300" />}
+                                        {previewLogo ? <img src={previewLogo} className="w-full h-full object-contain p-2" alt={`Logo ${currentSchool.name}`} /> : <School size={32} className="text-slate-300" />}
                                     </div>
+                                    {previewLogo && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setTempSchoolLogo('')}
+                                            className="mt-2 text-[10px] font-bold text-rose-600 hover:underline cursor-pointer"
+                                        >
+                                            Hapus Logo
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="flex-1 w-full">
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Upload Logo Sekolah</label>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Upload Logo Khusus {currentSchool.name}</label>
                                     <input type="file" accept="image/*" onChange={handleSchoolLogoUpload} className="w-full p-3 border border-slate-200 focus:border-indigo-400 rounded-xl bg-white shadow-sm font-medium text-slate-700 text-sm" />
-                                    <p className="text-[10px] text-slate-400 mt-2 font-semibold">Digunakan pada Kop Surat, Daftar Hadir, dan Berita Acara. Format: PNG/JPG, Maks 2MB.</p>
+                                    <p className="text-[10px] text-slate-500 mt-2 font-semibold">Logo ini terisolasi khusus untuk <strong>{currentSchool.name}</strong> dan hanya tampil pada Kop Surat, Kartu Login, Daftar Hadir, dan Berita Acara sekolah ini.</p>
                                 </div>
                             </div>
 
                             <div className="space-y-4 pt-2">
                                 <label className="block text-[10px] font-bold text-indigo-500 uppercase tracking-wider border-b border-slate-200 pb-1">Informasi Instansi</label>
-                                <div><input name="dinasPendidikan" defaultValue={currentSchool.dinasPendidikan || schoolData.dinasPendidikan} placeholder="Dinas Pendidikan (Kop Surat)" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div>
+                                <div><input name="dinasPendidikan" defaultValue={currentSchool.dinasPendidikan || ''} placeholder="Dinas Pendidikan (Kop Surat)" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div><input name="name" defaultValue={currentSchool.name || schoolData.name} placeholder="Nama Sekolah" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div>
-                                    <div><input name="kabupaten" defaultValue={currentSchool.kabupaten || schoolData.kabupaten} placeholder="Nama Kabupaten/Kota" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div>
+                                    <div><input name="name" defaultValue={currentSchool.name || ''} placeholder="Nama Sekolah" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" required /></div>
+                                    <div><input name="kabupaten" defaultValue={currentSchool.kabupaten || ''} placeholder="Nama Kabupaten/Kota" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div>
                                 </div>
-                                <div><input name="address" defaultValue={currentSchool.address || schoolData.address} placeholder="Alamat Sekolah Lengkap" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-medium text-slate-800 outline-none text-sm" /></div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div><input name="npsn" defaultValue={currentSchool.npsn || ''} placeholder="NPSN Sekolah" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-mono font-semibold text-slate-800 outline-none text-sm" /></div>
+                                    <div className="sm:col-span-2"><input name="address" defaultValue={currentSchool.address || ''} placeholder="Alamat Sekolah Lengkap" className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-medium text-slate-800 outline-none text-sm" /></div>
+                                </div>
 
                                 {/* Semester & Tahun Pelajaran */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -6071,7 +6404,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                         </label>
                                         <select
                                             name="semester"
-                                            defaultValue={currentSchool.semester || activeSemester}
+                                            defaultValue={currentSchool.semester || 'Ganjil'}
                                             className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-bold text-indigo-700 outline-none text-sm"
                                         >
                                             <option value="Ganjil">Semester Ganjil</option>
@@ -6083,21 +6416,22 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                         <label className="block text-xs font-semibold text-slate-600 mb-1.5">Tahun Pelajaran</label>
                                         <input
                                             name="academicYear"
-                                            defaultValue={currentSchool.academicYear || activeAcademicYear}
-                                            placeholder="Contoh: 2025/2026"
+                                            defaultValue={currentSchool.academicYear || '2026/2027'}
+                                            placeholder="Contoh: 2026/2027"
                                             className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm"
                                         />
-                                        <p className="text-[10px] text-slate-500 font-medium mt-1">Format tahun ajaran (misal: 2025/2026).</p>
+                                        <p className="text-[10px] text-slate-500 font-medium mt-1">Format tahun ajaran (misal: 2026/2027).</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="space-y-4 pt-4"><label className="block text-[10px] font-bold text-amber-500 uppercase tracking-wider border-b border-slate-200 pb-1">Data Kepala Sekolah</label><div><input name="kepsekName" defaultValue={currentSchool.kepsekName || schoolData.kepsekName} placeholder="Nama Kepala Sekolah beserta Gelar" className="w-full p-3.5 border border-slate-200 focus:border-amber-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div><div><input name="kepsekNip" defaultValue={currentSchool.kepsekNip || schoolData.kepsekNip} placeholder="NIP Kepala Sekolah" className="w-full p-3.5 border border-slate-200 focus:border-amber-400 rounded-xl bg-slate-50 font-medium text-slate-800 outline-none text-sm" /></div></div>                            <div className="space-y-4 pt-4">
+                            <div className="space-y-4 pt-4"><label className="block text-[10px] font-bold text-amber-500 uppercase tracking-wider border-b border-slate-200 pb-1">Data Kepala Sekolah</label><div><input name="kepsekName" defaultValue={currentSchool.kepsekName || ''} placeholder="Nama Kepala Sekolah beserta Gelar" className="w-full p-3.5 border border-slate-200 focus:border-amber-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" /></div><div><input name="kepsekNip" defaultValue={currentSchool.kepsekNip || ''} placeholder="NIP Kepala Sekolah" className="w-full p-3.5 border border-slate-200 focus:border-amber-400 rounded-xl bg-slate-50 font-medium text-slate-800 outline-none text-sm" /></div></div>
+                            <div className="space-y-4 pt-4">
                                 <label className="block text-[10px] font-bold text-rose-500 uppercase tracking-wider border-b border-slate-200 pb-1">
-                                    Kredensial Admin Utama
+                                    Kredensial Admin Sekolah
                                 </label>
                                 <div>
-                                    <input name="adminName" defaultValue={currentSchool.adminName || schoolData.adminName} placeholder="Nama Lengkap Admin" className="w-full p-3.5 border border-slate-200 focus:border-rose-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" />
+                                    <input name="adminName" defaultValue={currentSchool.adminName || ''} placeholder="Nama Lengkap Admin" className="w-full p-3.5 border border-slate-200 focus:border-rose-400 rounded-xl bg-slate-50 font-semibold text-slate-800 outline-none text-sm" />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
@@ -6110,7 +6444,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                         <div className="relative">
                                             <input 
                                                 name="adminUsername" 
-                                                defaultValue={currentSchool.adminUsername || schoolData.adminUsername || 'admin'} 
+                                                defaultValue={currentSchool.adminUsername || 'admin'} 
                                                 placeholder="Username Akses" 
                                                 className="w-full p-3.5 border border-slate-200 rounded-xl bg-slate-100 font-mono font-bold text-slate-500 outline-none text-sm cursor-not-allowed pr-10" 
                                                 readOnly 
@@ -6125,7 +6459,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                         </label>
                                         <input 
                                             name="adminPassword" 
-                                            defaultValue={currentSchool.adminPassword || schoolData.adminPassword} 
+                                            defaultValue={currentSchool.adminPassword || ''} 
                                             placeholder="Kata Sandi Baru" 
                                             className="w-full p-3.5 border border-slate-200 focus:border-rose-400 rounded-xl bg-slate-50 font-mono font-bold text-rose-600 outline-none text-sm" 
                                         />
@@ -6133,9 +6467,9 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                     </div>
                                 </div>
                             </div>
-                            <div className="space-y-4 pt-4"><label className="block text-[10px] font-bold text-indigo-500 uppercase tracking-wider border-b border-slate-200 pb-1">Pengaturan Ujian</label><div><label className="block text-xs font-semibold text-slate-600 mb-1.5">Jumlah Opsi Pilihan Ganda</label><select name="optionCount" defaultValue={currentSchool.optionCount || schoolData.optionCount || 5} className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-medium text-slate-600 outline-none text-sm"><option value="4">4 Opsi (A, B, C, D)</option><option value="5">5 Opsi (A, B, C, D, E)</option></select></div><p className="text-[10px] text-slate-500 font-medium mt-1">Menentukan jumlah opsi jawaban maksimal pada pembuatan soal.</p></div>
+                            <div className="space-y-4 pt-4"><label className="block text-[10px] font-bold text-indigo-500 uppercase tracking-wider border-b border-slate-200 pb-1">Pengaturan Ujian</label><div><label className="block text-xs font-semibold text-slate-600 mb-1.5">Jumlah Opsi Pilihan Ganda</label><select name="optionCount" defaultValue={currentSchool.optionCount || 5} className="w-full p-3.5 border border-slate-200 focus:border-indigo-400 rounded-xl bg-slate-50 font-medium text-slate-600 outline-none text-sm"><option value="4">4 Opsi (A, B, C, D)</option><option value="5">5 Opsi (A, B, C, D, E)</option></select></div><p className="text-[10px] text-slate-500 font-medium mt-1">Menentukan jumlah opsi jawaban maksimal pada pembuatan soal.</p></div>
                             <div className="space-y-4 pt-4 border-t border-slate-100">
-                                <div className="flex justify-between items-center border-b border-slate-200 pb-1">
+                                <div className="flex justify-between items-center border-b border-slate-100 pb-1">
                                     <label className="block text-[10px] font-bold text-fuchsia-500 uppercase tracking-wider">Integrasi AI Generator (Gemini)</label>
                                     <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                                         <Sparkles size={11} /> Auto Deteksi Model Versi
@@ -6148,7 +6482,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             id="geminiApiKeySettingInput"
                                             name="apiKey"
                                             type="password"
-                                            defaultValue={currentSchool.apiKey || schoolData.apiKey}
+                                            defaultValue={currentSchool.apiKey || ''}
                                             placeholder="Masukkan API Key Google AI Studio..."
                                             className="flex-1 p-3.5 border border-slate-200 focus:border-fuchsia-400 rounded-xl bg-slate-50 font-mono font-medium text-slate-700 outline-none text-sm"
                                         />
@@ -6180,8 +6514,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                     </div>
                                     <select
                                         name="aiModel"
-                                        value={schoolData.aiModel || "gemini-1.5-flash"}
-                                        onChange={e => setSchoolData(p => ({ ...p, aiModel: e.target.value }))}
+                                        defaultValue={currentSchool.aiModel || "gemini-1.5-flash"}
                                         className="w-full p-3.5 border border-slate-200 focus:border-fuchsia-400 rounded-xl bg-slate-50 font-mono font-medium text-slate-700 outline-none text-sm"
                                     >
                                         {availableAiModels && availableAiModels.length > 0 ? (
@@ -6300,7 +6633,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                     <div>
                                         <h3 className="font-extrabold text-sm text-slate-800 leading-tight">{currentUser?.name || 'Administrator'}</h3>
                                         <p className="text-[10px] text-slate-400 font-medium">
-                                            {role === 'admin' ? 'Administrator Sekolah' : (currentUser?.teacherType === 'guru_kelas' ? `Wali ${currentUser?.assignedClass || ''}` : `Guru Mapel: ${currentUser?.subjectName || ''}`)}
+                                            {role === 'admin' ? (currentUser?.isSuperAdmin ? 'Super Administrator' : 'Administrator Sekolah') : (currentUser?.teacherType === 'guru_kelas' ? `Wali ${currentUser?.assignedClass || ''}` : `Guru Mapel: ${currentUser?.subjectName || ''}`)}
                                         </p>
                                     </div>
                                 </div>
@@ -6336,6 +6669,21 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             </div>
                                             <span className="text-xs">Bank Soal</span>
                                         </button>
+
+                                        {role === 'admin' && currentUser?.isSuperAdmin && (
+                                            <button
+                                                onClick={() => { setAdminMenu('schools'); setMobileAdminDrawerOpen(false); }}
+                                                className={`col-span-2 flex items-center justify-between p-3 rounded-2xl border text-left transition-all ${adminMenu === 'schools' ? 'bg-indigo-600 border-indigo-700 text-white font-bold' : 'bg-indigo-50/80 border-indigo-200 text-indigo-800 font-bold hover:bg-indigo-100'}`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 shrink-0">
+                                                        <Building size={18} />
+                                                    </div>
+                                                    <span className="text-xs">Kelola Sekolah (Multi-Tenant)</span>
+                                                </div>
+                                                <span className="text-[10px] font-extrabold bg-white text-indigo-700 px-2 py-0.5 rounded-full">{schools.length} Unit</span>
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
 
@@ -6382,6 +6730,16 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                 <BookOpen size={18} />
                                             </div>
                                             <span className="text-xs">{role === 'admin' ? 'Mata Pelajaran' : 'Mapel Diampu'}</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => { setAdminMenu('analysis'); setMobileAdminDrawerOpen(false); }}
+                                            className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${adminMenu === 'analysis' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50/70 border-slate-200/80 text-slate-700 font-medium hover:bg-slate-100'}`}
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 shrink-0">
+                                                <BarChart2 size={18} />
+                                            </div>
+                                            <span className="text-xs">Analisis Nilai</span>
                                         </button>
 
                                         <button
@@ -6444,6 +6802,19 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                 {/* SCHOOL FORM (MULTI-TENANT SATUAN PENDIDIKAN) */}
                                 {modalType === 'school' && (
                                     <div className="space-y-4">
+                                        <div className="flex items-center gap-4 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                                            <div className="w-16 h-16 rounded-xl bg-white border border-dashed border-slate-300 flex items-center justify-center overflow-hidden shrink-0">
+                                                {(tempSchoolLogo !== null ? tempSchoolLogo : editingItem?.schoolLogo) ? (
+                                                    <img src={tempSchoolLogo !== null ? tempSchoolLogo : editingItem?.schoolLogo} alt="Logo Sekolah" className="w-full h-full object-contain p-1" />
+                                                ) : (
+                                                    <School size={26} className="text-slate-300" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1">
+                                                <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Logo Sekolah (Khusus Unit Ini)</label>
+                                                <input type="file" accept="image/*" onChange={handleSchoolLogoUpload} className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                                            </div>
+                                        </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Nama Satuan Pendidikan (Sekolah)</label>
                                             <input name="name" defaultValue={editingItem?.name} placeholder="Contoh: SMP Negeri 1 Raha / SD IT Al-Qalam" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-indigo-400 font-bold text-slate-800 text-sm" required />
@@ -6863,11 +7234,11 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                 {/* STUDENT FORM */}
                                 {modalType === 'student' && (
                                     <div className="space-y-4">
-                                        <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Nama Lengkap</label><input name="name" defaultValue={editingItem?.name} placeholder="Sesuai Akta Kelahiran" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-indigo-400 font-semibold text-slate-800 text-sm" required /></div>
+                                        <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Nama Lengkap</label><input name="name" defaultValue={editingItem?.name} placeholder="Sesuai Akta Kelahiran / Dapodik" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-indigo-400 font-semibold text-slate-800 text-sm" required /></div>
                                         <div className="space-y-1.5">
                                             <div className="flex items-center justify-between ml-1">
                                                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                                    Nomor Induk Siswa (NIS) {editingItem ? '(Terkunci)' : ''}
+                                                    Nomor Induk Siswa Nasional (NISN) {editingItem ? '(Terkunci)' : ''}
                                                 </label>
                                                 {editingItem && (
                                                     <span className="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded flex items-center gap-1">
@@ -6878,8 +7249,8 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             <div className="relative">
                                                 <input 
                                                     name="nis" 
-                                                    defaultValue={editingItem?.nis} 
-                                                    placeholder="NIS juga digunakan sebagai Username" 
+                                                    defaultValue={editingItem?.nisn || editingItem?.nis} 
+                                                    placeholder="Masukkan NISN (digunakan sebagai Username Ujian)" 
                                                     className={`w-full p-3 border border-slate-200 rounded-xl outline-none font-bold font-mono text-sm ${editingItem ? 'bg-slate-100 text-slate-500 cursor-not-allowed pr-9' : 'bg-slate-50 text-indigo-600 focus:border-indigo-400'}`} 
                                                     required 
                                                     readOnly={!!editingItem} 
@@ -6888,7 +7259,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             </div>
                                         </div>
                                         <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Rombongan Belajar (Kelas)</label>
-                                            <select name="class" defaultValue={editingItem?.class || (role === 'guru' && currentUser?.assignedClass ? currentUser.assignedClass : classes[0]?.name)} className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-indigo-400 font-semibold text-slate-700 text-sm">
+                                            <select name="class" defaultValue={editingItem?.class || (role === 'guru' && currentUser?.assignedClass ? currentUser.assignedClass : getMyClasses()[0]?.name)} className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-indigo-400 font-semibold text-slate-700 text-sm">
                                                 {getMyClasses().map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                                             </select>
                                         </div>
