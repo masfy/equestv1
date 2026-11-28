@@ -18,24 +18,22 @@ import {
     Shield, Building, ToggleLeft, ToggleRight, Copy, Smartphone
 } from 'lucide-react';
 
-// --- INITIAL DATA & MOCKUP DATABASE ---
-
 const EQUEST_LOGO = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhkZZ6nl3Pq7mFou917u9D1yJnyd4AmsDSQI4VyCjaktVQOk6Yj0teuLBiiyBeiyyKhhbBRC5SJW9Ml6QZZ5vlH-ZlR1lrrKO6auMpiFZrs_DC-VINjninMxAh57pj7yVza53Z2qgyUKiGw8RWviLJ8_Cvl_DamdXJG_OVk_CYc8iwVa4BReULUElQxinWK/s16000/logo%20e-quest.png";
 
-const INITIAL_SCHOOL_DATA = {
-    name: "SD Negeri 2 Palapi",
-    address: "Jl. Pendidikan Cerdas No. 1, Jakarta Selatan",
+const EMPTY_SCHOOL_FALLBACK = {
+    name: "",
+    address: "",
     semester: "Ganjil",
-    academicYear: "2025/2026",
-    term: "Ganjil 2025/2026",
-    dinasPendidikan: "Dinas Pendidikan Pemuda dan Olahraga",
-    kabupaten: "Kabupaten Muna",
-    kepsekName: "Samsuddin, S.Pd., M.Pd.",
-    kepsekNip: "19800101 200501 1 002",
-    adminName: "Administrator Pusat",
-    adminEmail: "alfyarnaim@gmail.com",
-    adminUsername: "admin",
-    adminPassword: "masfy",
+    academicYear: "2026/2027",
+    term: "Ganjil 2026/2027",
+    dinasPendidikan: "",
+    kabupaten: "",
+    kepsekName: "",
+    kepsekNip: "",
+    adminName: "",
+    adminEmail: "",
+    adminUsername: "",
+    adminPassword: "",
     logo: EQUEST_LOGO,
     schoolLogo: "",
     apiKey: "",
@@ -44,37 +42,16 @@ const INITIAL_SCHOOL_DATA = {
     optionCount: 5
 };
 
-const INITIAL_SCHOOLS = [
-    {
-        id: "sdn2palapi",
-        referralCode: "EQ-PALAPI",
-        npsn: "40402918",
-        name: "SD Negeri 2 Palapi",
-        address: "Jl. Pendidikan Cerdas No. 1, Jakarta Selatan",
-        dinasPendidikan: "Dinas Pendidikan Pemuda dan Olahraga",
-        kabupaten: "Kabupaten Muna",
-        kepsekName: "Samsuddin, S.Pd., M.Pd.",
-        kepsekNip: "19800101 200501 1 002",
-        adminName: "Administrator Pusat",
-        adminEmail: "alfyarnaim@gmail.com",
-        adminUsername: "admin",
-        adminPassword: "masfy",
-        status: "active", // 'active' | 'suspended'
-        isMaster: true,
-        optionCount: 5,
-        semester: "Ganjil",
-        academicYear: "2025/2026",
-        createdAt: "2025-01-01"
+const isLegacySingleBoolean = (q) => {
+    if (!q || String(q.type || '').toLowerCase().trim() !== 'boolean') return false;
+    const opts = Array.isArray(q.options) ? q.options : [];
+    const corr = String(q.correct ?? '').trim();
+    if (opts.length === 0) return true;
+    if (opts.length === 2 && opts[0] === 'Benar' && opts[1] === 'Salah' && (corr === '0' || corr === '1')) {
+        return true;
     }
-];
-
-const INITIAL_TEACHERS = [];
-const INITIAL_CLASSES = [];
-const INITIAL_SUBJECTS = [];
-const INITIAL_STUDENTS = [];
-const INITIAL_STIMULI = [];
-const INITIAL_QUESTIONS = [];
-const INITIAL_RESULTS = [];
+    return !corr.toUpperCase().includes('B') && !corr.toUpperCase().includes('S') && (corr === '0' || corr === '1');
+};
 
 const QUOTES = [
     "Pendidikan adalah senjata paling mematikan di dunia. - Nelson Mandela",
@@ -238,15 +215,145 @@ const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey, aiMod
         try {
             const XLSX = await loadSheetJS();
             let data = [];
+            const wb = XLSX.utils.book_new();
             if (type === 'Bank Soal') {
                 data = [
-                    ["Tipe Soal", "Level Kognitif", "Bobot", "Indikator", "Teks Soal", "Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E", "Kunci Jawaban"],
-                    ["single", "LOTS", 10, "Menghitung dasar", "Berapakah 1+1?", "1", "2", "3", "4", "5", "1"],
-                    ["multiple", "MOTS", 20, "Ciri makhluk hidup", "Pilih ciri makhluk hidup:", "Bernapas", "Mati", "Tumbuh", "Diam", "Makan", "0,2,4"],
-                    ["boolean", "LOTS", 10, "Fakta tata surya", "Matahari mengelilingi bumi.", "", "", "", "", "", "1"],
-                    ["matching", "MOTS", 20, "Ibukota negara", "Jodohkan negara berikut!", "", "", "", "", "", "Indonesia | Jakarta\nJepang | Tokyo"],
-                    ["short", "LOTS", 15, "Pengetahuan Umum", "Ibukota Indonesia adalah...", "", "", "", "", "", "Jakarta"],
-                    ["essay", "HOTS", 30, "Proses alam", "Jelaskan proses hujan!", "", "", "", "", "", "Air menguap menjadi awan dan turun hujan."]
+                    [
+                        "Tipe Soal",
+                        "Level Kognitif",
+                        "Bobot",
+                        "Indikator",
+                        "Judul Stimulus (Opsional)",
+                        "Tipe Stimulus (text/table/image)",
+                        "Isi Wacana / Tabel Stimulus (Opsional)",
+                        "URL Gambar Stimulus (Opsional)",
+                        "Teks Soal",
+                        "Opsi A / Pernyataan 1",
+                        "Opsi B / Pernyataan 2",
+                        "Opsi C / Pernyataan 3",
+                        "Opsi D / Pernyataan 4",
+                        "Opsi E / Pernyataan 5",
+                        "Kunci Jawaban"
+                    ],
+                    [
+                        "single",
+                        "MOTS",
+                        10,
+                        "Mengidentifikasi fungsi ekosistem mangrove",
+                        "Ekosistem Hutan Mangrove",
+                        "text",
+                        "Hutan mangrove tumbuh di sepanjang pesisir pantai tropis. Akar pohon bakau yang rapat berfungsi menahan abrasi air laut sekaligus menjadi tempat berkembang biak ikan kecil, udang, dan kepiting.",
+                        "",
+                        "Berdasarkan wacana di atas, apa fungsi ekologis utama akar pohon bakau di wilayah pesisir?",
+                        "Menahan abrasi gelombang laut",
+                        "Mempercepat penguapan air laut",
+                        "Mengurangi curah hujan pesisir",
+                        "Menghambat pasang surut bulan",
+                        "Menghasilkan batu karang",
+                        "A"
+                    ],
+                    [
+                        "multiple",
+                        "HOTS",
+                        15,
+                        "Menentukan manfaat biota dan pelindung pantai",
+                        "Ekosistem Hutan Mangrove",
+                        "text",
+                        "",
+                        "",
+                        "Pilih dua pernyataan yang tepat mengenai manfaat hutan mangrove berdasarkan wacana!",
+                        "Tempat berkembang biak udang dan kepiting",
+                        "Pemicu pengikisan tanah pantai",
+                        "Pelindung garis pantai dari abrasi",
+                        "Penghasil limbah logam berat",
+                        "Penghambat fotosintesis laut",
+                        "A,C"
+                    ],
+                    [
+                        "boolean",
+                        "HOTS",
+                        15,
+                        "Menganalisis tabel pertumbuhan kecambah",
+                        "Tabel Pengamatan Kecambah",
+                        "table",
+                        "Hari Ke | Tempat Terang (cm) | Tempat Gelap (cm)\nHari 1 | 0.5 | 0.9\nHari 3 | 2.4 | 5.2\nHari 5 | 4.8 | 9.6",
+                        "",
+                        "Tentukan Benar (B) atau Salah (S) untuk setiap pernyataan berikut berdasarkan tabel pengamatan!",
+                        "Pertambahan tinggi kecambah di tempat gelap lebih cepat dibandingkan tempat terang",
+                        "Pada hari ke-3 tinggi kecambah di tempat terang mencapai 5.2 cm",
+                        "Intensitas cahaya memengaruhi kecepatan pertumbuhan kecambah",
+                        "",
+                        "",
+                        "B,S,B"
+                    ],
+                    [
+                        "single",
+                        "LOTS",
+                        10,
+                        "Operasi hitung perkalian bilangan bulat",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "Hasil dari 12 x 8 adalah...",
+                        "86",
+                        "96",
+                        "106",
+                        "116",
+                        "126",
+                        "B"
+                    ],
+                    [
+                        "matching",
+                        "MOTS",
+                        20,
+                        "Menjodohkan negara dan ibukotanya",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "Pasangkan nama negara di sebelah kiri dengan ibukotanya yang tepat!",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "Indonesia | Jakarta\nJepang | Tokyo\nMesir | Kairo"
+                    ],
+                    [
+                        "short",
+                        "LOTS",
+                        10,
+                        "Menyebutkan ibukota provinsi",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "Ibukota Provinsi Jawa Timur adalah...",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "Surabaya"
+                    ],
+                    [
+                        "essay",
+                        "HOTS",
+                        20,
+                        "Menjelaskan tahapan siklus air",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "Jelaskan secara singkat tahapan terjadinya siklus hidrologi (siklus air)!",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "Air menguap (evaporasi), membentuk titik-titik awan (kondensasi), lalu turun menjadi hujan (presipitasi)."
+                    ]
                 ];
             } else if (type === 'Data Murid') {
                 data = [
@@ -263,8 +370,28 @@ const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey, aiMod
             }
 
             const ws = XLSX.utils.aoa_to_sheet(data);
-            const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Template");
+
+            if (type === 'Bank Soal') {
+                const guideData = [
+                    ["PANDUAN PENGISIAN TEMPLATE BANK SOAL & STIMULUS (e-Quest)"],
+                    [""],
+                    ["Kolom", "Keterangan & Aturan Pengisian"],
+                    ["Tipe Soal", "Isi salah satu: single (Pilihan Ganda), multiple (PG Kompleks), boolean (Benar/Salah), matching (Menjodohkan), short (Isian Singkat), essay (Uraian)."],
+                    ["Judul Stimulus (Opsional)", "KOSONGKAN jika soal berdiri sendiri tanpa stimulus. Jika beberapa soal memakai 1 wacana/tabel yang sama, ketik Judul Stimulus yang SAMA agar otomatis digabung."],
+                    ["Tipe Stimulus", "Isi text (wacana bacaan), table (tabel data dipisah tanda | per kolom dan baris baru per baris), atau image (gambar). Kosongkan jika tanpa stimulus."],
+                    ["Isi Wacana / Tabel Stimulus", "Isi teks bacaan atau data tabel (contoh tabel: Kolom 1 | Kolom 2 lalu Enter untuk baris berikutnya). Cukup diisi pada soal pertama jika judul stimulusnya sama."],
+                    ["URL Gambar Stimulus", "Opsional: tempel tautan gambar (https://...) jika menggunakan stimulus gambar."],
+                    ["Kunci Jawaban - single", "Ketik huruf opsi benar (A, B, C, D, E) atau indeks angka (0, 1, 2, 3, 4). Urutan jawaban pada peserta akan diacak otomatis."],
+                    ["Kunci Jawaban - multiple", "Ketik huruf opsi benar dipisah koma (contoh: A,C atau B,D,E)."],
+                    ["Kunci Jawaban - boolean", "Tulis pernyataan-pernyataan di kolom Pernyataan 1 s/d 5, lalu isi kunci dipisah koma sesuai urutan pernyataan (contoh: B,S,B)."],
+                    ["Kunci Jawaban - matching", "Tulis pasangan langsung dengan format: Pernyataan Kiri | Pasangan Kanan (pisahkan antar pasangan dengan baris baru / Alt+Enter). Sistem mengacak otomatis di peserta."],
+                    ["Kunci Jawaban - short / essay", "Ketik kata kunci jawaban singkat atau rubrik penilaian."]
+                ];
+                const wsGuide = XLSX.utils.aoa_to_sheet(guideData);
+                XLSX.utils.book_append_sheet(wb, wsGuide, "Panduan");
+            }
+
             XLSX.writeFile(wb, `Template_${type.replace(/\s+/g, '_')}.xlsx`);
             showToast("Template .xlsx berhasil diunduh!", "success");
         } catch (e) {
@@ -272,7 +399,7 @@ const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey, aiMod
         }
     };
 
-    const handleMockImport = async () => {
+    const handleStartImport = async () => {
         if (!selectedFile) return showToast("Pilih file terlebih dahulu!", "error");
         setErrorMessage("");
 
@@ -465,7 +592,7 @@ const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey, aiMod
                             </div>
                         </div>
                     ) : (
-                        <button onClick={handleMockImport} disabled={!selectedFile} className="w-full bg-indigo-600 text-white py-3.5 rounded-2xl font-bold text-sm sm:text-base shadow-lg hover:bg-indigo-700 transition-all disabled:opacity-50 flex justify-center items-center gap-2 cursor-pointer">
+                        <button onClick={handleStartImport} disabled={!selectedFile} className="w-full bg-indigo-600 text-white py-3.5 rounded-2xl font-bold text-sm sm:text-base shadow-lg hover:bg-indigo-700 transition-all disabled:opacity-50 flex justify-center items-center gap-2 cursor-pointer">
                             Mulai Import Data
                         </button>
                     )}
@@ -489,25 +616,6 @@ const PrintLayout = ({ type, data, schoolData, onBack }) => {
     const tahunAjaranText = schoolData?.academicYear
         ? `${schoolData.academicYear} (Semester ${schoolData.semester || 'Ganjil'})`
         : '2026/2027 (Semester Ganjil)';
-
-    const formatKeyLabel = (q) => {
-        if (!q) return '-';
-        if (q.type === 'single') {
-            const idx = Number(q.correct);
-            return !isNaN(idx) ? String.fromCharCode(65 + idx) : String(q.correct || '-');
-        }
-        if (q.type === 'multiple') {
-            return String(q.correct || '')
-                .split(',')
-                .filter(x => x !== '')
-                .map(x => (!isNaN(Number(x)) ? String.fromCharCode(65 + Number(x)) : x))
-                .join(', ') || '-';
-        }
-        if (q.type === 'boolean') {
-            return String(q.correct) === '0' ? 'Benar' : 'Salah';
-        }
-        return String(q.correct || '-').slice(0, 40);
-    };
 
     const findStudentNisn = (studentName, studentId) => {
         const list = Array.isArray(data?.students) ? data.students : [];
@@ -602,7 +710,7 @@ const PrintLayout = ({ type, data, schoolData, onBack }) => {
                         </div>
                     </div>
                     <table className="w-full border-collapse border border-black text-sm text-left mb-10">
-                        <thead><tr className="bg-slate-100"><th className="border border-black p-2 text-center w-10">No</th><th className="border border-black p-2">Indikator / Pokok Materi Soal</th><th className="border border-black p-2 text-center w-24">Level Kognitif</th><th className="border border-black p-2 text-center w-24">Bentuk Soal</th><th className="border border-black p-2 text-center w-16">Bobot</th><th className="border border-black p-2 text-center w-24">Kunci</th></tr></thead>
+                        <thead><tr className="bg-slate-100"><th className="border border-black p-2 text-center w-10">No</th><th className="border border-black p-2">Indikator / Pokok Materi Soal</th><th className="border border-black p-2 text-center w-28">Level Kognitif</th><th className="border border-black p-2 text-center w-28">Bentuk Soal</th><th className="border border-black p-2 text-center w-20">Bobot</th></tr></thead>
                         <tbody>
                             {(data.questions || []).length > 0 ? data.questions.map((q, i) => (
                                 <tr key={q.id || i} className="print-avoid-break">
@@ -611,10 +719,9 @@ const PrintLayout = ({ type, data, schoolData, onBack }) => {
                                     <td className="border border-black p-2 text-center font-bold">{q.difficulty || "MOTS"}</td>
                                     <td className="border border-black p-2 text-center uppercase text-xs font-semibold">{q.type}</td>
                                     <td className="border border-black p-2 text-center">{q.weight || 10}</td>
-                                    <td className="border border-black p-2 text-center font-bold">{formatKeyLabel(q)}</td>
                                 </tr>
                             )) : (
-                                <tr><td colSpan="6" className="border border-black p-4 text-center">Belum ada butir soal untuk mata pelajaran ini.</td></tr>
+                                <tr><td colSpan="5" className="border border-black p-4 text-center">Belum ada butir soal untuk mata pelajaran ini.</td></tr>
                             )}
                         </tbody>
                     </table>
@@ -770,42 +877,45 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const dbLoadedKeys = useRef(new Set());
     const DB_TOTAL_COLLECTIONS = 11;
 
-    // State awal dengan fallback cache lokal & data awal — data asli otomatis disinkronkan dari Firestore
-    const [schoolData, setSchoolData] = useState(() => getCachedData('schoolData', INITIAL_SCHOOL_DATA));
-    const [schools, setSchools] = useState(() => getCachedData('schools', INITIAL_SCHOOLS));
-    const [selectedSchoolId, setSelectedSchoolId] = useState('sdn2palapi');
+    // State awal dengan cache lokal — seluruh data asli disinkronkan langsung dari Cloud Firestore
+    const [schoolData, setSchoolData] = useState(() => getCachedData('schoolData', EMPTY_SCHOOL_FALLBACK));
+    const [schools, setSchools] = useState(() => getCachedData('schools', []));
+    const [selectedSchoolId, setSelectedSchoolId] = useState('');
     const [showSystemPassword, setShowSystemPassword] = useState(false);
     const [showStudentPassword, setShowStudentPassword] = useState(false);
     const [referralCodeInput, setReferralCodeInput] = useState('');
     const [showReferralBox, setShowReferralBox] = useState(false);
     const [schoolSearch, setSchoolSearch] = useState('');
     const [schoolStatusFilter, setSchoolStatusFilter] = useState('all');
-    const [teachers, setTeachers] = useState(() => getCachedData('teachers', INITIAL_TEACHERS));
-    const [classes, setClasses] = useState(() => getCachedData('classes', INITIAL_CLASSES));
-    const [subjects, setSubjects] = useState(() => getCachedData('subjects', INITIAL_SUBJECTS));
-    const [students, setStudents] = useState(() => getCachedData('students', INITIAL_STUDENTS));
-    const [questions, setQuestions] = useState(() => getCachedData('questions', INITIAL_QUESTIONS));
-    const [stimuli, setStimuli] = useState(() => getCachedData('stimuli', INITIAL_STIMULI));
+    const [teachers, setTeachers] = useState(() => getCachedData('teachers', []));
+    const [classes, setClasses] = useState(() => getCachedData('classes', []));
+    const [subjects, setSubjects] = useState(() => getCachedData('subjects', []));
+    const [students, setStudents] = useState(() => getCachedData('students', []));
+    const [questions, setQuestions] = useState(() => getCachedData('questions', []));
+    const [stimuli, setStimuli] = useState(() => getCachedData('stimuli', []));
     const [results, setResults] = useState(() => getCachedData('results', []));
     const [activeExams, setActiveExams] = useState(() => getCachedData('activeExams', []));
     const [liveStatus, setLiveStatus] = useState({});
 
+    const masterSchoolObj = Array.isArray(schools) ? (schools.find(s => s && (s.isMaster || s.isSuperAdmin)) || schools[0] || null) : null;
+    const masterSchoolId = masterSchoolObj?.id || '';
+
     const getActiveSchoolId = () => {
         if (role === 'admin') {
             if (currentUser?.isSuperAdmin) {
-                return selectedSchoolId || 'sdn2palapi';
+                return selectedSchoolId || masterSchoolId;
             }
-            return currentUser?.schoolId || selectedSchoolId || 'sdn2palapi';
+            return currentUser?.schoolId || selectedSchoolId || masterSchoolId;
         }
-        return currentUser?.schoolId || selectedSchoolId || 'sdn2palapi';
+        return currentUser?.schoolId || selectedSchoolId || masterSchoolId;
     };
 
     const getActiveSchool = () => {
         const sId = getActiveSchoolId();
-        const list = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
-        const matched = list.find(s => s && s.id === sId);
+        const list = Array.isArray(schools) ? schools : [];
+        const matched = list.find(s => s && s.id === sId) || (sId === '' ? masterSchoolObj : null);
         if (matched) {
-            const isMasterSchool = matched.id === 'sdn2palapi';
+            const isMasterSchool = Boolean(matched.isMaster || (masterSchoolId && matched.id === masterSchoolId));
             return {
                 ...(isMasterSchool ? schoolData : {}),
                 ...matched,
@@ -821,7 +931,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 address: matched.address ?? (isMasterSchool ? (schoolData?.address || '') : ''),
                 npsn: matched.npsn ?? '',
                 adminName: matched.adminName ?? (isMasterSchool ? (schoolData?.adminName || '') : ''),
-                adminUsername: matched.adminUsername ?? (isMasterSchool ? (schoolData?.adminUsername || 'admin') : ''),
+                adminUsername: matched.adminUsername ?? (isMasterSchool ? (schoolData?.adminUsername || '') : ''),
                 adminPassword: matched.adminPassword ?? (isMasterSchool ? (schoolData?.adminPassword || '') : ''),
                 apiKey: matched.apiKey ?? (isMasterSchool ? (schoolData?.apiKey || '') : ''),
                 aiModel: sanitizeModelId(matched.aiModel || (isMasterSchool ? schoolData?.aiModel : '') || DEFAULT_AI_MODEL),
@@ -829,12 +939,9 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 optionCount: Number(matched.optionCount || (isMasterSchool ? schoolData?.optionCount : 5)) || 5
             };
         }
-        const isMasterFallback = sId === 'sdn2palapi';
         return {
-            ...INITIAL_SCHOOL_DATA,
-            ...(isMasterFallback ? schoolData : { name: 'Satuan Pendidikan', address: '', kabupaten: '', kepsekName: '', kepsekNip: '', apiKey: '' }),
-            logo: EQUEST_LOGO,
-            schoolLogo: isMasterFallback ? (schoolData?.schoolLogo || '') : ''
+            ...EMPTY_SCHOOL_FALLBACK,
+            name: 'Satuan Pendidikan'
         };
     };
 
@@ -882,9 +989,9 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const [teacherSchoolFilter, setTeacherSchoolFilter] = useState('current'); // 'current' | 'all' | schoolId
 
     const getSchoolName = (sId) => {
-        const list = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
-        const found = list.find(s => s && s.id === (sId || 'sdn2palapi'));
-        return found?.name || 'SD Negeri 2 Palapi';
+        const list = Array.isArray(schools) ? schools : [];
+        const found = list.find(s => s && s.id === (sId || masterSchoolId));
+        return found?.name || 'Satuan Pendidikan';
     };
     const [classSearch, setClassSearch] = useState('');
     const [classLevelFilter, setClassLevelFilter] = useState('all');
@@ -894,6 +1001,18 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const [analysisFilterSubject, setAnalysisFilterSubject] = useState('');
     const [selectedSubjectForQuestions, setSelectedSubjectForQuestions] = useState(null);
     const [questionFormType, setQuestionFormType] = useState('single');
+    const [questionOptions, setQuestionOptions] = useState(['', '', '', '', '']);
+    const [questionSingleKey, setQuestionSingleKey] = useState(0);
+    const [questionMultiKeys, setQuestionMultiKeys] = useState(['0']);
+    const [questionBooleanRows, setQuestionBooleanRows] = useState([
+        { text: '', answer: 'B' },
+        { text: '', answer: 'S' }
+    ]);
+    const [questionMatchingPairs, setQuestionMatchingPairs] = useState([
+        { left: '', right: '' },
+        { left: '', right: '' },
+        { left: '', right: '' }
+    ]);
 
     // State Stimulus Soal
     const [bankSubjectTab, setBankSubjectTab] = useState('questions'); // 'questions' | 'stimuli'
@@ -981,7 +1100,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
                     updateGlobalState({ schools: next });
                     return next;
                 });
-                if (activeSId === 'sdn2palapi') {
+                if (curSc.isMaster || (masterSchoolId && activeSId === masterSchoolId)) {
                     setSchoolData(prev => {
                         const next = { ...prev, apiKey: key.trim(), aiModel: chosen, availableAiModels: res.models };
                         updateGlobalState({ schoolData: next });
@@ -1086,14 +1205,14 @@ export default function App({ defaultLogin = 'student', onBack }) {
             { key: 'results', setter: setResults, init: [] },
             { key: 'activeExams', setter: setActiveExams, init: [] },
             { key: 'liveStatus', setter: setLiveStatus, init: {} },
-            { key: 'schoolData', setter: setSchoolData, init: INITIAL_SCHOOL_DATA },
-            { key: 'schools', setter: setSchools, init: INITIAL_SCHOOLS },
-            { key: 'teachers', setter: setTeachers, init: INITIAL_TEACHERS },
-            { key: 'classes', setter: setClasses, init: INITIAL_CLASSES },
-            { key: 'subjects', setter: setSubjects, init: INITIAL_SUBJECTS },
-            { key: 'students', setter: setStudents, init: INITIAL_STUDENTS },
-            { key: 'questions', setter: setQuestions, init: INITIAL_QUESTIONS },
-            { key: 'stimuli', setter: setStimuli, init: INITIAL_STIMULI }
+            { key: 'schoolData', setter: setSchoolData, init: EMPTY_SCHOOL_FALLBACK },
+            { key: 'schools', setter: setSchools, init: [] },
+            { key: 'teachers', setter: setTeachers, init: [] },
+            { key: 'classes', setter: setClasses, init: [] },
+            { key: 'subjects', setter: setSubjects, init: [] },
+            { key: 'students', setter: setStudents, init: [] },
+            { key: 'questions', setter: setQuestions, init: [] },
+            { key: 'stimuli', setter: setStimuli, init: [] }
         ];
 
         const unsubs = collections.map(({ key, setter, init }) => {
@@ -1114,12 +1233,12 @@ export default function App({ defaultLogin = 'student', onBack }) {
                             });
                         }
                         if (key === 'schools') {
-                            if (!Array.isArray(data) || data.length === 0) {
-                                data = INITIAL_SCHOOLS;
+                            if (!Array.isArray(data)) {
+                                data = [];
                             } else {
                                 data = data.map(s => ({
                                     ...s,
-                                    referralCode: s.referralCode || (s.id === 'sdn2palapi' ? 'EQ-PALAPI' : ('EQ-' + (s.id || '').replace('school_', '').slice(-4).toUpperCase())),
+                                    referralCode: s.referralCode || ('EQ-' + (s.id || '').replace('school_', '').slice(-4).toUpperCase()),
                                     status: s.status || 'active'
                                 }));
                             }
@@ -1131,24 +1250,16 @@ export default function App({ defaultLogin = 'student', onBack }) {
                             }
                         } else if (key === 'schoolData') {
                             if (!data || typeof data !== 'object') {
-                                data = INITIAL_SCHOOL_DATA;
+                                data = EMPTY_SCHOOL_FALLBACK;
                             } else {
-                                data = { ...INITIAL_SCHOOL_DATA, ...data };
+                                data = { ...EMPTY_SCHOOL_FALLBACK, ...data };
                             }
                         }
                         const finalData = data !== undefined && data !== null ? data : init;
                         setCachedData(key, finalData);
                         setter(finalData);
                     } else {
-                        console.warn(`[Firestore] Collection '${key}' belum ada, melakukan seed awal...`);
-                        let seedData = init;
-                        if (key === 'stimuli' && Array.isArray(seedData)) {
-                            seedData = seedData.map(s => ({
-                                ...s,
-                                tableData: Array.isArray(s.tableData) ? JSON.stringify(s.tableData) : (s.tableData || '[]')
-                            }));
-                        }
-                        setDoc(doc(db, key, 'data'), { data: seedData }).catch(e => console.error("Seed error for " + key, e));
+                        setter(init);
                     }
                     dbLoadedKeys.current.add(key);
                     if (dbLoadedKeys.current.size >= DB_TOTAL_COLLECTIONS) {
@@ -1285,9 +1396,66 @@ export default function App({ defaultLogin = 'student', onBack }) {
             setTempSchoolLogo(null);
         }
         if (type === 'question') {
-            setQuestionFormType(item?.type || 'single');
+            const qType = item?.type || 'single';
+            setQuestionFormType(qType);
             setQuestionUseStimulus(Boolean(item?.stimulusId));
             setQuestionStimulusId(item?.stimulusId ? String(item.stimulusId) : '');
+
+            const optCount = Math.max(Number(currentActiveSchool.optionCount) || 5, 5);
+            if (item && (qType === 'single' || qType === 'multiple')) {
+                const existingOpts = Array.isArray(item.options) ? item.options : [];
+                setQuestionOptions(Array.from({ length: optCount }, (_, idx) => String(existingOpts[idx] ?? '')));
+                if (qType === 'single') {
+                    const parsedIdx = parseInt(item.correct);
+                    setQuestionSingleKey(!isNaN(parsedIdx) && parsedIdx >= 0 ? parsedIdx : 0);
+                    setQuestionMultiKeys(['0']);
+                } else {
+                    const parsedMulti = String(item.correct ?? '0').split(',').map(s => s.trim()).filter(Boolean);
+                    setQuestionMultiKeys(parsedMulti.length > 0 ? parsedMulti : ['0']);
+                    setQuestionSingleKey(0);
+                }
+            } else {
+                setQuestionOptions(Array.from({ length: optCount }, () => ''));
+                setQuestionSingleKey(0);
+                setQuestionMultiKeys(['0']);
+            }
+
+            if (item && qType === 'boolean') {
+                if (isLegacySingleBoolean(item)) {
+                    setQuestionBooleanRows([{ text: String(item.text || ''), answer: String(item.correct) === '1' ? 'S' : 'B' }]);
+                } else {
+                    const corrParts = String(item.correct || '').split(',').map(s => s.trim().toUpperCase());
+                    const rows = (Array.isArray(item.options) ? item.options : []).map((st, idx) => ({
+                        text: String(st || ''),
+                        answer: corrParts[idx] === 'S' ? 'S' : 'B'
+                    }));
+                    setQuestionBooleanRows(rows.length > 0 ? rows : [{ text: '', answer: 'B' }, { text: '', answer: 'S' }]);
+                }
+            } else {
+                setQuestionBooleanRows([
+                    { text: '', answer: 'B' },
+                    { text: '', answer: 'S' }
+                ]);
+            }
+
+            if (item && qType === 'matching' && item.correct) {
+                const parsedPairs = String(item.correct)
+                    .split('\n')
+                    .map(l => l.trim())
+                    .filter(Boolean)
+                    .map(l => {
+                        const [left, ...rest] = l.split('|');
+                        return { left: (left || '').trim(), right: rest.join('|').trim() };
+                    });
+                while (parsedPairs.length < 2) parsedPairs.push({ left: '', right: '' });
+                setQuestionMatchingPairs(parsedPairs);
+            } else {
+                setQuestionMatchingPairs([
+                    { left: '', right: '' },
+                    { left: '', right: '' },
+                    { left: '', right: '' }
+                ]);
+            }
         }
         if (type === 'stimulus') {
             setStimulusType(item?.type || 'text');
@@ -1331,14 +1499,14 @@ export default function App({ defaultLogin = 'student', onBack }) {
             showToast("Masukkan Kode Referensi Sekolah!", "error");
             return;
         }
-        const list = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
+        const list = Array.isArray(schools) ? schools : [];
         const matched = list.find(s => (s.referralCode || '').toUpperCase().trim() === cleaned);
         if (!matched) {
             showToast(`Kode Referensi "${cleaned}" tidak ditemukan! Pastikan kode dari Super Admin benar.`, "error");
             return;
         }
         if (matched.status !== 'active') {
-            showToast(`Akses sekolah "${matched.name}" dinonaktifkan oleh Super Admin (Mas Alfy).`, "error");
+            showToast(`Akses sekolah "${matched.name}" dinonaktifkan oleh Super Admin.`, "error");
             return;
         }
 
@@ -1357,12 +1525,13 @@ export default function App({ defaultLogin = 'student', onBack }) {
     };
 
     const toggleSchoolStatus = (schoolId) => {
-        if (schoolId === 'sdn2palapi') {
-            showToast("Akses Sekolah Utama (SD Negeri 2 Palapi) tidak dapat dinonaktifkan!", "error");
+        const target = (Array.isArray(schools) ? schools : []).find(s => s.id === schoolId);
+        if (target?.isMaster || (masterSchoolId && schoolId === masterSchoolId)) {
+            showToast("Akses Sekolah Utama tidak dapat dinonaktifkan!", "error");
             return;
         }
         setSchools(prev => {
-            const list = Array.isArray(prev) ? prev : INITIAL_SCHOOLS;
+            const list = Array.isArray(prev) ? prev : [];
             const next = list.map(s => {
                 if (s.id === schoolId) {
                     const newStatus = s.status === 'active' ? 'suspended' : 'active';
@@ -1373,8 +1542,6 @@ export default function App({ defaultLogin = 'student', onBack }) {
             updateGlobalState({ schools: next });
             return next;
         });
-        const list = Array.isArray(schools) ? schools : INITIAL_SCHOOLS;
-        const target = list.find(s => s.id === schoolId);
         const willBeActive = target?.status !== 'active';
         showToast(
             `Akses login untuk ${target?.name || 'sekolah'} berhasil ${willBeActive ? 'DIAKTIFKAN' : 'DIBEKUKAN / DINONAKTIFKAN'}!`,
@@ -1386,7 +1553,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
         if (!teacher) return [];
         const sId = getActiveSchoolId();
         const listClasses = Array.isArray(classes) ? classes : [];
-        const schoolClasses = listClasses.filter(c => (c.schoolId || 'sdn2palapi') === sId);
+        const schoolClasses = listClasses.filter(c => (c.schoolId || masterSchoolId) === sId);
         if (teacher.teacherType === 'guru_kelas') {
             return teacher.assignedClass ? [teacher.assignedClass] : (schoolClasses[0]?.name ? [schoolClasses[0].name] : []);
         }
@@ -1395,19 +1562,19 @@ export default function App({ defaultLogin = 'student', onBack }) {
             if (Array.isArray(teacher.assignedClasses) && teacher.assignedClasses.length > 0) {
                 return teacher.assignedClasses;
             }
-            const cls = listSubjects.filter(s => s.teacherId === teacher.id && (s.schoolId || 'sdn2palapi') === sId).map(s => s.class);
+            const cls = listSubjects.filter(s => s.teacherId === teacher.id && (s.schoolId || masterSchoolId) === sId).map(s => s.class);
             return Array.from(new Set(cls));
         }
         if (teacher.assignedClass) return [teacher.assignedClass];
         if (Array.isArray(teacher.assignedClasses) && teacher.assignedClasses.length > 0) return teacher.assignedClasses;
-        const cls = listSubjects.filter(s => s.teacherId === teacher.id && (s.schoolId || 'sdn2palapi') === sId).map(s => s.class);
+        const cls = listSubjects.filter(s => s.teacherId === teacher.id && (s.schoolId || masterSchoolId) === sId).map(s => s.class);
         return cls.length > 0 ? Array.from(new Set(cls)) : (schoolClasses[0]?.name ? [schoolClasses[0].name] : []);
     };
 
     const getMyClasses = () => {
         const sId = getActiveSchoolId();
         const listClasses = Array.isArray(classes) ? classes : [];
-        const schoolClasses = listClasses.filter(c => (c.schoolId || 'sdn2palapi') === sId);
+        const schoolClasses = listClasses.filter(c => (c.schoolId || masterSchoolId) === sId);
         if (role === 'admin') return schoolClasses;
         if (role === 'guru' && currentUser) {
             const listTeachers = Array.isArray(teachers) ? teachers : [];
@@ -1424,22 +1591,22 @@ export default function App({ defaultLogin = 'student', onBack }) {
         if (role === 'admin' && currentUser?.isSuperAdmin) {
             if (teacherSchoolFilter === 'all') return listTeachers;
             if (teacherSchoolFilter && teacherSchoolFilter !== 'current') {
-                return listTeachers.filter(t => (t.schoolId || 'sdn2palapi') === teacherSchoolFilter);
+                return listTeachers.filter(t => (t.schoolId || masterSchoolId) === teacherSchoolFilter);
             }
         }
-        return listTeachers.filter(t => (t.schoolId || 'sdn2palapi') === sId);
+        return listTeachers.filter(t => (t.schoolId || masterSchoolId) === sId);
     };
 
     const getMyStudents = () => {
         const sId = getActiveSchoolId();
         const listStudents = Array.isArray(students) ? students : [];
-        return listStudents.filter(s => (s.schoolId || 'sdn2palapi') === sId);
+        return listStudents.filter(s => (s.schoolId || masterSchoolId) === sId);
     };
 
     const getMySubjects = () => {
         const sId = getActiveSchoolId();
         const listSubjects = Array.isArray(subjects) ? subjects : [];
-        const schoolSubjects = listSubjects.filter(s => (s.schoolId || 'sdn2palapi') === sId);
+        const schoolSubjects = listSubjects.filter(s => (s.schoolId || masterSchoolId) === sId);
         if (role === 'admin') return schoolSubjects;
         if (role === 'guru' && currentUser) {
             const listTeachers = Array.isArray(teachers) ? teachers : [];
@@ -1470,7 +1637,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
         const sId = getActiveSchoolId();
         const listQuestions = Array.isArray(questions) ? questions : [];
         const myIds = new Set(getMySubjects().map(s => s.id));
-        return listQuestions.filter(q => (q.schoolId || 'sdn2palapi') === sId && myIds.has(q.subjectId));
+        return listQuestions.filter(q => (q.schoolId || masterSchoolId) === sId && myIds.has(q.subjectId));
     };
 
     const getMyStimuli = () => {
@@ -1478,7 +1645,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
         const listStimuli = Array.isArray(stimuli) ? stimuli : [];
         const myIds = new Set(getMySubjects().map(s => s.id));
         return listStimuli.filter(st => {
-            const stSchool = st.schoolId || 'sdn2palapi';
+            const stSchool = st.schoolId || masterSchoolId;
             if (stSchool !== sId) return false;
             if (!st.subjectId) return true;
             return myIds.has(st.subjectId);
@@ -1488,7 +1655,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const getMyResults = () => {
         const sId = getActiveSchoolId();
         const listResults = Array.isArray(results) ? results : [];
-        const schoolResults = listResults.filter(r => (r.schoolId || 'sdn2palapi') === sId);
+        const schoolResults = listResults.filter(r => (r.schoolId || masterSchoolId) === sId);
         if (role === 'admin') return schoolResults;
         if (role === 'guru' && currentUser) {
             const listTeachers = Array.isArray(teachers) ? teachers : [];
@@ -1505,23 +1672,77 @@ export default function App({ defaultLogin = 'student', onBack }) {
         return schoolResults;
     };
 
-    const loginAsSuperAdmin = () => {
-        const listSchools = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
-        const masterSchool = listSchools.find(s => s.isMaster || s.id === 'sdn2palapi') || listSchools[0];
+    const loginAsSuperAdmin = (matchedAccount = null) => {
+        const listSchools = Array.isArray(schools) ? schools : [];
+        const masterSchool = listSchools.find(s => s.isMaster || s.isSuperAdmin) || listSchools[0];
+        const resolvedSchoolId = matchedAccount?.schoolId || selectedSchoolId || masterSchool?.id || '';
         const adminUser = {
-            name: masterSchool?.adminName || (schoolData && schoolData.adminName) || 'Masfy (Super Admin)',
-            id: 0,
+            name: matchedAccount?.name || masterSchool?.adminName || schoolData?.adminName || 'Super Admin',
+            id: matchedAccount?.id ?? 0,
             isSuperAdmin: true,
-            schoolId: selectedSchoolId || masterSchool?.id || 'sdn2palapi',
-            email: masterSchool?.adminEmail || (schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com'
+            schoolId: resolvedSchoolId,
+            email: matchedAccount?.email || masterSchool?.adminEmail || schoolData?.adminEmail || ''
         };
         setCurrentUser(adminUser);
-        setSelectedSchoolId(adminUser.schoolId);
+        setSelectedSchoolId(resolvedSchoolId);
         setTeacherSchoolFilter('current');
         setTempSchoolLogo(null);
         setRole('admin');
         setAdminMenu('dashboard');
-        showToast("Login Super Admin Berhasil! Selamat Datang Mas Alfy.");
+        showToast(`Login Super Admin Berhasil! Selamat Datang, ${adminUser.name}.`);
+    };
+
+    const verifySuperAdminCredentials = (uLower, rawPass) => {
+        if (!uLower || !rawPass) return null;
+        const listSchools = Array.isArray(schools) ? schools : [];
+        const listTeachers = Array.isArray(teachers) ? teachers : [];
+
+        const matchedMasterSchool = listSchools.find(s =>
+            (s.isMaster || s.isSuperAdmin) &&
+            String(s.adminPassword || '').trim() !== '' &&
+            String(s.adminPassword || '').trim() === rawPass &&
+            ((s.adminUsername || '').toLowerCase().trim() === uLower ||
+             (s.adminEmail || '').toLowerCase().trim() === uLower)
+        );
+        if (matchedMasterSchool) {
+            return {
+                name: matchedMasterSchool.adminName || 'Super Admin',
+                email: matchedMasterSchool.adminEmail || '',
+                schoolId: matchedMasterSchool.id
+            };
+        }
+
+        const matchedSuperTeacher = listTeachers.find(t =>
+            Boolean(t.isSuperAdmin) &&
+            String(t.password || '').trim() !== '' &&
+            String(t.password || '').trim() === rawPass &&
+            ((t.username || '').toLowerCase().trim() === uLower ||
+             (t.email || '').toLowerCase().trim() === uLower)
+        );
+        if (matchedSuperTeacher) {
+            return {
+                id: matchedSuperTeacher.id,
+                name: matchedSuperTeacher.name || 'Super Admin',
+                email: matchedSuperTeacher.email || '',
+                schoolId: matchedSuperTeacher.schoolId || masterSchoolId
+            };
+        }
+
+        if (
+            schoolData &&
+            String(schoolData.adminPassword || '').trim() !== '' &&
+            String(schoolData.adminPassword || '').trim() === rawPass &&
+            ((schoolData.adminUsername || '').toLowerCase().trim() === uLower ||
+             (schoolData.adminEmail || '').toLowerCase().trim() === uLower)
+        ) {
+            return {
+                name: schoolData.adminName || 'Super Admin',
+                email: schoolData.adminEmail || '',
+                schoolId: masterSchoolId
+            };
+        }
+
+        return null;
     };
 
     const handleSystemLogin = (e) => {
@@ -1535,48 +1756,20 @@ export default function App({ defaultLogin = 'student', onBack }) {
             return;
         }
 
-        const listSchools = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
+        const listSchools = Array.isArray(schools) ? schools : [];
         const listTeachers = Array.isArray(teachers) ? teachers : [];
-        const masterSchool = listSchools.find(s => s.isMaster || s.id === 'sdn2palapi') || listSchools[0];
-        const superAdminTeacher = listTeachers.find(t =>
-            t.isSuperAdmin ||
-            (t.username || '').toLowerCase().trim() === 'alfy' ||
-            (t.name || '').toLowerCase().trim() === 'masfy'
-        );
 
-        // 1. Verifikasi Super Admin Terlebih Dahulu (Akun Mas Alfy / Administrator Pusat)
-        const masterUsernames = [
-            'admin',
-            'alfy',
-            'masfy',
-            'alfyarnaim',
-            'alfyarnaim@gmail.com',
-            'administrator',
-            'superadmin',
-            ((schoolData && schoolData.adminUsername) || 'admin').toLowerCase().trim(),
-            ((schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com').toLowerCase().trim(),
-            ((masterSchool && masterSchool.adminUsername) || 'admin').toLowerCase().trim(),
-            ((masterSchool && masterSchool.adminEmail) || 'alfyarnaim@gmail.com').toLowerCase().trim()
-        ];
-        const isMasterPass = (
-            rawP === 'masfy' ||
-            rawP === 'admin' ||
-            rawP === '123' ||
-            rawP === '123456' ||
-            rawP === 'admin123' ||
-            (schoolData && String(schoolData.adminPassword || '').trim() === rawP) ||
-            (masterSchool && String(masterSchool.adminPassword || '').trim() === rawP) ||
-            (superAdminTeacher && String(superAdminTeacher.password || '').trim() === rawP)
-        );
-
-        if (masterUsernames.includes(uLower) && isMasterPass) {
-            loginAsSuperAdmin();
+        // 1. Verifikasi Super Admin dari Database Firebase
+        const superAdminMatch = verifySuperAdminCredentials(uLower, rawP);
+        if (superAdminMatch) {
+            loginAsSuperAdmin(superAdminMatch);
             return;
         }
 
         // 2. Verifikasi Administrator Sekolah Multi-Tenant (Hanya akses sekolahnya masing-masing)
         const matchedSchool = listSchools.find(s =>
-            !s.isMaster && s.id !== 'sdn2palapi' &&
+            !s.isMaster && !s.isSuperAdmin &&
+            String(s.adminPassword || '').trim() !== '' &&
             (s.adminUsername?.toLowerCase().trim() === uLower ||
              s.adminEmail?.toLowerCase().trim() === uLower) &&
             String(s.adminPassword || '').trim() === rawP
@@ -1584,7 +1777,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
 
         if (matchedSchool) {
             if (matchedSchool.status === 'suspended') {
-                showToast("Akun sekolah ini sedang dibekukan oleh Super Admin. Hubungi Mas Alfy untuk aktivasi.", "error");
+                showToast("Akun sekolah ini sedang dibekukan oleh Super Admin.", "error");
                 return;
             }
             const schoolAdmin = {
@@ -1607,6 +1800,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
         // 3. Verifikasi Akun Guru Pengampu (Cek username, nama, atau email)
         const matchedTeacher = listTeachers.find(t =>
             !t.isSuperAdmin &&
+            String(t.password || '').trim() !== '' &&
             ((t.username || '').toLowerCase().trim() === uLower ||
              (t.name || '').toLowerCase().trim() === uLower ||
              (t.email || '').toLowerCase().trim() === uLower) &&
@@ -1614,7 +1808,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
         );
 
         if (matchedTeacher) {
-            const teacherSchoolId = matchedTeacher.schoolId || 'sdn2palapi';
+            const teacherSchoolId = matchedTeacher.schoolId || masterSchoolId;
             const tSchool = listSchools.find(s => s.id === teacherSchoolId);
             if (tSchool && tSchool.status === 'suspended') {
                 showToast("Akses sekolah Anda sedang dinonaktifkan oleh Administrator Pusat.", "error");
@@ -1634,10 +1828,10 @@ export default function App({ defaultLogin = 'student', onBack }) {
             return;
         }
 
-        // 4. Deteksi apakah username terdaftar tetapi password keliru
-        const userExists = masterUsernames.includes(uLower) ||
+        // 4. Deteksi apakah username terdaftar di Firebase tetapi password keliru
+        const userExists =
             listSchools.some(s => s.adminUsername?.toLowerCase().trim() === uLower || s.adminEmail?.toLowerCase().trim() === uLower) ||
-            listTeachers.some(t => (t.username || '').toLowerCase().trim() === uLower || (t.name || '').toLowerCase().trim() === uLower);
+            listTeachers.some(t => (t.username || '').toLowerCase().trim() === uLower || (t.name || '').toLowerCase().trim() === uLower || (t.email || '').toLowerCase().trim() === uLower);
 
         if (userExists) {
             showToast(`Kata sandi salah untuk akun "${rawU}"! Pastikan sandi benar atau hubungi Super Admin untuk reset kata sandi.`, "error");
@@ -1652,52 +1846,26 @@ export default function App({ defaultLogin = 'student', onBack }) {
         const rawPass = (e.target.password?.value || '').trim();
         const uLower = rawNis.toLowerCase();
 
-        const listSchools = Array.isArray(schools) && schools.length > 0 ? schools : INITIAL_SCHOOLS;
+        const listSchools = Array.isArray(schools) ? schools : [];
         const listTeachers = Array.isArray(teachers) ? teachers : [];
-        const masterSchool = listSchools.find(s => s.isMaster || s.id === 'sdn2palapi') || listSchools[0];
-        const superAdminTeacher = listTeachers.find(t =>
-            t.isSuperAdmin ||
-            (t.username || '').toLowerCase().trim() === 'alfy' ||
-            (t.name || '').toLowerCase().trim() === 'masfy'
-        );
 
-        // 1. FAILSAFE SUPER ADMIN: Jika Mas Alfy memasukkan username admin di tab Portal Siswa
-        const masterUsernames = [
-            'admin',
-            'alfy',
-            'masfy',
-            'alfyarnaim',
-            'alfyarnaim@gmail.com',
-            'administrator',
-            'superadmin',
-            ((schoolData && schoolData.adminUsername) || 'admin').toLowerCase().trim(),
-            ((schoolData && schoolData.adminEmail) || 'alfyarnaim@gmail.com').toLowerCase().trim(),
-            ((masterSchool && masterSchool.adminUsername) || 'admin').toLowerCase().trim()
-        ];
-        const isMasterPass = (
-            rawPass === 'masfy' ||
-            rawPass === 'admin' ||
-            rawPass === '123' ||
-            rawPass === '123456' ||
-            (schoolData && String(schoolData.adminPassword || '').trim() === rawPass) ||
-            (masterSchool && String(masterSchool.adminPassword || '').trim() === rawPass) ||
-            (superAdminTeacher && String(superAdminTeacher.password || '').trim() === rawPass)
-        );
-
-        if (masterUsernames.includes(uLower) && isMasterPass) {
-            loginAsSuperAdmin();
+        // 1. Jika Super Admin login melalui tab Portal Siswa
+        const superAdminMatch = verifySuperAdminCredentials(uLower, rawPass);
+        if (superAdminMatch) {
+            loginAsSuperAdmin(superAdminMatch);
             return;
         }
 
         // 2. Cek apakah guru login di tab siswa
-        const teacher = listTeachers.find(t => 
+        const teacher = listTeachers.find(t =>
             !t.isSuperAdmin &&
+            String(t.password || '').trim() !== '' &&
             ((t.username || '').toLowerCase().trim() === uLower ||
              (t.name || '').toLowerCase().trim() === uLower) &&
             String(t.password || '').trim() === rawPass
         );
         if (teacher) {
-            const teacherSchoolId = teacher.schoolId || 'sdn2palapi';
+            const teacherSchoolId = teacher.schoolId || masterSchoolId;
             setCurrentUser({ ...teacher, isSuperAdmin: false });
             setSelectedSchoolId(teacherSchoolId);
             setTeacherSchoolFilter('current');
@@ -1708,11 +1876,11 @@ export default function App({ defaultLogin = 'student', onBack }) {
             return;
         }
 
-        // 3. Login Siswa (Berdasarkan NISN)
+        // 3. Login Siswa (Berdasarkan NISN di Firestore)
         const listStudents = Array.isArray(students) ? students : [];
-        const s = listStudents.find(i => ((i.nisn || i.nis || '').trim() === rawNis) && (i.password || '').trim() === rawPass);
+        const s = listStudents.find(i => ((i.nisn || i.nis || '').trim() === rawNis) && String(i.password || '').trim() !== '' && (i.password || '').trim() === rawPass);
         if (s) {
-            const studentSchoolId = s.schoolId || 'sdn2palapi';
+            const studentSchoolId = s.schoolId || masterSchoolId;
             const sSchool = listSchools.find(sc => sc.id === studentSchoolId);
             if (sSchool && sSchool.status !== 'active') {
                 showToast("Akses ujian sekolah Anda sedang dinonaktifkan oleh Administrator Pusat.", "error");
@@ -1737,8 +1905,8 @@ export default function App({ defaultLogin = 'student', onBack }) {
             if (!subjectObj) { showToast("Mata pelajaran untuk token ini tidak ditemukan!", "error"); return; }
             if (subjectObj.class !== currentUser.class) { showToast("Token ini bukan untuk kelas Anda!", "error"); return; }
 
-            const studentSchoolId = currentUser.schoolId || 'sdn2palapi';
-            const subjectSchoolId = subjectObj.schoolId || exam.schoolId || 'sdn2palapi';
+            const studentSchoolId = currentUser.schoolId || masterSchoolId;
+            const subjectSchoolId = subjectObj.schoolId || exam.schoolId || masterSchoolId;
             if (studentSchoolId !== subjectSchoolId) {
                 showToast("Token ini milik sesi sekolah lain!", "error");
                 return;
@@ -1773,29 +1941,53 @@ export default function App({ defaultLogin = 'student', onBack }) {
             const weight = Number(q.weight) || 10;
             max += weight;
             let earnedThisQ = 0;
-            if (q.type === 'single' && String(answers[i]) === String(q.correct)) {
+            const qTypeLower = String(q.type || '').toLowerCase().trim();
+            if (qTypeLower === 'single' && String(answers[i]) === String(q.correct)) {
                 earnedThisQ = weight;
-            } else if (q.type === 'multiple') {
+            } else if (qTypeLower === 'multiple') {
                 const ansArr = String(answers[i] || "").split(',').filter(Boolean).sort();
                 const corrArr = String(q.correct).split(',').filter(Boolean).sort();
                 if (JSON.stringify(ansArr) === JSON.stringify(corrArr)) earnedThisQ = weight;
-            } else if (q.type === 'boolean' && String(answers[i]) === String(q.correct)) {
-                earnedThisQ = weight;
-            } else if (q.type === 'matching') {
+            } else if (qTypeLower === 'boolean') {
+                if (isLegacySingleBoolean(q)) {
+                    if (String(answers[i]) === String(q.correct)) earnedThisQ = weight;
+                } else {
+                    try {
+                        const studentMap = JSON.parse(answers[i] || "{}");
+                        const stmts = Array.isArray(q.options) ? q.options : [];
+                        const corrArr = String(q.correct || "").split(',').map(s => s.trim().toUpperCase());
+                        let matchedCount = 0;
+                        stmts.forEach((stmt, sIdx) => {
+                            const stmtKey = String(stmt || '').trim() || String(sIdx);
+                            const expected = corrArr[sIdx] === 'S' ? 'S' : 'B';
+                            const actual = studentMap[stmtKey] ?? studentMap[String(sIdx)];
+                            if (actual === expected) matchedCount++;
+                        });
+                        if (stmts.length > 0) {
+                            earnedThisQ = Math.round(((matchedCount / stmts.length) * weight) * 100) / 100;
+                        }
+                    } catch (e) { }
+                }
+            } else if (qTypeLower === 'matching') {
                 try {
                     const studentPairs = JSON.parse(answers[i] || "{}");
-                    const correctPairs = String(q.correct).split('\n').filter(Boolean).map(line => line.split('|').map(s => s.trim()));
-                    let allCorrect = true;
+                    const correctPairs = String(q.correct).split('\n').filter(Boolean).map(line => line.split('|').map(s => s.trim())).filter(p => p[0] && p[1]);
+                    let matchedCount = 0;
                     for (let pair of correctPairs) {
-                        if (studentPairs[pair[0]] !== pair[1]) {
-                            allCorrect = false;
-                            break;
+                        if (studentPairs[pair[0]] === pair[1]) {
+                            matchedCount++;
                         }
                     }
-                    if (allCorrect && correctPairs.length > 0) earnedThisQ = weight;
+                    if (correctPairs.length > 0) {
+                        earnedThisQ = Math.round(((matchedCount / correctPairs.length) * weight) * 100) / 100;
+                    }
                 } catch (e) { }
-            } else if ((q.type === 'short' || q.type === 'essay') && String(answers[i]).toLowerCase().trim() === String(q.correct).toLowerCase().trim()) {
-                earnedThisQ = weight;
+            } else if ((qTypeLower === 'short' || qTypeLower === 'essay') && answers[i] !== undefined && answers[i] !== null) {
+                const studentText = String(answers[i]).toLowerCase().trim();
+                const validKeys = String(q.correct || '').split(',').map(k => k.toLowerCase().trim()).filter(Boolean);
+                if (studentText && (validKeys.includes(studentText) || studentText === String(q.correct || '').toLowerCase().trim())) {
+                    earnedThisQ = weight;
+                }
             }
             earned += earnedThisQ;
             earnedScores[q.id] = earnedThisQ;
@@ -1820,7 +2012,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 earnedTotal: earned,
                 earnedScores,
                 rawAnswersMap,
-                schoolId: currentUser.schoolId || currentExamSubject.schoolId || 'sdn2palapi',
+                schoolId: currentUser.schoolId || currentExamSubject.schoolId || masterSchoolId,
                 submittedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }];
             updateGlobalState({ results: next });
@@ -1853,7 +2045,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 updateGlobalState({ schools: next });
                 return next;
             });
-            if (id === 'sdn2palapi' || (schoolData && id === schoolData.id)) {
+            if ((masterSchoolId && id === masterSchoolId) || (schoolData && id === schoolData.id)) {
                 setSchoolData(prev => {
                     const next = { ...prev, adminPassword: finalPass };
                     updateGlobalState({ schoolData: next });
@@ -1894,7 +2086,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
             }
 
             const currentSchoolId = getActiveSchoolId();
-            const chosenSchoolId = d.schoolId || (editingItem ? (editingItem.schoolId || currentSchoolId) : currentSchoolId) || 'sdn2palapi';
+            const chosenSchoolId = d.schoolId || (editingItem ? (editingItem.schoolId || currentSchoolId) : currentSchoolId) || masterSchoolId;
             const lockedUsername = editingItem ? (editingItem.username || d.username || '').trim() : (d.username || '').trim();
             const teacherRecord = {
                 name: (d.name || '').trim(),
@@ -1930,7 +2122,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
                     let hasChanges = false;
                     assignedClasses.forEach(clsName => {
                         const existingIdx = updated.findIndex(
-                            s => s.name.toLowerCase() === subjectName.toLowerCase() && s.class === clsName && (s.schoolId || 'sdn2palapi') === currentSchoolId
+                            s => s.name.toLowerCase() === subjectName.toLowerCase() && s.class === clsName && (s.schoolId || masterSchoolId) === currentSchoolId
                         );
                         if (existingIdx >= 0) {
                             if (updated[existingIdx].teacherId !== teacherId) {
@@ -2028,7 +2220,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
                             s.name.toLowerCase() === sName.toLowerCase() &&
                             s.class === clsName &&
                             (s.academicYear || activeAcademicYear).toLowerCase() === sYear.toLowerCase() &&
-                            (s.schoolId || 'sdn2palapi') === currentSchoolId
+                            (s.schoolId || masterSchoolId) === currentSchoolId
                         );
                         if (existingIdx >= 0) {
                             updated[existingIdx] = {
@@ -2057,22 +2249,74 @@ export default function App({ defaultLogin = 'student', onBack }) {
             setModalOpen(false);
         } else if (modalType === 'question') {
             const currentSchoolId = getActiveSchoolId();
-            let correctData = d.correct;
-            let optionsData = [d.optA, d.optB, d.optC, d.optD, d.optE];
+            const qType = questionFormType || d.type || 'single';
+            const optCount = Number(currentActiveSchool.optionCount) || 5;
+            let correctData = '';
+            let optionsData = [];
 
-            if (d.type !== 'single' && d.type !== 'multiple') {
-                if (d.type === 'boolean') optionsData = ["Benar", "Salah"];
-                else optionsData = [];
+            if (qType === 'single') {
+                optionsData = questionOptions.slice(0, optCount).map(o => String(o ?? '').trim());
+                const filledCount = optionsData.filter(Boolean).length;
+                if (filledCount < 2) {
+                    showToast("Isi minimal 2 pilihan jawaban untuk soal Pilihan Ganda!", "error");
+                    return;
+                }
+                const safeKey = Math.min(Math.max(Number(questionSingleKey) || 0, 0), optCount - 1);
+                if (!optionsData[safeKey]) {
+                    showToast("Opsi yang dicentang sebagai Kunci Jawaban masih kosong!", "error");
+                    return;
+                }
+                correctData = String(safeKey);
+            } else if (qType === 'multiple') {
+                optionsData = questionOptions.slice(0, optCount).map(o => String(o ?? '').trim());
+                const filledCount = optionsData.filter(Boolean).length;
+                if (filledCount < 2) {
+                    showToast("Isi minimal 2 pilihan jawaban untuk soal Pilihan Ganda Kompleks!", "error");
+                    return;
+                }
+                const validKeys = questionMultiKeys
+                    .map(k => Number(k))
+                    .filter(k => !isNaN(k) && k >= 0 && k < optCount && Boolean(optionsData[k]))
+                    .sort((a, b) => a - b);
+                if (validKeys.length === 0) {
+                    showToast("Centang minimal 1 pilihan jawaban yang bernilai benar!", "error");
+                    return;
+                }
+                correctData = Array.from(new Set(validKeys)).map(String).join(',');
+            } else if (qType === 'boolean') {
+                const validRows = questionBooleanRows.filter(r => r.text && r.text.trim() !== '');
+                if (validRows.length === 0) {
+                    showToast("Tambahkan minimal 1 pernyataan Benar/Salah!", "error");
+                    return;
+                }
+                optionsData = validRows.map(r => r.text.trim());
+                correctData = validRows.map(r => (r.answer === 'S' ? 'S' : 'B')).join(',');
+            } else if (qType === 'matching') {
+                const validPairs = questionMatchingPairs.filter(p => p.left && p.left.trim() !== '' && p.right && p.right.trim() !== '');
+                if (validPairs.length < 2) {
+                    showToast("Isi minimal 2 pasangan pernyataan & jawaban untuk soal Menjodohkan!", "error");
+                    return;
+                }
+                optionsData = [];
+                correctData = validPairs.map(p => `${p.left.trim()} | ${p.right.trim()}`).join('\n');
+            } else {
+                optionsData = [];
+                correctData = String(d.correct ?? '').trim();
             }
 
             const chosenStimulusId = questionUseStimulus && questionStimulusId ? parseInt(questionStimulusId) : null;
 
             const newQ = {
                 id: editingItem ? editingItem.id : Date.now(),
-                subjectId: parseInt(d.subjectId), type: d.type, text: d.text,
-                options: optionsData, correct: correctData,
-                difficulty: d.difficulty, weight: parseInt(d.weight),
-                indicator: d.indicator, image: d.image,
+                subjectId: parseInt(d.subjectId),
+                type: qType,
+                text: (d.text || '').trim(),
+                options: optionsData,
+                correct: correctData,
+                difficulty: d.difficulty,
+                weight: parseInt(d.weight) || 10,
+                indicator: d.indicator,
+                image: d.image,
                 stimulusId: chosenStimulusId,
                 semester: d.semester || activeSemester,
                 academicYear: d.academicYear || activeAcademicYear,
@@ -2140,7 +2384,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 updateGlobalState({ schools: next });
                 return next;
             });
-            if (schoolId === 'sdn2palapi') {
+            if (schoolRecord.isMaster || (masterSchoolId && schoolId === masterSchoolId)) {
                 setSchoolData(prev => {
                     const next = { ...prev, ...schoolRecord, logo: EQUEST_LOGO, schoolLogo: resolvedLogo };
                     updateGlobalState({ schoolData: next });
@@ -2186,7 +2430,8 @@ export default function App({ defaultLogin = 'student', onBack }) {
         if (type === 'class') setClasses(p => { const next = p.filter(i => i.id !== id); updateGlobalState({ classes: next }); return next; });
         if (type === 'subject') setSubjects(p => { const next = p.filter(i => i.id !== id); updateGlobalState({ subjects: next }); return next; });
         if (type === 'school') {
-            if (id === 'sdn2palapi') {
+            const targetSchool = (Array.isArray(schools) ? schools : []).find(s => s.id === id);
+            if (targetSchool?.isMaster || (masterSchoolId && id === masterSchoolId)) {
                 showToast("Sekolah Utama tidak dapat dihapus!", "error");
                 setDeleteConfig({ isOpen: false, type: '', id: null });
                 return;
@@ -2196,7 +2441,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 updateGlobalState({ schools: next });
                 return next;
             });
-            if (selectedSchoolId === id) setSelectedSchoolId('sdn2palapi');
+            if (selectedSchoolId === id) setSelectedSchoolId(masterSchoolId);
         }
         if (type === 'stimulus') {
             setStimuli(p => { const next = p.filter(i => i.id !== id); updateGlobalState({ stimuli: next }); return next; });
@@ -2284,8 +2529,8 @@ Ketentuan:
 - Opsi Pilihan Ganda (single / multiple): Maksimal ${currentActiveSchool.optionCount || 5} opsi.
 - Jumlah Soal Pilihan Ganda (single): ${aiParams.counts.single}
 - Jumlah Soal PG Kompleks (multiple): ${aiParams.counts.multiple}
-- Jumlah Soal Benar/Salah (boolean): ${aiParams.counts.boolean}
-- Jumlah Soal Menjodohkan (matching): ${aiParams.counts.matching} (format correct wajib: "Premis 1 | Pasangan 1\\nPremis 2 | Pasangan 2")
+- Jumlah Soal Benar/Salah (boolean): ${aiParams.counts.boolean} (Setiap soal boolean WAJIB berisi 3 pernyataan turunan di array "options", dan "correct" berisi kunci tiap pernyataan dipisah koma seperti "B,S,B")
+- Jumlah Soal Menjodohkan (matching): ${aiParams.counts.matching} (format correct wajib: "Premis 1 | Pasangan 1\\nPremis 2 | Pasangan 2\\nPremis 3 | Pasangan 3")
 - Jumlah Soal Isian Singkat (short): ${aiParams.counts.short}
 - Jumlah Soal Esai (essay): ${aiParams.counts.essay}
 - Proporsi Kesulitan: ${aiParams.pcts.lots}% LOTS, ${aiParams.pcts.mots}% MOTS, ${aiParams.pcts.hots}% HOTS.
@@ -2294,8 +2539,8 @@ Format Output WAJIB berupa Array JSON murni (tanpa block code markdown) dengan s
 [
   { 
     "type": "single|multiple|boolean|matching|short|essay", 
-    "text": "Pertanyaan lengkap", 
-    "options": ["Opsi A", "Opsi B"], 
+    "text": "Pertanyaan lengkap atau instruksi soal", 
+    "options": ["Opsi A / Pernyataan 1", "Opsi B / Pernyataan 2"], 
     "correct": "0", 
     "difficulty": "LOTS", 
     "weight": 10, 
@@ -2303,10 +2548,10 @@ Format Output WAJIB berupa Array JSON murni (tanpa block code markdown) dengan s
   }
 ]
 Perhatian: 
-- "correct" untuk single/boolean adalah index (String angka, misal "0").
+- "correct" untuk single adalah index (String angka, misal "0").
 - "correct" untuk multiple adalah daftar index dipisah koma (misal "0,2").
-- "correct" untuk boolean HARUS "0" (jika Opsi A Benar) atau "1" (jika Opsi B Salah), options-nya: ["Benar", "Salah"].
-- "correct" untuk matching adalah pasangan seperti contoh di atas.
+- "correct" untuk boolean adalah rangkaian "B" (Benar) dan "S" (Salah) dipisah koma sesuai jumlah pernyataan pada "options" (misal options berisi 3 pernyataan, maka correct "B,S,B").
+- "correct" untuk matching adalah pasangan "Pernyataan Kiri | Pasangan Kanan" dipisah baris baru (\\n), minimal 3 pasang.
 - "correct" untuk short/essay adalah langsung ketikkan teks kunci jawaban atau rubriknya.
 - Jangan gunakan formatting block \`\`\`json pada output, langsung array!`;
 
@@ -2317,18 +2562,18 @@ Perhatian:
                 contents: [{ parts: [{ text: promptText }] }]
             });
 
-            const parsedMocks = parseAiJsonArray(responseText);
-            const normalized = normalizeExtractedQuestions(parsedMocks);
-            const mappedMocks = normalized.map((m, idx) => ({
+            const parsedQuestions = parseAiJsonArray(responseText);
+            const normalized = normalizeExtractedQuestions(parsedQuestions);
+            const mappedQuestions = normalized.map((m, idx) => ({
                 ...m,
                 semester: targetSem,
                 academicYear: targetYear,
                 id: `draft_${Date.now()}_${idx}`
             }));
 
-            setAiDrafts(mappedMocks);
+            setAiDrafts(mappedQuestions);
             setAiStep(2);
-            showToast(`Berhasil men-generate ${mappedMocks.length} soal via ${usedModel}!`, "success");
+            showToast(`Berhasil men-generate ${mappedQuestions.length} soal via ${usedModel}!`, "success");
         } catch (err) {
             console.error(err);
             showToast("Gagal men-generate soal: " + err.message, "error");
@@ -2592,8 +2837,8 @@ Perhatian:
             return next;
         });
 
-        // Hanya update dokumen legacy schoolData jika yang diedit benar-benar sekolah utama (sdn2palapi)
-        if (activeSId === 'sdn2palapi') {
+        // Hanya update dokumen legacy schoolData jika yang diedit benar-benar sekolah utama
+        if (curSc.isMaster || (masterSchoolId && activeSId === masterSchoolId)) {
             setSchoolData(p => {
                 const next = {
                     ...p,
@@ -2617,6 +2862,7 @@ Perhatian:
         const clean = (rawKey || '').trim();
         if (!clean) return;
         const activeSId = getActiveSchoolId();
+        const curSc = getActiveSchool();
         if (role === 'guru' && currentUser) {
             const updatedTeacher = { ...currentUser, apiKey: clean };
             setCurrentUser(updatedTeacher);
@@ -2631,7 +2877,7 @@ Perhatian:
                 updateGlobalState({ schools: next });
                 return next;
             });
-            if (activeSId === 'sdn2palapi') {
+            if (curSc.isMaster || (masterSchoolId && activeSId === masterSchoolId)) {
                 setSchoolData(prev => {
                     const next = { ...prev, apiKey: clean };
                     updateGlobalState({ schoolData: next });
@@ -2686,85 +2932,184 @@ Perhatian:
                 return { success: false, error: errText };
             }
 
+            const parseTableRowsHelper = (rawStr) => {
+                if (!rawStr) return [];
+                return String(rawStr).trim().split('\n').filter(Boolean).map(row => {
+                    if (row.includes('|')) return row.split('|').map(c => c.trim());
+                    if (row.includes('\t')) return row.split('\t').map(c => c.trim());
+                    return [row.trim()];
+                });
+            };
+
             if (parsedRows && !useAI) {
                 if (parsedRows.length <= 1) {
                     showToast("File Excel kosong atau format salah", "error");
                     return { success: false, error: "File Excel kosong atau format tidak sesuai template." };
                 }
+
+                const headerCells = (parsedRows[0] || []).map(h => String(h || '').toLowerCase());
+                const hasStimulusCols = headerCells.some(h => h.includes('stimulus')) || (parsedRows[0] && parsedRows[0].length >= 14);
+
+                let nextStimuli = [...(Array.isArray(stimuli) ? stimuli : [])];
+                let stimuliCreatedCount = 0;
                 const newQuestions = [];
+                const baseTs = Date.now();
+
                 for (let i = 1; i < parsedRows.length; i++) {
                     const cols = parsedRows[i];
-                    if (cols.length >= 5 && cols[0]) {
-                        let qType = String(cols[0]).toLowerCase().trim();
-                        if (qType.includes('short') || qType.includes('isian')) qType = 'short';
-                        else if (qType.includes('essay') || qType.includes('uraian')) qType = 'essay';
-                        else if (qType.includes('match') || qType.includes('jodoh')) qType = 'matching';
-                        else if (qType.includes('bool') || qType.includes('salah')) qType = 'boolean';
-                        else if (qType.includes('multi') || qType.includes('kompleks')) qType = 'multiple';
-                        else qType = 'single';
+                    if (!cols || !cols[0]) continue;
 
-                        let optionsArr = [cols[5] || "", cols[6] || "", cols[7] || "", cols[8] || "", cols[9] || ""];
-                        if (qType !== 'single' && qType !== 'multiple') optionsArr = [];
+                    let qType = String(cols[0]).toLowerCase().trim();
+                    if (qType.includes('short') || qType.includes('isian')) qType = 'short';
+                    else if (qType.includes('essay') || qType.includes('uraian')) qType = 'essay';
+                    else if (qType.includes('match') || qType.includes('jodoh')) qType = 'matching';
+                    else if (qType.includes('bool') || qType.includes('salah') || qType.includes('benar')) qType = 'boolean';
+                    else if (qType.includes('multi') || qType.includes('kompleks')) qType = 'multiple';
+                    else qType = 'single';
 
-                        let corrAns = String(cols[10] ?? "").trim();
-                        if (qType === 'single') {
-                            if (/^[a-eA-E]$/.test(corrAns)) {
-                                corrAns = String(corrAns.toUpperCase().charCodeAt(0) - 65);
+                    let linkedStimulusId = null;
+                    let qText = '';
+                    let rawOpts = [];
+                    let corrAns = '';
+
+                    if (hasStimulusCols) {
+                        const stimTitleRaw = String(cols[4] ?? '').trim();
+                        const stimTypeCell = String(cols[5] ?? 'text').toLowerCase().trim();
+                        const stimBodyRaw = String(cols[6] ?? '').trim();
+                        const stimImgRaw = String(cols[7] ?? '').trim();
+
+                        if (stimTitleRaw || stimBodyRaw || stimImgRaw) {
+                            const effectiveTitle = stimTitleRaw || `Stimulus Soal #${i}`;
+                            const existingStim = nextStimuli.find(s =>
+                                (s.schoolId || masterSchoolId) === curSchoolId &&
+                                (!s.subjectId || s.subjectId === subId) &&
+                                String(s.title || '').toLowerCase().trim() === effectiveTitle.toLowerCase()
+                            );
+                            if (existingStim) {
+                                linkedStimulusId = existingStim.id;
                             } else {
-                                corrAns = corrAns || "0";
+                                const resolvedType = stimTypeCell === 'table' || stimTypeCell === 'tabel'
+                                    ? 'table'
+                                    : stimTypeCell === 'image' || stimTypeCell === 'gambar'
+                                        ? 'image'
+                                        : stimTypeCell === 'combined' || stimTypeCell === 'gabungan'
+                                            ? 'combined'
+                                            : 'text';
+                                const newStim = {
+                                    id: baseTs + 10000 + i,
+                                    title: effectiveTitle,
+                                    type: resolvedType,
+                                    content: resolvedType === 'table' ? '' : stimBodyRaw,
+                                    tableData: (resolvedType === 'table' || (resolvedType === 'combined' && stimBodyRaw.includes('|'))) ? parseTableRowsHelper(stimBodyRaw) : [],
+                                    imageUrl: stimImgRaw,
+                                    source: '',
+                                    subjectId: subId,
+                                    createdAt: new Date().toISOString(),
+                                    schoolId: curSchoolId
+                                };
+                                nextStimuli.push(newStim);
+                                linkedStimulusId = newStim.id;
+                                stimuliCreatedCount++;
                             }
-                        } else if (qType === 'multiple') {
-                            corrAns = corrAns.split(',').map(c => {
-                                let t = c.trim();
-                                if (/^[a-eA-E]$/.test(t)) return String(t.toUpperCase().charCodeAt(0) - 65);
-                                return t;
-                            }).filter(c => c !== "").join(',');
-                        } else if (qType === 'boolean') {
-                            corrAns = corrAns || "0";
                         }
 
-                        newQuestions.push({
-                            id: Date.now() + i,
-                            subjectId: subId,
-                            type: qType,
-                            difficulty: String(cols[1] || 'MOTS'),
-                            weight: parseInt(cols[2]) || 10,
-                            indicator: String(cols[3] || ''),
-                            text: String(cols[4] || 'Soal tidak valid'),
-                            options: optionsArr,
-                            correct: corrAns,
-                            semester: activeSemester,
-                            academicYear: activeAcademicYear,
-                            schoolId: curSchoolId
-                        });
+                        qText = String(cols[8] ?? '').trim();
+                        rawOpts = [cols[9], cols[10], cols[11], cols[12], cols[13]].map(v => String(v ?? '').trim());
+                        corrAns = String(cols[14] ?? '').trim();
+                    } else {
+                        qText = String(cols[4] ?? '').trim();
+                        rawOpts = [cols[5], cols[6], cols[7], cols[8], cols[9]].map(v => String(v ?? '').trim());
+                        corrAns = String(cols[10] ?? '').trim();
                     }
+
+                    if (!qText) continue;
+
+                    let optionsArr = [];
+                    if (qType === 'single') {
+                        optionsArr = rawOpts;
+                        if (/^[a-eA-E]$/.test(corrAns)) {
+                            corrAns = String(corrAns.toUpperCase().charCodeAt(0) - 65);
+                        } else {
+                            corrAns = corrAns || "0";
+                        }
+                    } else if (qType === 'multiple') {
+                        optionsArr = rawOpts;
+                        corrAns = corrAns.split(',').map(c => {
+                            const t = c.trim();
+                            if (/^[a-eA-E]$/.test(t)) return String(t.toUpperCase().charCodeAt(0) - 65);
+                            return t;
+                        }).filter(c => c !== "").join(',') || "0";
+                    } else if (qType === 'boolean') {
+                        const nonEmptyStmts = rawOpts.filter(Boolean);
+                        if (nonEmptyStmts.length > 0) {
+                            optionsArr = nonEmptyStmts;
+                            const rawTokens = corrAns.split(',').map(t => t.trim().toUpperCase()).filter(Boolean);
+                            corrAns = nonEmptyStmts.map((_, sIdx) => {
+                                const tok = rawTokens[sIdx] ?? rawTokens[0] ?? 'B';
+                                return (tok === 'S' || tok === 'SALAH' || tok === 'FALSE' || tok === '1') ? 'S' : 'B';
+                            }).join(',');
+                        } else {
+                            optionsArr = [qText];
+                            qText = "Perhatikan pernyataan berikut dan tentukan Benar atau Salah!";
+                            const tok = corrAns.toUpperCase();
+                            corrAns = (tok === 'S' || tok === 'SALAH' || tok === 'FALSE' || tok === '1') ? 'S' : 'B';
+                        }
+                    } else {
+                        optionsArr = [];
+                    }
+
+                    newQuestions.push({
+                        id: baseTs + i,
+                        subjectId: subId,
+                        type: qType,
+                        difficulty: String(cols[1] || 'MOTS').toUpperCase().trim(),
+                        weight: parseInt(cols[2]) || 10,
+                        indicator: String(cols[3] || '').trim(),
+                        text: qText,
+                        options: optionsArr,
+                        correct: corrAns,
+                        stimulusId: linkedStimulusId,
+                        semester: activeSemester,
+                        academicYear: activeAcademicYear,
+                        schoolId: curSchoolId
+                    });
+                }
+
+                if (stimuliCreatedCount > 0) {
+                    setStimuli(nextStimuli);
+                    updateGlobalState({ stimuli: nextStimuli });
                 }
                 setQuestions(p => { const next = [...p, ...newQuestions]; updateGlobalState({ questions: next }); return next; });
-                const msg = `Berhasil mengimpor ${newQuestions.length} butir soal dari Excel!`;
+                const stimNote = stimuliCreatedCount > 0 ? ` beserta ${stimuliCreatedCount} stimulus baru` : '';
+                const msg = `Berhasil mengimpor ${newQuestions.length} butir soal${stimNote} dari Excel!`;
                 showToast(msg, "success");
                 return { success: true, count: newQuestions.length, message: msg };
             } else if (useAI && rawFile) {
                 setAiLoading(true);
                 try {
                     const keyToUse = (overrideApiKey || effectiveApiKey || '').trim();
-                    const promptText = `Anda adalah sistem ekstraktor soal CBT & TKA profesional. Ekstrak SELURUH butir soal yang ada di dalam dokumen ini menjadi format JSON Array murni.
+                    const promptText = `Anda adalah sistem ekstraktor soal CBT & TKA profesional. Ekstrak SELURUH butir soal (beserta wacana/tabel stimulus jika ada) dari dokumen ini menjadi format JSON Array murni.
 Ketentuan struktur JSON untuk setiap objek soal:
 [
   {
     "type": "single|multiple|boolean|matching|short|essay",
     "text": "Pertanyaan lengkap tanpa nomor urut di depannya",
-    "options": ["Teks Opsi A", "Teks Opsi B", "Teks Opsi C", "Teks Opsi D"],
+    "options": ["Teks Opsi A / Pernyataan 1", "Teks Opsi B / Pernyataan 2"],
     "correct": "0",
     "difficulty": "LOTS|MOTS|HOTS",
     "weight": 10,
-    "indicator": "Indikator kompetensi singkat sesuai isi soal"
+    "indicator": "Indikator kompetensi singkat sesuai isi soal",
+    "stimulusTitle": "Judul Wacana/Tabel jika soal merujuk pada bacaan/tabel (kosongkan jika tidak ada)",
+    "stimulusType": "text|table",
+    "stimulusContent": "Isi lengkap wacana atau tabel dipisah tanda | per kolom jika soal memakai stimulus (kosongkan jika tidak ada)"
   }
 ]
 Aturan Penting:
 - Jangan sertakan huruf "A.", "B.", "C.", "D." di dalam isi teks array "options".
-- "correct" untuk 'single' adalah index angka dalam string ("0" untuk A, "1" untuk B, "2" untuk C, "3" untuk D, "4" untuk E). Jika pada naskah belum tertulis kunci jawaban, tentukan jawaban yang paling tepat secara keilmuan!
+- Jika beberapa soal mengacu pada wacana/tabel yang sama, berikan "stimulusTitle" yang persis sama pada soal-soal tersebut. Soal yang berdiri sendiri tanpa stimulus biarkan "stimulusTitle" dan "stimulusContent" kosong "".
+- "correct" untuk 'single' adalah index angka dalam string ("0" untuk A, "1" untuk B, dst). Jika kunci belum tertulis di naskah, tentukan jawaban yang paling benar secara keilmuan!
 - "correct" untuk 'multiple' (PG Kompleks) adalah daftar index dipisah koma (misal "0,2").
-- "correct" untuk 'boolean' (Benar/Salah) adalah "0" jika Benar atau "1" jika Salah, dengan options ["Benar", "Salah"].
+- "correct" untuk 'boolean' (Benar/Salah): masukkan daftar pernyataan ke "options" (1 atau beberapa pernyataan), dan isi "correct" dengan rangkaian "B" atau "S" dipisah koma (misal "B,S,B").
 - "correct" untuk 'matching' adalah pasangan berformat "Premis Kiri | Pasangan Kanan\\nPremis 2 | Pasangan 2".
 - "correct" untuk 'short'/'essay' adalah kunci jawaban singkat atau rubrik penilaiannya.
 - Outputkan HANYA JSON Array murni tanpa tag markdown \`\`\`json dan tanpa penjelasan tambahan!`;
@@ -2784,17 +3129,61 @@ Aturan Penting:
                     }
 
                     const baseTs = Date.now();
-                    const newQuestions = normalized.map((m, idx) => ({
-                        ...m,
-                        id: baseTs + idx,
-                        subjectId: subId,
-                        semester: activeSemester,
-                        academicYear: activeAcademicYear,
-                        schoolId: curSchoolId
-                    }));
+                    let nextStimuli = [...(Array.isArray(stimuli) ? stimuli : [])];
+                    let stimuliCreatedCount = 0;
 
+                    const newQuestions = normalized.map((m, idx) => {
+                        let linkedStimulusId = null;
+                        const sTitle = String(m.stimulusTitle || '').trim();
+                        const sBody = String(m.stimulusContent || '').trim();
+                        if (sTitle || sBody) {
+                            const effectiveTitle = sTitle || `Stimulus Dokumen #${idx + 1}`;
+                            const existingStim = nextStimuli.find(s =>
+                                (s.schoolId || masterSchoolId) === curSchoolId &&
+                                (!s.subjectId || s.subjectId === subId) &&
+                                String(s.title || '').toLowerCase().trim() === effectiveTitle.toLowerCase()
+                            );
+                            if (existingStim) {
+                                linkedStimulusId = existingStim.id;
+                            } else if (sBody) {
+                                const isTbl = m.stimulusType === 'table';
+                                const newStim = {
+                                    id: baseTs + 20000 + idx,
+                                    title: effectiveTitle,
+                                    type: isTbl ? 'table' : 'text',
+                                    content: isTbl ? '' : sBody,
+                                    tableData: isTbl ? parseTableRowsHelper(sBody) : [],
+                                    imageUrl: '',
+                                    source: fileName || '',
+                                    subjectId: subId,
+                                    createdAt: new Date().toISOString(),
+                                    schoolId: curSchoolId
+                                };
+                                nextStimuli.push(newStim);
+                                linkedStimulusId = newStim.id;
+                                stimuliCreatedCount++;
+                            }
+                        }
+
+                        const { stimulusTitle, stimulusType: _st, stimulusContent, ...cleanQ } = m;
+                        return {
+                            ...cleanQ,
+                            id: baseTs + idx,
+                            subjectId: subId,
+                            stimulusId: linkedStimulusId,
+                            semester: activeSemester,
+                            academicYear: activeAcademicYear,
+                            schoolId: curSchoolId
+                        };
+                    });
+
+                    if (stimuliCreatedCount > 0) {
+                        setStimuli(nextStimuli);
+                        updateGlobalState({ stimuli: nextStimuli });
+                    }
                     setQuestions(prev => { const next = [...prev, ...newQuestions]; updateGlobalState({ questions: next }); return next; });
-                    const msg = `AI (${usedModel}) berhasil mengekstrak ${newQuestions.length} butir soal ke Bank Soal!`;
+                    const stimInfo = stimuliCreatedCount > 0 ? ` (+${stimuliCreatedCount} stimulus)` : '';
+                    const msg = `AI (${usedModel}) berhasil mengekstrak ${newQuestions.length} butir soal${stimInfo} ke Bank Soal!`;
                     showToast(msg, "success");
                     return { success: true, count: newQuestions.length, message: msg };
                 } catch (err) {
@@ -3048,7 +3437,7 @@ Aturan Penting:
                                         <input
                                             value={referralCodeInput}
                                             onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
-                                            placeholder="Contoh: EQ-PALAPI"
+                                            placeholder="Contoh: EQ-XXXX"
                                             className="flex-1 p-2.5 bg-amber-50/50 border border-amber-300 rounded-xl font-mono font-black text-amber-900 text-xs tracking-wider uppercase outline-none focus:border-amber-500"
                                         />
                                         <button
@@ -3145,25 +3534,38 @@ Aturan Penting:
                         }
 
                         const shuffled = finalQuestions.map(q => {
-                            if (q.type === 'single' || q.type === 'multiple') {
+                            const qTypeLower = String(q.type || '').toLowerCase().trim();
+                            if (qTypeLower === 'single' || qTypeLower === 'multiple') {
                                 const optsWithOrig = (q.options || []).map((text, idx) => ({ text: String(text || ""), origIndex: idx })).filter(o => o.text.trim() !== "");
                                 optsWithOrig.sort(() => Math.random() - 0.5);
                                 const newOptions = optsWithOrig.map(o => o.text);
                                 let newCorrect = q.correct;
-                                if (q.type === 'single') {
+                                if (qTypeLower === 'single') {
                                     newCorrect = String(optsWithOrig.findIndex(o => o.origIndex === parseInt(q.correct)));
-                                } else if (q.type === 'multiple') {
+                                } else if (qTypeLower === 'multiple') {
                                     const cInts = String(q.correct).split(',').map(Number);
                                     newCorrect = cInts.map(c => optsWithOrig.findIndex(o => o.origIndex === c)).filter(i => i !== -1).join(',');
                                 }
                                 return { ...q, options: newOptions, correct: newCorrect };
-                            } else if (q.type === 'boolean') {
-                                return { ...q, options: ['Benar', 'Salah'] };
-                            } else if (q.type === 'matching') {
-                                const pairs = String(q.correct).split('\n').filter(Boolean).map(line => line.split('|').map(s => s.trim()));
-                                const rightItems = [...new Set(pairs.map(p => p[1]))];
-                                rightItems.sort(() => Math.random() - 0.5);
-                                return { ...q, options: rightItems };
+                            } else if (qTypeLower === 'boolean') {
+                                if (isLegacySingleBoolean(q)) {
+                                    return { ...q, options: ['Benar', 'Salah'] };
+                                }
+                                const corrArr = String(q.correct || '').split(',').map(s => s.trim().toUpperCase());
+                                const zipped = (q.options || [])
+                                    .map((text, idx) => ({ text: String(text || '').trim(), ans: corrArr[idx] === 'S' ? 'S' : 'B' }))
+                                    .filter(item => item.text !== '');
+                                zipped.sort(() => Math.random() - 0.5);
+                                return {
+                                    ...q,
+                                    options: zipped.map(z => z.text),
+                                    correct: zipped.map(z => z.ans).join(',')
+                                };
+                            } else if (qTypeLower === 'matching') {
+                                const pairs = String(q.correct).split('\n').filter(Boolean).map(line => line.split('|').map(s => s.trim())).filter(p => p[0] && p[1]);
+                                const leftItems = pairs.map(p => p[0]).sort(() => Math.random() - 0.5);
+                                const rightItems = [...new Set(pairs.map(p => p[1]))].sort(() => Math.random() - 0.5);
+                                return { ...q, leftItems, options: rightItems };
                             }
                             return q;
                         }).sort(() => Math.random() - 0.5);
@@ -3260,14 +3662,57 @@ Aturan Penting:
                                                 <p className="text-slate-800 text-base font-medium mb-8 leading-relaxed whitespace-pre-wrap">{stdQuestions[currentQIndex].text}</p>
 
                                                 <div className="space-y-3 mb-8">
-                                                    {(stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'single' || stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'boolean') ? (
+                                                    {(stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'single' || (stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'boolean' && isLegacySingleBoolean(stdQuestions[currentQIndex]))) ? (
                                                         (stdQuestions[currentQIndex].options || []).map((opt, i) => (
                                                             <label key={i} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${examAnswers[currentQIndex] === String(i) ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-bold shadow-sm' : 'border-slate-200 hover:bg-slate-50'}`}>
                                                                 <input type="radio" name={`q_${currentQIndex}`} className="hidden" checked={examAnswers[currentQIndex] === String(i)} onChange={() => setExamAnswers(p => ({ ...p, [currentQIndex]: String(i) }))} />
-                                                                <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs shrink-0 ${examAnswers[currentQIndex] === String(i) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300'}`}>{stdQuestions[currentQIndex].type === 'boolean' ? (i === 0 ? 'B' : 'S') : String.fromCharCode(65 + i)}</span>
+                                                                <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs shrink-0 ${examAnswers[currentQIndex] === String(i) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300'}`}>{stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'boolean' ? (i === 0 ? 'B' : 'S') : String.fromCharCode(65 + i)}</span>
                                                                 <span className="text-sm font-medium">{opt}</span>
                                                             </label>
                                                         ))
+                                                    ) : stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'boolean' ? (
+                                                        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
+                                                            <div className="grid grid-cols-12 bg-slate-100 px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-slate-600 border-b border-slate-200">
+                                                                <div className="col-span-12 sm:col-span-8">Pernyataan</div>
+                                                                <div className="hidden sm:block sm:col-span-4 text-center">Pilihan Jawaban</div>
+                                                            </div>
+                                                            <div className="divide-y divide-slate-100">
+                                                                {(stdQuestions[currentQIndex].options || []).map((stmt, sIdx) => {
+                                                                    let currentMap = {};
+                                                                    try { currentMap = JSON.parse(examAnswers[currentQIndex] || "{}"); } catch (e) { }
+                                                                    const stmtKey = String(stmt || '').trim() || String(sIdx);
+                                                                    const chosenVal = currentMap[stmtKey];
+                                                                    const setChoice = (val) => {
+                                                                        const nextMap = { ...currentMap, [stmtKey]: val };
+                                                                        setExamAnswers(p => ({ ...p, [currentQIndex]: JSON.stringify(nextMap) }));
+                                                                    };
+                                                                    return (
+                                                                        <div key={sIdx} className="grid grid-cols-1 sm:grid-cols-12 items-center gap-3 p-4 hover:bg-slate-50/70 transition-colors">
+                                                                            <div className="sm:col-span-8 flex items-start gap-2.5">
+                                                                                <span className="w-6 h-6 rounded-lg bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{sIdx + 1}</span>
+                                                                                <span className="text-sm font-medium text-slate-800 leading-relaxed">{stmt}</span>
+                                                                            </div>
+                                                                            <div className="sm:col-span-4 flex items-center justify-end sm:justify-center gap-2">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => setChoice('B')}
+                                                                                    className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${chosenVal === 'B' ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/60'}`}
+                                                                                >
+                                                                                    <Check size={14} /> Benar
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => setChoice('S')}
+                                                                                    className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${chosenVal === 'S' ? 'bg-rose-600 text-white border-rose-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-rose-300 hover:bg-rose-50/60'}`}
+                                                                                >
+                                                                                    <X size={14} /> Salah
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
                                                     ) : stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'multiple' ? (
                                                         (stdQuestions[currentQIndex].options || []).map((opt, i) => {
                                                             const currentAns = examAnswers[currentQIndex] ? String(examAnswers[currentQIndex]).split(',') : [];
@@ -3286,28 +3731,32 @@ Aturan Penting:
                                                         })
                                                     ) : stdQuestions[currentQIndex].type?.toLowerCase().trim() === 'matching' ? (
                                                         <div className="space-y-4">
-                                                            {String(stdQuestions[currentQIndex].correct).split('\n').filter(Boolean).map((line, idx) => {
-                                                                const leftItem = line.split('|')[0]?.trim();
+                                                            {(stdQuestions[currentQIndex].leftItems || String(stdQuestions[currentQIndex].correct).split('\n').filter(Boolean).map(line => line.split('|')[0]?.trim()).filter(Boolean)).map((leftItem, idx) => {
                                                                 if (!leftItem) return null;
                                                                 let currentAns = {};
                                                                 try { currentAns = JSON.parse(examAnswers[currentQIndex] || "{}"); } catch (e) { }
                                                                 return (
                                                                     <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-indigo-300 transition-colors">
-                                                                        <div className="flex-1 font-medium text-slate-700">{leftItem}</div>
+                                                                        <div className="flex-1 font-medium text-slate-700 flex items-start gap-2.5">
+                                                                            <span className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{idx + 1}</span>
+                                                                            <span>{leftItem}</span>
+                                                                        </div>
                                                                         <select
                                                                             className="w-full sm:w-1/2 p-3 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:border-indigo-500 font-medium text-slate-700 cursor-pointer"
                                                                             value={currentAns[leftItem] || ""}
                                                                             onChange={(e) => {
                                                                                 const selectedVal = e.target.value;
-                                                                                if (selectedVal !== "" && Object.values(currentAns).includes(selectedVal)) {
-                                                                                    showToast("Jawaban ini sudah digunakan di pernyataan lain!", "error");
+                                                                                const otherUsed = Object.entries(currentAns).some(([k, v]) => k !== leftItem && v === selectedVal);
+                                                                                if (selectedVal !== "" && otherUsed) {
+                                                                                    showToast("Jawaban ini sudah dipasangkan ke pernyataan lain!", "error");
                                                                                     return;
                                                                                 }
                                                                                 const newAns = { ...currentAns, [leftItem]: selectedVal };
+                                                                                if (!selectedVal) delete newAns[leftItem];
                                                                                 setExamAnswers(p => ({ ...p, [currentQIndex]: JSON.stringify(newAns) }));
                                                                             }}
                                                                         >
-                                                                            <option value="">-- Pilih Pasangan --</option>
+                                                                            <option value="">-- Pilih Pasangan Jawaban --</option>
                                                                             {(stdQuestions[currentQIndex].options || []).map((opt, oIdx) => (
                                                                                 <option key={oIdx} value={opt}>{opt}</option>
                                                                             ))}
@@ -3338,11 +3787,17 @@ Aturan Penting:
                                                 {stdQuestions.map((q, idx) => {
                                                     let isAnswered = false;
                                                     const ans = examAnswers[idx];
+                                                    const qTypeL = String(q.type || '').toLowerCase().trim();
                                                     if (ans !== undefined && ans !== null && ans !== "") {
-                                                        if (q.type === 'matching') {
+                                                        if (qTypeL === 'matching') {
                                                             try {
                                                                 const parsed = JSON.parse(ans);
-                                                                isAnswered = Object.keys(parsed).length > 0;
+                                                                isAnswered = Object.values(parsed).filter(Boolean).length > 0;
+                                                            } catch (e) { }
+                                                        } else if (qTypeL === 'boolean' && !isLegacySingleBoolean(q)) {
+                                                            try {
+                                                                const parsed = JSON.parse(ans);
+                                                                isAnswered = Object.keys(parsed).length >= (q.options || []).length;
                                                             } catch (e) { }
                                                         } else {
                                                             isAnswered = true;
@@ -3409,7 +3864,7 @@ Aturan Penting:
                                     <div class="score">Skor Akhir: ${studentScore.toFixed(0)}</div>
                                     <div class="footer">
                                         <div>Diterbitkan pada: ${new Date().toLocaleDateString('id-ID')}</div>
-                                        <div>Disahkan oleh: ${schoolData.name}</div>
+                                        <div>Disahkan oleh: ${currentActiveSchool.name}</div>
                                     </div>
                                 </div>
                                 <script>setTimeout(() => window.print(), 500);</script>
@@ -3591,7 +4046,7 @@ Aturan Penting:
                                                                 updateGlobalState({ schools: next });
                                                                 return next;
                                                             });
-                                                            if (activeSId === 'sdn2palapi') {
+                                                            if (currentActiveSchool.isMaster || (masterSchoolId && activeSId === masterSchoolId)) {
                                                                 setSchoolData(p => { const next = { ...p, aiModel: nm }; updateGlobalState({ schoolData: next }); return next; });
                                                             }
                                                             showToast(`Model AI dialihkan ke ${nm}`, "success");
@@ -3790,13 +4245,61 @@ Aturan Penting:
                                                     )}
 
                                                     {(draft.type === 'boolean') && (
-                                                        <select value={draft.correct} onChange={(e) => handleAiFieldChange(idx, 'correct', e.target.value)} className="w-full p-3 border border-emerald-200 rounded-xl outline-none focus:border-emerald-500 font-bold text-emerald-700 bg-emerald-50 text-center text-sm cursor-pointer">
-                                                            <option value="0">Pernyataan Bernilai BENAR</option>
-                                                            <option value="1">Pernyataan Bernilai SALAH</option>
-                                                        </select>
+                                                        <div className="space-y-2.5">
+                                                            {(Array.isArray(draft.options) && draft.options.length > 0 && !isLegacySingleBoolean(draft) ? draft.options : [draft.text || 'Pernyataan 1']).map((stmt, sIdx) => {
+                                                                const corrParts = isLegacySingleBoolean(draft)
+                                                                    ? [String(draft.correct) === '1' ? 'S' : 'B']
+                                                                    : String(draft.correct || 'B').split(',').map(s => s.trim().toUpperCase());
+                                                                const curVal = corrParts[sIdx] === 'S' ? 'S' : 'B';
+                                                                const updateDraftBool = (newText, newAns) => {
+                                                                    const n = [...aiDrafts];
+                                                                    const curOpts = Array.isArray(n[idx].options) && !isLegacySingleBoolean(n[idx]) ? [...n[idx].options] : [n[idx].text || ''];
+                                                                    const curKeys = curOpts.map((_, kIdx) => (corrParts[kIdx] === 'S' ? 'S' : 'B'));
+                                                                    if (newText !== null) curOpts[sIdx] = newText;
+                                                                    if (newAns !== null) curKeys[sIdx] = newAns;
+                                                                    n[idx] = { ...n[idx], options: curOpts, correct: curKeys.join(',') };
+                                                                    setAiDrafts(n);
+                                                                };
+                                                                return (
+                                                                    <div key={sIdx} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                                                                        <span className="text-[11px] font-bold text-slate-400 w-6 text-center shrink-0">#{sIdx + 1}</span>
+                                                                        <input
+                                                                            value={stmt}
+                                                                            onChange={(e) => updateDraftBool(e.target.value, null)}
+                                                                            placeholder={`Pernyataan ${sIdx + 1}`}
+                                                                            className="flex-1 p-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:border-fuchsia-400"
+                                                                        />
+                                                                        <div className="flex items-center gap-1.5 shrink-0">
+                                                                            <button type="button" onClick={() => updateDraftBool(null, 'B')} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border cursor-pointer transition-all ${curVal === 'B' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-500 border-slate-200'}`}>✓ Benar</button>
+                                                                            <button type="button" onClick={() => updateDraftBool(null, 'S')} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border cursor-pointer transition-all ${curVal === 'S' ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-500 border-slate-200'}`}>✕ Salah</button>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
                                                     )}
 
-                                                    {(draft.type === 'short' || draft.type === 'essay' || draft.type === 'matching') && (
+                                                    {(draft.type === 'matching') && (
+                                                        <div className="space-y-2">
+                                                            {String(draft.correct || '').split('\n').filter(Boolean).map((line, pIdx) => {
+                                                                const [leftPart, ...rightRest] = line.split('|');
+                                                                const rightPart = rightRest.join('|');
+                                                                const updatePair = (newLeft, newRight) => {
+                                                                    const lines = String(draft.correct || '').split('\n').filter(Boolean);
+                                                                    lines[pIdx] = `${newLeft} | ${newRight}`;
+                                                                    handleAiFieldChange(idx, 'correct', lines.join('\n'));
+                                                                };
+                                                                return (
+                                                                    <div key={pIdx} className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                                                                        <input value={(leftPart || '').trim()} onChange={(e) => updatePair(e.target.value, (rightPart || '').trim())} placeholder="Pernyataan Kiri" className="p-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:border-fuchsia-400" />
+                                                                        <input value={(rightPart || '').trim()} onChange={(e) => updatePair((leftPart || '').trim(), e.target.value)} placeholder="Pasangan Jawaban Kanan" className="p-2 bg-emerald-50/60 border border-emerald-200 rounded-lg text-xs font-semibold text-emerald-900 outline-none focus:border-emerald-500" />
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+
+                                                    {(draft.type === 'short' || draft.type === 'essay') && (
                                                         <textarea value={draft.correct} onChange={(e) => handleAiFieldChange(idx, 'correct', e.target.value)} rows="3" className="w-full p-3 border border-fuchsia-200 rounded-xl outline-none focus:border-fuchsia-400 bg-fuchsia-50/50 font-medium text-slate-700 text-sm leading-relaxed" placeholder="Ketik kunci jawaban / rubrik di sini..." />
                                                     )}
                                                 </div>
@@ -4140,7 +4643,7 @@ Aturan Penting:
                                                 </div>
                                                 <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Guru</span>
                                             </div>
-                                            <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{teachers.filter(t => (t.schoolId || 'sdn2palapi') === getActiveSchoolId()).length}</p>
+                                            <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{teachers.filter(t => (t.schoolId || masterSchoolId) === getActiveSchoolId()).length}</p>
                                             <p className="text-[10px] font-semibold text-slate-400 mt-1">Edukator Sekolah Ini</p>
                                         </div>
 
@@ -4193,7 +4696,7 @@ Aturan Penting:
                                             </div>
                                             <div className="flex items-baseline gap-2">
                                                 <p className="text-2xl sm:text-3xl font-black tracking-tight">
-                                                    {activeExams.filter(e => (e.schoolId || 'sdn2palapi') === getActiveSchoolId()).length}
+                                                    {activeExams.filter(e => (e.schoolId || masterSchoolId) === getActiveSchoolId()).length}
                                                 </p>
                                                 <span className="text-[10px] text-emerald-100 font-bold">Sesi Aktif</span>
                                             </div>
@@ -5524,7 +6027,7 @@ Aturan Penting:
                                                                 </div>
                                                             )}
                                                             {(() => {
-                                                                const sObj = stimuli.find(s => s.id === q.stimulusId);
+                                                                const sObj = getMyStimuli().find(s => s.id === q.stimulusId);
                                                                 if (!sObj) return null;
                                                                 return (
                                                                     <div className="flex items-center gap-2 bg-amber-50/90 border border-amber-200 px-3 py-1.5 rounded-xl w-fit">
@@ -5552,14 +6055,53 @@ Aturan Penting:
                                                                 <p className="font-semibold text-slate-900 text-sm leading-relaxed">{q.text}</p>
                                                                 {(q.type === 'single' || q.type === 'multiple') && q.options && q.options.length > 0 && (
                                                                     <div className="mt-3.5 space-y-1.5">
-                                                                        {q.options.map((opt, oIdx) => opt ? (
-                                                                            <div key={oIdx} className="flex items-start gap-2 text-xs bg-slate-50 p-2 rounded-xl border border-slate-100">
-                                                                                <span className="w-5 h-5 rounded-full bg-white border border-slate-200 text-slate-600 font-black flex items-center justify-center shrink-0 text-[10px] shadow-2xs">
-                                                                                    {String.fromCharCode(65 + oIdx)}
-                                                                                </span>
-                                                                                <span className="text-slate-700 font-medium leading-tight mt-0.5">{opt}</span>
-                                                                            </div>
-                                                                        ) : null)}
+                                                                        {q.options.map((opt, oIdx) => {
+                                                                            if (!opt) return null;
+                                                                            const isKey = q.type === 'single'
+                                                                                ? String(q.correct) === String(oIdx)
+                                                                                : String(q.correct || '').split(',').map(s => s.trim()).includes(String(oIdx));
+                                                                            return (
+                                                                                <div key={oIdx} className={`flex items-start justify-between gap-2 text-xs p-2.5 rounded-xl border ${isKey ? 'bg-emerald-50/80 border-emerald-200' : 'bg-slate-50 border-slate-100'}`}>
+                                                                                    <div className="flex items-start gap-2">
+                                                                                        <span className={`w-5 h-5 rounded-full font-black flex items-center justify-center shrink-0 text-[10px] shadow-2xs ${isKey ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>
+                                                                                            {String.fromCharCode(65 + oIdx)}
+                                                                                        </span>
+                                                                                        <span className={`font-medium leading-tight mt-0.5 ${isKey ? 'text-emerald-900 font-bold' : 'text-slate-700'}`}>{opt}</span>
+                                                                                    </div>
+                                                                                    {isKey && <span className="text-[10px] font-extrabold text-emerald-700 bg-white px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">✓ Kunci</span>}
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                )}
+                                                                {q.type === 'boolean' && !isLegacySingleBoolean(q) && Array.isArray(q.options) && q.options.length > 0 && (
+                                                                    <div className="mt-3.5 space-y-1.5">
+                                                                        {q.options.map((stmt, sIdx) => {
+                                                                            const ansVal = (String(q.correct || '').split(',')[sIdx] || 'B').trim().toUpperCase();
+                                                                            const isTrue = ansVal !== 'S';
+                                                                            return (
+                                                                                <div key={sIdx} className="flex items-center justify-between gap-3 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                                                                    <span className="text-slate-700 font-medium">{sIdx + 1}. {stmt}</span>
+                                                                                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold shrink-0 ${isTrue ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'}`}>
+                                                                                        {isTrue ? '✓ BENAR' : '✕ SALAH'}
+                                                                                    </span>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                )}
+                                                                {q.type === 'matching' && q.correct && (
+                                                                    <div className="mt-3.5 space-y-1.5">
+                                                                        {String(q.correct).split('\n').filter(Boolean).map((line, pIdx) => {
+                                                                            const [lPart, ...rRest] = line.split('|');
+                                                                            return (
+                                                                                <div key={pIdx} className="flex flex-wrap items-center gap-2 text-xs bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                                                                    <span className="font-semibold text-slate-700">{(lPart || '').trim()}</span>
+                                                                                    <span className="text-indigo-500 font-black">⟷</span>
+                                                                                    <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">{rRest.join('|').trim()}</span>
+                                                                                </div>
+                                                                            );
+                                                                        })}
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -5571,9 +6113,14 @@ Aturan Penting:
                                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kunci Jawaban</p>
                                                                 <div className="bg-emerald-50 border border-emerald-200/80 p-2.5 rounded-xl">
                                                                     {q.type === 'single' && !isNaN(q.correct) && <p className="font-extrabold text-emerald-800 text-base">{String.fromCharCode(65 + Number(q.correct))}</p>}
-                                                                    {q.type === 'multiple' && <p className="font-extrabold text-emerald-800 text-sm">{String(q.correct).split(',').map(n => String.fromCharCode(65 + Number(n))).join(', ')}</p>}
-                                                                    {q.type === 'boolean' && <p className="font-extrabold text-emerald-800 text-sm">{String(q.correct) === "0" ? "BENAR" : "SALAH"}</p>}
-                                                                    {(q.type === 'short' || q.type === 'essay' || q.type === 'matching') && <p className="font-bold text-emerald-800 text-xs whitespace-pre-wrap">{q.correct}</p>}
+                                                                    {q.type === 'multiple' && <p className="font-extrabold text-emerald-800 text-sm">{String(q.correct).split(',').filter(x => x !== '').map(n => String.fromCharCode(65 + Number(n))).join(', ')}</p>}
+                                                                    {q.type === 'boolean' && (
+                                                                        isLegacySingleBoolean(q)
+                                                                            ? <p className="font-extrabold text-emerald-800 text-sm">{String(q.correct) === "0" ? "BENAR" : "SALAH"}</p>
+                                                                            : <p className="font-extrabold text-emerald-800 text-xs">{String(q.correct).split(',').map((v, idx) => `${idx + 1}:${v.trim().toUpperCase() === 'S' ? 'Salah' : 'Benar'}`).join(' • ')}</p>
+                                                                    )}
+                                                                    {q.type === 'matching' && <p className="font-bold text-emerald-800 text-xs">{String(q.correct).split('\n').filter(Boolean).length} Pasangan Terkunci (Acak di Peserta)</p>}
+                                                                    {(q.type === 'short' || q.type === 'essay') && <p className="font-bold text-emerald-800 text-xs whitespace-pre-wrap">{q.correct}</p>}
                                                                 </div>
                                                             </div>
                                                             <div className="flex gap-2 mt-4">
@@ -5854,7 +6401,7 @@ Aturan Penting:
                                 </form>
 
                                 {activeExams.filter(e => {
-                                    const isSchool = (e.schoolId || 'sdn2palapi') === getActiveSchoolId();
+                                    const isSchool = (e.schoolId || masterSchoolId) === getActiveSchoolId();
                                     if (!isSchool) return false;
                                     if (role === 'guru') {
                                         const mySubIds = getMySubjects().map(s => s.id);
@@ -5865,7 +6412,7 @@ Aturan Penting:
                                     <div className="mt-12 text-left">
                                         <h3 className="font-bold text-lg mb-4 text-slate-800 flex items-center gap-2"><div className="w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse"></div> Sesi Ujian Aktif (LIVE)</h3>
                                         <div className={`grid gap-5 ${activeExams.filter(e => {
-                                            const isSchool = (e.schoolId || 'sdn2palapi') === getActiveSchoolId();
+                                            const isSchool = (e.schoolId || masterSchoolId) === getActiveSchoolId();
                                             if (!isSchool) return false;
                                             if (role === 'guru') {
                                                 const mySubIds = getMySubjects().map(s => s.id);
@@ -5874,7 +6421,7 @@ Aturan Penting:
                                             return true;
                                         }).length === 1 ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
                                             {activeExams.filter(e => {
-                                                const isSchool = (e.schoolId || 'sdn2palapi') === getActiveSchoolId();
+                                                const isSchool = (e.schoolId || masterSchoolId) === getActiveSchoolId();
                                                 if (!isSchool) return false;
                                                 if (role === 'guru') {
                                                     const mySubIds = getMySubjects().map(s => s.id);
@@ -6195,10 +6742,10 @@ Aturan Penting:
                                 {filteredSchoolsList.map(s => {
                                     const isActive = s.status === 'active';
                                     const isCurrent = s.id === selectedSchoolId;
-                                    const schoolTeachersCount = teachers.filter(t => (t.schoolId || 'sdn2palapi') === s.id).length;
-                                    const schoolStudentsCount = students.filter(st => (st.schoolId || 'sdn2palapi') === s.id).length;
-                                    const schoolClassesCount = classes.filter(c => (c.schoolId || 'sdn2palapi') === s.id).length;
-                                    const schoolQuestionsCount = questions.filter(q => (q.schoolId || 'sdn2palapi') === s.id).length;
+                                    const schoolTeachersCount = teachers.filter(t => (t.schoolId || masterSchoolId) === s.id).length;
+                                    const schoolStudentsCount = students.filter(st => (st.schoolId || masterSchoolId) === s.id).length;
+                                    const schoolClassesCount = classes.filter(c => (c.schoolId || masterSchoolId) === s.id).length;
+                                    const schoolQuestionsCount = questions.filter(q => (q.schoolId || masterSchoolId) === s.id).length;
 
                                     return (
                                         <div
@@ -6293,7 +6840,7 @@ Aturan Penting:
 
                                                 <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/60">
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kata Sandi Admin</p>
-                                                    <p className="font-mono font-bold text-xs text-indigo-600 mt-0.5 truncate">{s.adminPassword || 'masfy'}</p>
+                                                    <p className="font-mono font-bold text-xs text-indigo-600 mt-0.5 truncate">{s.adminPassword || '••••••••'}</p>
                                                     <p className="text-[10px] text-slate-400 mt-0.5 truncate">Semester {s.semester || 'Ganjil'}</p>
                                                 </div>
 
@@ -6317,7 +6864,7 @@ Aturan Penting:
                                             {/* Action Bar (1-Click Access Toggle + Edit + Switch) */}
                                             <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
                                                 <div className="flex flex-wrap items-center gap-2">
-                                                    {/* TOMBOL 1-KLIK TOGGLE AKSES LOGIN (HANYA SUPER ADMIN MAS ALFY) */}
+                                                    {/* TOMBOL 1-KLIK TOGGLE AKSES LOGIN (KHUSUS SUPER ADMIN) */}
                                                     <button
                                                         type="button"
                                                         onClick={() => toggleSchoolStatus(s.id)}
@@ -7680,43 +8227,259 @@ Aturan Penting:
                                             </div>
                                             <input type="hidden" name="image" value={editingItem?.image || ''} />
                                             {editingItem?.image && <div className="mb-3 rounded-lg overflow-hidden border border-slate-200 max-w-[200px]"><img src={editingItem.image} alt="Preview" className="w-full h-auto object-cover" /></div>}
-                                            <textarea name="text" defaultValue={editingItem?.text} placeholder="Ketik narasi kasus atau pertanyaan secara lengkap di sini..." rows={4} className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-indigo-400 focus:bg-white font-medium text-slate-800 text-sm leading-relaxed transition-colors" required />
+                                            <textarea
+                                                name="text"
+                                                defaultValue={
+                                                    editingItem?.type === 'boolean' && isLegacySingleBoolean(editingItem)
+                                                        ? 'Perhatikan pernyataan berikut dan tentukan Benar atau Salah!'
+                                                        : editingItem?.text
+                                                }
+                                                placeholder={
+                                                    questionFormType === 'boolean'
+                                                        ? "Ketik kalimat pengantar soal (contoh: Perhatikan pernyataan-pernyataan berikut dan tentukan Benar atau Salah!)"
+                                                        : questionFormType === 'matching'
+                                                            ? "Ketik instruksi soal menjodohkan (contoh: Pasangkan pernyataan di sebelah kiri dengan pasangan yang tepat!)"
+                                                            : "Ketik narasi kasus atau pertanyaan secara lengkap di sini..."
+                                                }
+                                                rows={3}
+                                                className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-indigo-400 focus:bg-white font-medium text-slate-800 text-sm leading-relaxed transition-colors"
+                                                required
+                                            />
                                         </div>
 
                                         {/* RENDER DYNAMIC FIELDS BASED ON TYPE */}
                                         <div className="border border-slate-200 p-5 rounded-2xl bg-slate-50">
-                                            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-4 flex items-center gap-1.5"><Settings size={14} /> Kunci Jawaban & Opsi</p>
+                                            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                                                <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                                                    <CheckSquare size={14} className="text-indigo-600" /> Opsi & Penentuan Kunci Jawaban
+                                                </p>
+                                                {(questionFormType === 'single' || questionFormType === 'multiple' || questionFormType === 'boolean' || questionFormType === 'matching') && (
+                                                    <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full">
+                                                        🔀 Urutan otomatis diacak di layar peserta
+                                                    </span>
+                                                )}
+                                            </div>
 
-                                            {(questionFormType === 'single' || questionFormType === 'multiple') && (
+                                            {questionFormType === 'single' && (
                                                 <div className="space-y-3">
-                                                    {Array.from({ length: schoolData.optionCount || 5 }).map((_, i) => String.fromCharCode(65 + i)).map((l, i) => (
-                                                        <div key={i} className="flex items-center gap-3">
-                                                            <span className="font-bold text-slate-400 w-5 text-center text-sm">{l}.</span>
-                                                            <input name={`opt${l}`} defaultValue={editingItem?.options?.[i]} placeholder={`Teks Pilihan ${l}`} className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 text-sm font-medium text-slate-700 bg-white" />
-                                                        </div>
-                                                    ))}
-                                                    <div className="mt-6 pt-5 border-t border-slate-200">
-                                                        <label className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 block mb-2 ml-1">Kunci Jawaban Tepat</label>
-                                                        <input name="correct" defaultValue={editingItem?.correct} placeholder={questionFormType === 'single' ? "Ketik index (0 = A, 1 = B, dst)" : "Ketik index pisahkan koma (0,2)"} className="w-full p-3 border border-emerald-200 rounded-xl outline-none focus:border-emerald-500 font-bold text-emerald-700 bg-emerald-50 text-center text-base tracking-widest" required />
-                                                    </div>
+                                                    <p className="text-xs text-slate-500 font-medium mb-2">
+                                                        Isi pilihan jawaban lalu <strong>klik tanda centang</strong> pada satu pilihan yang merupakan Kunci Jawaban benar.
+                                                    </p>
+                                                    {Array.from({ length: Number(currentActiveSchool.optionCount) || 5 }).map((_, i) => {
+                                                        const letter = String.fromCharCode(65 + i);
+                                                        const isSelected = Number(questionSingleKey) === i;
+                                                        return (
+                                                            <div key={i} className={`flex items-center gap-2.5 p-2 rounded-xl border transition-all ${isSelected ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-500/15' : 'bg-white border-slate-200'}`}>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setQuestionSingleKey(i)}
+                                                                    title="Klik untuk jadikan Kunci Jawaban"
+                                                                    className={`w-9 h-9 rounded-xl font-black text-xs flex items-center justify-center shrink-0 transition-all cursor-pointer ${isSelected ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-200'}`}
+                                                                >
+                                                                    {isSelected ? <Check size={17} /> : letter}
+                                                                </button>
+                                                                <input
+                                                                    value={questionOptions[i] ?? ''}
+                                                                    onChange={(e) => {
+                                                                        const next = [...questionOptions];
+                                                                        next[i] = e.target.value;
+                                                                        setQuestionOptions(next);
+                                                                    }}
+                                                                    placeholder={`Teks Pilihan ${letter}`}
+                                                                    className="flex-1 p-2.5 bg-transparent outline-none text-sm font-medium text-slate-800"
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setQuestionSingleKey(i)}
+                                                                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold shrink-0 cursor-pointer transition-all ${isSelected ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700'}`}
+                                                                >
+                                                                    {isSelected ? '✓ Kunci' : 'Pilih Kunci'}
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+
+                                            {questionFormType === 'multiple' && (
+                                                <div className="space-y-3">
+                                                    <p className="text-xs text-slate-500 font-medium mb-2">
+                                                        Isi pilihan jawaban lalu <strong>beri tanda centang</strong> pada semua pilihan yang bernilai BENAR (bisa lebih dari satu).
+                                                    </p>
+                                                    {Array.from({ length: Number(currentActiveSchool.optionCount) || 5 }).map((_, i) => {
+                                                        const letter = String.fromCharCode(65 + i);
+                                                        const keyStr = String(i);
+                                                        const isChecked = questionMultiKeys.includes(keyStr);
+                                                        const toggleKey = () => {
+                                                            setQuestionMultiKeys(prev =>
+                                                                prev.includes(keyStr) ? prev.filter(k => k !== keyStr) : [...prev, keyStr]
+                                                            );
+                                                        };
+                                                        return (
+                                                            <div key={i} className={`flex items-center gap-2.5 p-2 rounded-xl border transition-all ${isChecked ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-500/15' : 'bg-white border-slate-200'}`}>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={toggleKey}
+                                                                    title="Centang sebagai jawaban benar"
+                                                                    className={`w-9 h-9 rounded-xl font-black text-xs flex items-center justify-center shrink-0 transition-all cursor-pointer ${isChecked ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-200'}`}
+                                                                >
+                                                                    {isChecked ? <Check size={17} /> : letter}
+                                                                </button>
+                                                                <input
+                                                                    value={questionOptions[i] ?? ''}
+                                                                    onChange={(e) => {
+                                                                        const next = [...questionOptions];
+                                                                        next[i] = e.target.value;
+                                                                        setQuestionOptions(next);
+                                                                    }}
+                                                                    placeholder={`Teks Pilihan ${letter}`}
+                                                                    className="flex-1 p-2.5 bg-transparent outline-none text-sm font-medium text-slate-800"
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={toggleKey}
+                                                                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold shrink-0 cursor-pointer transition-all ${isChecked ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700'}`}
+                                                                >
+                                                                    {isChecked ? '✓ Benar' : 'Centang'}
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
 
                                             {questionFormType === 'boolean' && (
                                                 <div className="space-y-3">
-                                                    <p className="text-xs text-slate-500 font-medium mb-2">Pilih validasi yang benar untuk pernyataan (stimulus) di atas.</p>
-                                                    <select name="correct" defaultValue={editingItem?.correct || "0"} className="w-full p-3 border border-emerald-200 rounded-xl outline-none focus:border-emerald-500 font-bold text-emerald-700 bg-emerald-50 text-center text-sm cursor-pointer">
-                                                        <option value="0">Pernyataan Bernilai BENAR</option>
-                                                        <option value="1">Pernyataan Bernilai SALAH</option>
-                                                    </select>
+                                                    <p className="text-xs text-slate-500 font-medium mb-2">
+                                                        Tulis satu atau beberapa pernyataan turunan di bawah ini, lalu langsung pilih <strong>Benar</strong> atau <strong>Salah</strong> untuk setiap pernyataan.
+                                                    </p>
+                                                    {questionBooleanRows.map((row, rIdx) => (
+                                                        <div key={rIdx} className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 bg-white border border-slate-200 rounded-xl shadow-2xs">
+                                                            <div className="flex items-center gap-2 flex-1">
+                                                                <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-500 font-bold text-xs flex items-center justify-center shrink-0">
+                                                                    {rIdx + 1}
+                                                                </span>
+                                                                <input
+                                                                    value={row.text}
+                                                                    onChange={(e) => {
+                                                                        const next = [...questionBooleanRows];
+                                                                        next[rIdx] = { ...next[rIdx], text: e.target.value };
+                                                                        setQuestionBooleanRows(next);
+                                                                    }}
+                                                                    placeholder={`Ketik pernyataan ke-${rIdx + 1}...`}
+                                                                    className="flex-1 p-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-400 rounded-lg outline-none text-sm font-medium text-slate-800"
+                                                                />
+                                                            </div>
+                                                            <div className="flex items-center justify-end gap-1.5 shrink-0">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const next = [...questionBooleanRows];
+                                                                        next[rIdx] = { ...next[rIdx], answer: 'B' };
+                                                                        setQuestionBooleanRows(next);
+                                                                    }}
+                                                                    className={`px-3 py-2 rounded-lg text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1 ${row.answer === 'B' ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' : 'bg-white text-slate-500 border-slate-200 hover:bg-emerald-50 hover:text-emerald-700'}`}
+                                                                >
+                                                                    <Check size={14} /> Benar
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const next = [...questionBooleanRows];
+                                                                        next[rIdx] = { ...next[rIdx], answer: 'S' };
+                                                                        setQuestionBooleanRows(next);
+                                                                    }}
+                                                                    className={`px-3 py-2 rounded-lg text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1 ${row.answer === 'S' ? 'bg-rose-600 text-white border-rose-600 shadow-xs' : 'bg-white text-slate-500 border-slate-200 hover:bg-rose-50 hover:text-rose-700'}`}
+                                                                >
+                                                                    <X size={14} /> Salah
+                                                                </button>
+                                                                {questionBooleanRows.length > 1 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setQuestionBooleanRows(questionBooleanRows.filter((_, idx) => idx !== rIdx))}
+                                                                        className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                                        title="Hapus pernyataan"
+                                                                    >
+                                                                        <Trash2 size={15} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setQuestionBooleanRows([...questionBooleanRows, { text: '', answer: 'B' }])}
+                                                        className="w-full py-2.5 border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-white hover:bg-indigo-50/50 text-indigo-600 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                                                    >
+                                                        <Plus size={15} /> Tambah Pernyataan Benar / Salah
+                                                    </button>
                                                 </div>
                                             )}
 
                                             {questionFormType === 'matching' && (
                                                 <div className="space-y-3">
-                                                    <p className="text-xs text-slate-500 font-medium mb-2">Format: `Pertanyaan | Pasangan Jawaban`. Setiap baris adalah 1 pasang.</p>
-                                                    <div className="bg-slate-800 p-3 rounded-lg mb-3 text-[11px] font-mono text-emerald-400">Contoh Format:<br />Ibukota Indonesia | Jakarta<br />Ibukota Jepang | Tokyo</div>
-                                                    <textarea name="correct" defaultValue={editingItem?.correct || "Pertanyaan Kiri | Jawaban Kanan"} rows={5} className="w-full p-4 border border-emerald-200 rounded-xl outline-none focus:border-emerald-500 font-mono text-sm bg-white leading-relaxed font-medium text-slate-700" required />
+                                                    <p className="text-xs text-slate-500 font-medium mb-2">
+                                                        Isi pernyataan di kiri beserta pasangan jawaban benarnya secara langsung di kanan. Sistem akan <strong>mengacak otomatis</strong> posisi pasangan saat ujian berlangsung!
+                                                    </p>
+                                                    <div className="hidden sm:grid sm:grid-cols-12 gap-2 px-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                                                        <div className="col-span-5">Pernyataan / Premis (Kiri)</div>
+                                                        <div className="col-span-1 text-center">Jodoh</div>
+                                                        <div className="col-span-5">Pasangan Jawaban Tepat (Kanan)</div>
+                                                        <div className="col-span-1"></div>
+                                                    </div>
+                                                    {questionMatchingPairs.map((pair, pIdx) => (
+                                                        <div key={pIdx} className="grid grid-cols-1 sm:grid-cols-12 items-center gap-2 p-3 bg-white border border-slate-200 rounded-xl shadow-2xs">
+                                                            <div className="sm:col-span-5 flex items-center gap-2">
+                                                                <span className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0">
+                                                                    {pIdx + 1}
+                                                                </span>
+                                                                <input
+                                                                    value={pair.left}
+                                                                    onChange={(e) => {
+                                                                        const next = [...questionMatchingPairs];
+                                                                        next[pIdx] = { ...next[pIdx], left: e.target.value };
+                                                                        setQuestionMatchingPairs(next);
+                                                                    }}
+                                                                    placeholder={`Premis / Pernyataan ${pIdx + 1}`}
+                                                                    className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-400 rounded-lg outline-none text-xs sm:text-sm font-medium text-slate-800"
+                                                                />
+                                                            </div>
+                                                            <div className="sm:col-span-1 text-center text-emerald-600 font-black text-sm">
+                                                                ⟷
+                                                            </div>
+                                                            <div className="sm:col-span-5">
+                                                                <input
+                                                                    value={pair.right}
+                                                                    onChange={(e) => {
+                                                                        const next = [...questionMatchingPairs];
+                                                                        next[pIdx] = { ...next[pIdx], right: e.target.value };
+                                                                        setQuestionMatchingPairs(next);
+                                                                    }}
+                                                                    placeholder={`Pasangan Jawaban ${pIdx + 1}`}
+                                                                    className="w-full p-2.5 bg-emerald-50/60 focus:bg-white border border-emerald-200 focus:border-emerald-500 rounded-lg outline-none text-xs sm:text-sm font-semibold text-emerald-900"
+                                                                />
+                                                            </div>
+                                                            <div className="sm:col-span-1 flex justify-end">
+                                                                {questionMatchingPairs.length > 2 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setQuestionMatchingPairs(questionMatchingPairs.filter((_, idx) => idx !== pIdx))}
+                                                                        className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                                        title="Hapus pasangan"
+                                                                    >
+                                                                        <Trash2 size={15} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setQuestionMatchingPairs([...questionMatchingPairs, { left: '', right: '' }])}
+                                                        className="w-full py-2.5 border-2 border-dashed border-emerald-200 hover:border-emerald-400 bg-white hover:bg-emerald-50/50 text-emerald-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                                                    >
+                                                        <Plus size={15} /> Tambah Pasangan Menjodohkan
+                                                    </button>
                                                 </div>
                                             )}
 
@@ -7939,7 +8702,21 @@ Aturan Penting:
                                                         }).join(' | ');
                                                     }
                                                     if (type === 'boolean') {
-                                                        return String(ans) === "0" ? "Pernyataan BENAR" : "Pernyataan SALAH";
+                                                        if (isLegacySingleBoolean(q)) {
+                                                            return String(ans) === "0" ? "Pernyataan BENAR" : "Pernyataan SALAH";
+                                                        }
+                                                        if (typeof ans === 'string' && ans.trim().startsWith('{')) {
+                                                            try {
+                                                                const parsed = JSON.parse(ans);
+                                                                return (options || []).map((st, sIdx) => {
+                                                                    const k = String(st || '').trim() || String(sIdx);
+                                                                    const v = parsed[k] ?? parsed[String(sIdx)];
+                                                                    return `${sIdx + 1}. ${st} -> ${v === 'B' ? 'BENAR' : v === 'S' ? 'SALAH' : '-'}`;
+                                                                }).join('\n');
+                                                            } catch (e) { }
+                                                        }
+                                                        const parts = String(ans).split(',').map(s => s.trim().toUpperCase());
+                                                        return (options || []).map((st, sIdx) => `${sIdx + 1}. ${st} -> ${parts[sIdx] === 'S' ? 'SALAH' : 'BENAR'}`).join('\n');
                                                     }
                                                     if (type === 'matching') {
                                                         try {

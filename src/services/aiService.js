@@ -111,13 +111,9 @@ export const normalizeExtractedQuestions = (parsedArray) => {
             else if (t.includes('multi') || t.includes('kompleks') || t.includes('mcma')) t = 'multiple';
             else t = 'single';
 
-            let opts = Array.isArray(m.options || m.opsi || m.pilihan || m.jawaban_pilihan)
-                ? (m.options || m.opsi || m.pilihan || m.jawaban_pilihan).map(o => String(o ?? '').replace(/^[A-Ea-e][\.\)]\s*/, '').trim())
+            let opts = Array.isArray(m.options || m.opsi || m.pilihan || m.jawaban_pilihan || m.statements || m.pernyataan)
+                ? (m.options || m.opsi || m.pilihan || m.jawaban_pilihan || m.statements || m.pernyataan).map(o => String(o ?? '').replace(/^[A-Ea-e][\.\)]\s*/, '').trim()).filter(Boolean)
                 : [];
-
-            if (t === 'boolean') {
-                opts = ['Benar', 'Salah'];
-            }
 
             let corrAns = String(m.correct ?? m.jawaban ?? m.kunci ?? m.kunci_jawaban ?? m.answer ?? '0').trim();
 
@@ -142,12 +138,26 @@ export const normalizeExtractedQuestions = (parsedArray) => {
                     .filter(Boolean)
                     .join(',') || '0';
             } else if (t === 'boolean') {
-                const low = corrAns.toLowerCase();
-                if (low === '1' || low.includes('salah') || low === 'false' || low === 'b') corrAns = '1';
-                else corrAns = '0';
+                const isLegacyBinaryOpts = opts.length === 0 || (opts.length === 2 && opts[0].toLowerCase() === 'benar' && opts[1].toLowerCase() === 'salah');
+                if (!isLegacyBinaryOpts && opts.length >= 1) {
+                    const rawList = Array.isArray(m.correct) ? m.correct : corrAns.split(/[,;|/\s]+/).filter(Boolean);
+                    corrAns = opts.map((_, idx) => {
+                        const token = String(rawList[idx] ?? 'B').toLowerCase().trim();
+                        return (token === 's' || token === '1' || token.includes('salah') || token === 'false') ? 'S' : 'B';
+                    }).join(',');
+                } else {
+                    const low = corrAns.toLowerCase();
+                    const singleKey = (low === '1' || low === 's' || low.includes('salah') || low === 'false') ? 'S' : 'B';
+                    const txtStmt = String(m.text || m.pertanyaan || m.soal || '').trim();
+                    opts = txtStmt ? [txtStmt] : ['Pernyataan 1'];
+                    corrAns = singleKey;
+                }
             }
 
-            const txt = String(m.text || m.pertanyaan || m.soal || '').trim();
+            let txt = String(m.text || m.pertanyaan || m.soal || '').trim();
+            if (t === 'boolean' && opts.length === 1 && opts[0] === txt) {
+                txt = 'Tentukan Benar atau Salah untuk pernyataan berikut!';
+            }
             const ind = String(m.indicator || m.indikator || '').trim();
             const rawDif = String(m.difficulty || m.kesulitan || m.level || 'MOTS').toUpperCase();
             const dif = rawDif.includes('HOTS') ? 'HOTS' : rawDif.includes('LOTS') ? 'LOTS' : 'MOTS';
@@ -159,7 +169,10 @@ export const normalizeExtractedQuestions = (parsedArray) => {
                 text: txt,
                 indicator: ind,
                 difficulty: dif,
-                weight: Number(m.weight || m.bobot) || 10
+                weight: Number(m.weight || m.bobot) || 10,
+                stimulusTitle: String(m.stimulusTitle || m.judulStimulus || '').trim(),
+                stimulusType: String(m.stimulusType || m.tipeStimulus || 'text').toLowerCase().trim(),
+                stimulusContent: String(m.stimulusContent || m.isiStimulus || m.wacana || '').trim()
             };
         })
         .filter(q => q.text.length > 0);
