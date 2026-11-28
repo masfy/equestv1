@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from './firebase';
 import { collection, doc, onSnapshot, setDoc, deleteDoc, getDocs, updateDoc } from 'firebase/firestore';
-import { aiService } from './services/aiService';
+import { aiService, DEFAULT_AI_MODEL, sanitizeModelId, parseAiJsonArray, normalizeExtractedQuestions } from './services/aiService';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
 import {
     Clock, User, Key, ChevronLeft, ChevronRight, CheckCircle, LogOut,
@@ -39,7 +39,7 @@ const INITIAL_SCHOOL_DATA = {
     logo: EQUEST_LOGO,
     schoolLogo: "",
     apiKey: "",
-    aiModel: "gemini-1.5-flash",
+    aiModel: DEFAULT_AI_MODEL,
     availableAiModels: [],
     optionCount: 5
 };
@@ -204,7 +204,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message }) => {
     );
 };
 
-const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey, aiModel }) => {
+const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey, aiModel, onSaveInlineApiKey }) => {
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [statusText, setStatusText] = useState("");
@@ -212,13 +212,25 @@ const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey, aiMod
     const [selectedFile, setSelectedFile] = useState(null);
     const [isSuccess, setIsSuccess] = useState(false);
     const [summaryMessage, setSummaryMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
+    const [inlineKeyInput, setInlineKeyInput] = useState("");
 
     if (!isOpen) return null;
 
+    const effectiveKey = (apiKey && apiKey.trim()) || inlineKeyInput.trim();
+
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files.length > 0) {
-            setSelectedFile(e.target.files[0]);
-            showToast(`File ${e.target.files[0].name} dipilih.`, "success");
+            const file = e.target.files[0];
+            setSelectedFile(file);
+            setErrorMessage("");
+            const lowerName = (file.name || '').toLowerCase();
+            if (type === 'Bank Soal' && (lowerName.endsWith('.pdf') || lowerName.endsWith('.docx') || lowerName.endsWith('.doc') || lowerName.endsWith('.png') || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg') || lowerName.endsWith('.txt'))) {
+                setUseAI(true);
+            } else if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) {
+                setUseAI(false);
+            }
+            showToast(`File ${file.name} dipilih.`, "success");
         }
     };
 
@@ -262,76 +274,87 @@ const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey, aiMod
 
     const handleMockImport = async () => {
         if (!selectedFile) return showToast("Pilih file terlebih dahulu!", "error");
+        setErrorMessage("");
 
-        if (useAI && (!apiKey || apiKey.trim() === '')) {
-            return showToast("API Key belum disetting! Buka Pengaturan Sistem untuk mengintegrasikan AI.", "error");
+        const lowerName = (selectedFile.name || '').toLowerCase();
+        const isDocOrPdf = lowerName.endsWith('.pdf') || lowerName.endsWith('.docx') || lowerName.endsWith('.doc') || lowerName.endsWith('.png') || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg');
+        const shouldUseAI = useAI || (type === 'Bank Soal' && isDocOrPdf);
+
+        if (shouldUseAI && !effectiveKey) {
+            setErrorMessage("API Key Gemini belum diisi! Masukkan API Key Google AI Studio pada kolom di bawah atau di menu Pengaturan Sekolah.");
+            return showToast("Masukkan API Key Gemini terlebih dahulu!", "error");
+        }
+
+        if (inlineKeyInput.trim() && onSaveInlineApiKey) {
+            onSaveInlineApiKey(inlineKeyInput.trim());
         }
 
         setLoading(true);
-        setProgress(0);
-        setStatusText(useAI ? "Menghubungkan ke Engine AI..." : "Mempersiapkan file...");
+        setProgress(5);
+        setStatusText(shouldUseAI ? "Membaca dokumen & menghubungkan ke Google Gemini AI..." : "Mempersiapkan file Excel...");
 
-        let currentProgress = 0;
+        let currentProgress = 5;
         const interval = setInterval(() => {
-            currentProgress += Math.floor(Math.random() * 15) + 5;
+            currentProgress += Math.floor(Math.random() * 8) + 3;
             if (currentProgress > 90) currentProgress = 90;
             setProgress(currentProgress);
 
             if (currentProgress > 20 && currentProgress <= 50) {
-                setStatusText(useAI ? "AI Menganalisis Teks Dokumen..." : "Membaca data baris per baris...");
+                setStatusText(shouldUseAI ? "AI sedang membaca naskah soal & opsi jawaban..." : "Membaca baris data Excel...");
             } else if (currentProgress > 50 && currentProgress <= 80) {
-                setStatusText(useAI ? "Memisahkan Soal & Kunci Jawaban..." : "Memvalidasi format data...");
+                setStatusText(shouldUseAI ? "Mengekstrak kunci jawaban & level kognitif..." : "Memvalidasi format data...");
             } else if (currentProgress > 80) {
-                setStatusText(useAI ? "Membangun struktur data..." : "Menyimpan ke database...");
+                setStatusText(shouldUseAI ? "Menyusun butir soal ke Bank Soal..." : "Menyimpan ke database...");
             }
-        }, 500);
+        }, 600);
 
-        const finishImport = (parsedRows = null, resultCount = 0) => {
-            clearInterval(interval);
-            setProgress(100);
-            setStatusText("Selesai!");
-
-            setTimeout(() => {
-                setLoading(false);
-                setIsSuccess(true);
-                setSummaryMessage(`Berhasil memproses ${resultCount || 'beberapa'} data dari file ${selectedFile.name}`);
-                onImport(type, useAI, selectedFile.name, parsedRows);
-            }, 800);
-        };
-
-        if ((selectedFile.name.endsWith('.xlsx') || selectedFile.name.endsWith('.xls')) && !useAI) {
+        if ((lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) && !shouldUseAI) {
             try {
                 const XLSX = await loadSheetJS();
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                const arrayBuf = await selectedFile.arrayBuffer();
+                const data = new Uint8Array(arrayBuf);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                    const validCount = json.filter(row => row && row.length > 0).length - 1;
-                    finishImport(json, validCount > 0 ? validCount : 0);
-                };
-                reader.readAsArrayBuffer(selectedFile);
+                const res = await onImport(type, false, selectedFile.name, json, null, effectiveKey);
+                clearInterval(interval);
+                if (res && res.success === false) {
+                    setLoading(false);
+                    setErrorMessage(res.error || "Gagal memproses file Excel.");
+                    return;
+                }
+                setProgress(100);
+                setStatusText("Selesai!");
+                setLoading(false);
+                setIsSuccess(true);
+                setSummaryMessage(res?.message || `Berhasil memproses ${res?.count ?? 0} data dari file ${selectedFile.name}`);
             } catch (e) {
                 clearInterval(interval);
                 setLoading(false);
+                setErrorMessage(e.message || "Gagal membaca file Excel. Pastikan file tidak rusak.");
                 showToast("Gagal membaca file Excel. Pastikan file tidak rusak.", "error");
             }
         } else {
-            // For AI, we pass the file to be processed by processImport
-            setTimeout(() => {
-                onImport(type, useAI, selectedFile.name, null, selectedFile);
+            try {
+                const res = await onImport(type, true, selectedFile.name, null, selectedFile, effectiveKey);
                 clearInterval(interval);
+                if (!res || res.success === false) {
+                    setLoading(false);
+                    setErrorMessage(res?.error || "AI gagal mengekstrak soal dari dokumen.");
+                    return;
+                }
                 setProgress(100);
                 setStatusText("Selesai!");
-                setTimeout(() => {
-                    setLoading(false);
-                    setIsSuccess(true);
-                    setSummaryMessage(`File ${selectedFile.name} berhasil dikirim ke Engine AI!`);
-                }, 800);
-            }, 1000); // We don't finishImport here, we just pass to onImport
+                setLoading(false);
+                setIsSuccess(true);
+                setSummaryMessage(res.message || `Berhasil mengekstrak ${res.count} butir soal dari ${selectedFile.name}!`);
+            } catch (err) {
+                clearInterval(interval);
+                setLoading(false);
+                setErrorMessage(err.message || "Terjadi kesalahan saat mengekstrak soal.");
+            }
         }
     };
 
@@ -342,17 +365,18 @@ const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey, aiMod
                     <div className="w-24 h-24 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
                         <CheckSquare size={48} />
                     </div>
-                    <h3 className="text-2xl font-black text-slate-800 mb-2">Import Selesai!</h3>
-                    <p className="text-slate-500 font-medium mb-8 leading-relaxed">{summaryMessage}</p>
+                    <h3 className="text-2xl font-black text-slate-800 mb-2">Import Berhasil!</h3>
+                    <p className="text-slate-600 font-medium mb-8 leading-relaxed text-sm">{summaryMessage}</p>
                     <button
                         onClick={() => {
                             setIsSuccess(false);
                             setSelectedFile(null);
+                            setErrorMessage("");
                             onClose();
                         }}
-                        className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-200 transition-all hover:-translate-y-1"
+                        className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-200 transition-all hover:-translate-y-1 cursor-pointer"
                     >
-                        Tutup Jendela
+                        Tutup & Lihat Soal
                     </button>
                 </div>
             </div>
@@ -361,47 +385,72 @@ const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey, aiMod
 
     return (
         <div className="fixed inset-0 bg-slate-900/60 z-[9999] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
-            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8 border border-slate-100">
-                <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-6 sm:p-8 border border-slate-100 max-h-[92vh] overflow-y-auto no-scrollbar">
+                <div className="flex justify-between items-center mb-5 border-b border-slate-100 pb-4">
                     <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2"><Upload size={22} className="text-indigo-500" /> Import {type}</h3>
-                    <button onClick={onClose} disabled={loading} className="text-slate-400 hover:bg-rose-50 hover:text-rose-500 p-2 rounded-xl transition-colors disabled:opacity-50"><X size={20} /></button>
+                    <button onClick={() => { setErrorMessage(""); setSelectedFile(null); onClose(); }} disabled={loading} className="text-slate-400 hover:bg-rose-50 hover:text-rose-500 p-2 rounded-xl transition-colors disabled:opacity-50"><X size={20} /></button>
                 </div>
 
-                <div className="space-y-6">
-                    <div className="flex justify-between items-center bg-indigo-50/80 p-5 rounded-2xl border border-indigo-100/50">
+                <div className="space-y-5">
+                    <div className="flex justify-between items-center bg-indigo-50/80 p-4 rounded-2xl border border-indigo-100/50">
                         <div>
                             <p className="font-bold text-indigo-900 text-sm">Unduh Format Template</p>
-                            <p className="text-[11px] text-indigo-600/80 mt-1 font-medium">Buka & edit langsung di Excel.</p>
+                            <p className="text-[11px] text-indigo-600/80 mt-0.5 font-medium">Khusus import via tabel Excel (.xlsx).</p>
                         </div>
-                        <button type="button" onClick={downloadTemplate} disabled={loading} className="bg-white text-indigo-600 border border-indigo-100 px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:shadow transition-all flex items-center gap-2 disabled:opacity-50 hover:-translate-y-0.5"><Download size={16} /> Template.xlsx</button>
+                        <button type="button" onClick={downloadTemplate} disabled={loading} className="bg-white text-indigo-600 border border-indigo-100 px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm hover:shadow transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"><Download size={15} /> Template.xlsx</button>
                     </div>
 
-                    <div className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all relative group ${selectedFile ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-300'} ${loading ? 'opacity-70 pointer-events-none' : 'cursor-pointer'}`}>
-                        <input type="file" onChange={handleFileChange} disabled={loading} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed" accept=".xlsx,.xls,.doc,.docx,.pdf" />
+                    <div className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all relative group ${selectedFile ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-300'} ${loading ? 'opacity-70 pointer-events-none' : 'cursor-pointer'}`}>
+                        <input type="file" onChange={handleFileChange} disabled={loading} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed" accept=".xlsx,.xls,.docx,.doc,.pdf,.png,.jpg,.jpeg,.txt" />
                         {selectedFile ? (
                             <div className="animate-fade-in">
-                                <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-emerald-500"><FileCheck size={28} /></div>
+                                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm text-emerald-500"><FileCheck size={26} /></div>
                                 <p className="font-bold text-emerald-700 text-sm truncate px-4">{selectedFile.name}</p>
-                                <p className="text-xs text-emerald-600/70 mt-1.5 font-medium">Siap diproses</p>
+                                <p className="text-xs text-emerald-600/80 mt-1 font-medium">Klik untuk mengganti file</p>
                             </div>
                         ) : (
                             <div>
-                                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm group-hover:scale-110 transition-transform text-indigo-500"><FileUp size={28} /></div>
-                                <p className="font-bold text-slate-700 text-sm">Drag & Drop file Anda</p>
-                                <p className="text-[11px] text-slate-500 mt-1.5 font-medium">Mendukung .xlsx, atau PDF/Word (via AI)</p>
+                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm group-hover:scale-110 transition-transform text-indigo-500"><FileUp size={26} /></div>
+                                <p className="font-bold text-slate-700 text-sm">Pilih atau Drag & Drop File</p>
+                                <p className="text-[11px] text-slate-500 mt-1 font-medium">Mendukung .xlsx, PDF, Word (.docx), atau Gambar Soal</p>
                             </div>
                         )}
                     </div>
 
                     {type === 'Bank Soal' && (
-                        <div className="bg-gradient-to-r from-purple-50 to-fuchsia-50 p-5 rounded-2xl border border-purple-100 flex items-start gap-4 shadow-sm">
-                            <input type="checkbox" id="useAI" checked={useAI} onChange={() => setUseAI(!useAI)} disabled={loading} className="mt-1 w-5 h-5 accent-purple-600 rounded cursor-pointer disabled:opacity-50" />
-                            <div>
-                                <label htmlFor="useAI" className={`font-bold text-purple-900 text-sm flex items-center gap-1.5 ${loading ? '' : 'cursor-pointer'}`}><BrainCircuit size={16} /> AI Document Parser</label>
-                                <p className="text-xs text-purple-700/80 mt-1.5 leading-relaxed font-medium">Pilih ini jika mengunggah file Word/PDF. AI akan mengekstrak narasi soal & opsi secara otomatis.</p>
-                                {useAI && <span className="text-[10px] text-purple-700 bg-white/80 border border-purple-200 px-2 py-0.5 rounded-md font-mono font-bold mt-2 inline-block">Engine: {aiModel || "gemini-1.5-flash"}</span>}
-                                {!apiKey && useAI && <p className="text-[10px] text-rose-500 font-bold mt-2 flex items-center gap-1"><AlertCircle size={12} /> Mohon isi API Key di Pengaturan Sistem terlebih dahulu.</p>}
+                        <div className="bg-gradient-to-r from-purple-50 to-fuchsia-50 p-4 rounded-2xl border border-purple-100 space-y-3 shadow-xs">
+                            <div className="flex items-start gap-3">
+                                <input type="checkbox" id="useAI" checked={useAI} onChange={() => setUseAI(!useAI)} disabled={loading} className="mt-1 w-4 h-4 accent-purple-600 rounded cursor-pointer disabled:opacity-50" />
+                                <div className="flex-1">
+                                    <label htmlFor="useAI" className={`font-bold text-purple-900 text-sm flex items-center gap-1.5 ${loading ? '' : 'cursor-pointer'}`}><BrainCircuit size={16} /> AI Document Parser (PDF & Word .docx)</label>
+                                    <p className="text-[11px] text-purple-700/85 mt-1 leading-relaxed font-medium">Otomatis membaca naskah PDF atau Word (.docx) dan mengubahnya menjadi butir soal, opsi jawaban, serta kunci jawaban.</p>
+                                    {useAI && (
+                                        <span className="text-[10px] text-purple-700 bg-white/90 border border-purple-200 px-2 py-0.5 rounded-md font-mono font-bold mt-2 inline-block">
+                                            Engine Otomatis: {sanitizeModelId(aiModel)}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
+                            {useAI && (!apiKey || !apiKey.trim()) && (
+                                <div className="pt-2 border-t border-purple-200/60 space-y-1.5">
+                                    <label className="block text-[10px] font-bold text-purple-900 uppercase tracking-wider">Masukkan API Key Google Gemini:</label>
+                                    <input
+                                        type="password"
+                                        value={inlineKeyInput}
+                                        onChange={(e) => setInlineKeyInput(e.target.value)}
+                                        placeholder="Tempel API Key Google AI Studio (AIzaSy...)"
+                                        className="w-full p-2.5 rounded-xl bg-white border border-purple-300 text-xs font-mono text-slate-800 outline-none focus:border-purple-600"
+                                    />
+                                    <p className="text-[10px] text-purple-700 font-medium">API Key akan langsung disimpan ke akun/sekolah Anda.</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {errorMessage && (
+                        <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-start gap-2.5 animate-fade-in">
+                            <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-600" />
+                            <div className="leading-relaxed">{errorMessage}</div>
                         </div>
                     )}
 
@@ -416,7 +465,7 @@ const ImportModal = ({ isOpen, onClose, type, onImport, showToast, apiKey, aiMod
                             </div>
                         </div>
                     ) : (
-                        <button onClick={handleMockImport} disabled={!selectedFile} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-base shadow-lg hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:hover:translate-y-0 flex justify-center items-center gap-2 hover:-translate-y-1">
+                        <button onClick={handleMockImport} disabled={!selectedFile} className="w-full bg-indigo-600 text-white py-3.5 rounded-2xl font-bold text-sm sm:text-base shadow-lg hover:bg-indigo-700 transition-all disabled:opacity-50 flex justify-center items-center gap-2 cursor-pointer">
                             Mulai Import Data
                         </button>
                     )}
@@ -775,7 +824,7 @@ export default function App({ defaultLogin = 'student', onBack }) {
                 adminUsername: matched.adminUsername ?? (isMasterSchool ? (schoolData?.adminUsername || 'admin') : ''),
                 adminPassword: matched.adminPassword ?? (isMasterSchool ? (schoolData?.adminPassword || '') : ''),
                 apiKey: matched.apiKey ?? (isMasterSchool ? (schoolData?.apiKey || '') : ''),
-                aiModel: matched.aiModel || (isMasterSchool ? schoolData?.aiModel : '') || 'gemini-1.5-flash',
+                aiModel: sanitizeModelId(matched.aiModel || (isMasterSchool ? schoolData?.aiModel : '') || DEFAULT_AI_MODEL),
                 availableAiModels: matched.availableAiModels || (isMasterSchool ? schoolData?.availableAiModels : []) || [],
                 optionCount: Number(matched.optionCount || (isMasterSchool ? schoolData?.optionCount : 5)) || 5
             };
@@ -874,13 +923,15 @@ export default function App({ defaultLogin = 'student', onBack }) {
     const [showTeacherKeyBox, setShowTeacherKeyBox] = useState(false);
     const [isVerifyingTeacherKey, setIsVerifyingTeacherKey] = useState(false);
 
-    // Dynamic Effective AI Key & Model (Terisolasi per Sekolah / Guru)
+    // Dynamic Effective AI Key & Model (Terisolasi per Sekolah / Guru & Auto-Upgrade dari 1.5 ke 2.5)
     const effectiveApiKey = (role === 'guru' && currentUser?.apiKey?.trim())
         ? currentUser.apiKey.trim()
         : (currentActiveSchool.apiKey?.trim() || '');
-    const effectiveAiModel = (role === 'guru' && currentUser?.aiModel)
-        ? currentUser.aiModel
-        : (currentActiveSchool.aiModel || 'gemini-1.5-flash');
+    const effectiveAiModel = sanitizeModelId(
+        (role === 'guru' && currentUser?.aiModel)
+            ? currentUser.aiModel
+            : (currentActiveSchool.aiModel || DEFAULT_AI_MODEL)
+    );
     const effectiveAvailableModels = (role === 'guru' && currentUser?.availableAiModels?.length > 0)
         ? currentUser.availableAiModels
         : (availableAiModels?.length > 0 ? availableAiModels : (currentActiveSchool.availableAiModels || []));
@@ -963,8 +1014,8 @@ export default function App({ defaultLogin = 'student', onBack }) {
             const res = await aiService.fetchAvailableModels(key);
             setIsVerifyingTeacherKey(false);
             if (res.success && res.models && res.models.length > 0) {
-                const chosen = res.models.find(m => m.id === 'gemini-2.0-flash')?.id
-                    || res.models.find(m => m.id === 'gemini-1.5-flash')?.id
+                const chosen = res.models.find(m => m.id === 'gemini-2.5-flash')?.id
+                    || res.models.find(m => m.id === 'gemini-2.0-flash')?.id
                     || res.models[0].id;
 
                 const updatedTeacher = {
@@ -2223,7 +2274,6 @@ export default function App({ defaultLogin = 'student', onBack }) {
 
         setAiLoading(true);
 
-        const chosenModel = effectiveAiModel || "gemini-1.5-flash";
         const targetSem = aiParams.semester || activeSemester;
         const targetYear = aiParams.academicYear || activeAcademicYear;
         const subObj = getMySubjects().find(s => s.id === parseInt(aiParams.subject));
@@ -2261,76 +2311,24 @@ Perhatian:
 - Jangan gunakan formatting block \`\`\`json pada output, langsung array!`;
 
         try {
-            let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${chosenModel}:generateContent?key=${effectiveApiKey}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+            const { text: responseText, usedModel } = await aiService.generateContentSmart({
+                apiKey: effectiveApiKey,
+                preferredModel: effectiveAiModel,
+                contents: [{ parts: [{ text: promptText }] }]
             });
-            let data = await res.json();
 
-            // Auto-fallback if chosen model fails
-            if (!res.ok && chosenModel !== 'gemini-1.5-flash') {
-                console.warn(`Model ${chosenModel} gagal, mencoba fallback ke gemini-1.5-flash...`);
-                res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveApiKey}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-                });
-                data = await res.json();
-            }
-
-            if (!res.ok) throw new Error(data.error?.message || "Failed to fetch");
-
-            let responseText = data.candidates[0].content.parts[0].text;
-            responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-
-            const parsedMocks = JSON.parse(responseText);
-            const mappedMocks = parsedMocks.map((m, idx) => {
-                let t = String(m.type || m.tipe || 'single').toLowerCase().trim();
-                if (t.includes('short') || t.includes('isian')) t = 'short';
-                else if (t.includes('essay') || t.includes('uraian')) t = 'essay';
-                else if (t.includes('match') || t.includes('jodoh')) t = 'matching';
-                else if (t.includes('bool') || t.includes('salah')) t = 'boolean';
-                else if (t.includes('multi') || t.includes('kompleks')) t = 'multiple';
-                else t = 'single';
-
-                const opts = m.options || m.opsi || m.pilihan || m.jawaban_pilihan || [];
-                let corrAns = String(m.correct ?? m.jawaban ?? m.kunci ?? m.kunci_jawaban ?? m.answer ?? "0").trim();
-
-                if (t === 'single') {
-                    if (/^[a-eA-E]$/.test(corrAns)) {
-                        corrAns = String(corrAns.toUpperCase().charCodeAt(0) - 65);
-                    }
-                } else if (t === 'multiple') {
-                    corrAns = corrAns.split(',').map(c => {
-                        let x = c.trim();
-                        if (/^[a-eA-E]$/.test(x)) return String(x.toUpperCase().charCodeAt(0) - 65);
-                        return x;
-                    }).filter(c => c !== "").join(',');
-                }
-
-                const txt = m.text || m.pertanyaan || m.soal || "Soal tidak valid";
-                const ind = m.indicator || m.indikator || "";
-                const dif = m.difficulty || m.kesulitan || m.level || "MOTS";
-
-                return {
-                    ...m,
-                    type: t,
-                    options: opts,
-                    correct: corrAns,
-                    text: txt,
-                    indicator: ind,
-                    difficulty: dif,
-                    semester: targetSem,
-                    academicYear: targetYear,
-                    id: `draft_${Date.now()}_${idx}`,
-                    weight: Number(m.weight || m.bobot) || 10
-                };
-            });
+            const parsedMocks = parseAiJsonArray(responseText);
+            const normalized = normalizeExtractedQuestions(parsedMocks);
+            const mappedMocks = normalized.map((m, idx) => ({
+                ...m,
+                semester: targetSem,
+                academicYear: targetYear,
+                id: `draft_${Date.now()}_${idx}`
+            }));
 
             setAiDrafts(mappedMocks);
             setAiStep(2);
-            showToast(`Soal berhasil digenerate AI (${chosenModel})!`, "success");
+            showToast(`Berhasil men-generate ${mappedMocks.length} soal via ${usedModel}!`, "success");
         } catch (err) {
             console.error(err);
             showToast("Gagal men-generate soal: " + err.message, "error");
@@ -2615,10 +2613,41 @@ Perhatian:
         showToast(`Pengaturan "${d.name || curSc.name}" Berhasil Disimpan!`, "success");
     };
 
-    const processImport = async (type, useAI, fileName, parsedRows, rawFile) => {
+    const handleQuickSaveApiKey = (rawKey) => {
+        const clean = (rawKey || '').trim();
+        if (!clean) return;
+        const activeSId = getActiveSchoolId();
+        if (role === 'guru' && currentUser) {
+            const updatedTeacher = { ...currentUser, apiKey: clean };
+            setCurrentUser(updatedTeacher);
+            setTeachers(prev => {
+                const next = prev.map(t => t.id === currentUser.id ? { ...t, apiKey: clean } : t);
+                updateGlobalState({ teachers: next });
+                return next;
+            });
+        } else {
+            setSchools(prev => {
+                const next = prev.map(s => s.id === activeSId ? { ...s, apiKey: clean } : s);
+                updateGlobalState({ schools: next });
+                return next;
+            });
+            if (activeSId === 'sdn2palapi') {
+                setSchoolData(prev => {
+                    const next = { ...prev, apiKey: clean };
+                    updateGlobalState({ schoolData: next });
+                    return next;
+                });
+            }
+        }
+    };
+
+    const processImport = async (type, useAI, fileName, parsedRows, rawFile, overrideApiKey = '') => {
         const curSchoolId = getActiveSchoolId();
         if (type === 'Data Murid' && parsedRows) {
-            if (parsedRows.length <= 1) return showToast("File Excel kosong atau format salah", "error");
+            if (parsedRows.length <= 1) {
+                showToast("File Excel kosong atau format salah", "error");
+                return { success: false, error: "File Excel kosong atau format kolom tidak sesuai." };
+            }
             const newStudents = [];
             for (let i = 1; i < parsedRows.length; i++) {
                 const cols = parsedRows[i];
@@ -2628,10 +2657,15 @@ Perhatian:
                 }
             }
             setStudents(p => { const next = [...p, ...newStudents]; updateGlobalState({ students: next }); return next; });
-            showToast(`Berhasil import ${newStudents.length} data murid dari file ${fileName}`, "success");
+            const msg = `Berhasil mengimpor ${newStudents.length} data murid dari file ${fileName}`;
+            showToast(msg, "success");
+            return { success: true, count: newStudents.length, message: msg };
         }
         else if (type === 'Data Kelas' && parsedRows) {
-            if (parsedRows.length <= 1) return showToast("File Excel kosong atau format salah", "error");
+            if (parsedRows.length <= 1) {
+                showToast("File Excel kosong atau format salah", "error");
+                return { success: false, error: "File Excel kosong atau format kolom tidak sesuai." };
+            }
             const newClasses = [];
             for (let i = 1; i < parsedRows.length; i++) {
                 const cols = parsedRows[i];
@@ -2640,14 +2674,23 @@ Perhatian:
                 }
             }
             setClasses(p => { const next = [...p, ...newClasses]; updateGlobalState({ classes: next }); return next; });
-            showToast(`Berhasil import ${newClasses.length} data kelas dari file ${fileName}`, "success");
+            const msg = `Berhasil mengimpor ${newClasses.length} data kelas dari file ${fileName}`;
+            showToast(msg, "success");
+            return { success: true, count: newClasses.length, message: msg };
         }
         else if (type === 'Bank Soal') {
             const subId = selectedSubjectForQuestions ? selectedSubjectForQuestions.id : getMySubjects()[0]?.id;
-            if (!subId) return showToast("Pilih mapel terlebih dahulu sebelum mengimpor soal!", "error");
+            if (!subId) {
+                const errText = "Pilih mata pelajaran terlebih dahulu sebelum mengimpor soal!";
+                showToast(errText, "error");
+                return { success: false, error: errText };
+            }
 
             if (parsedRows && !useAI) {
-                if (parsedRows.length <= 1) return showToast("File Excel kosong atau format salah", "error");
+                if (parsedRows.length <= 1) {
+                    showToast("File Excel kosong atau format salah", "error");
+                    return { success: false, error: "File Excel kosong atau format tidak sesuai template." };
+                }
                 const newQuestions = [];
                 for (let i = 1; i < parsedRows.length; i++) {
                     const cols = parsedRows[i];
@@ -2697,96 +2740,73 @@ Perhatian:
                     }
                 }
                 setQuestions(p => { const next = [...p, ...newQuestions]; updateGlobalState({ questions: next }); return next; });
-                showToast(`Berhasil import ${newQuestions.length} soal presisi dari Excel!`, "success");
+                const msg = `Berhasil mengimpor ${newQuestions.length} butir soal dari Excel!`;
+                showToast(msg, "success");
+                return { success: true, count: newQuestions.length, message: msg };
             } else if (useAI && rawFile) {
                 setAiLoading(true);
                 try {
-                    const base64Data = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                        reader.readAsDataURL(rawFile);
-                    });
-                    const mimeType = rawFile.type || "text/plain";
-
-                    const promptText = `Ekstrak soal-soal dari dokumen ini. Anda adalah pembuat soal CBT profesional. Ubah soal-soal dalam dokumen menjadi format JSON Array murni.
+                    const keyToUse = (overrideApiKey || effectiveApiKey || '').trim();
+                    const promptText = `Anda adalah sistem ekstraktor soal CBT & TKA profesional. Ekstrak SELURUH butir soal yang ada di dalam dokumen ini menjadi format JSON Array murni.
 Ketentuan struktur JSON untuk setiap objek soal:
-{ "type": "single|multiple|boolean|matching|short|essay", "text": "Pertanyaan lengkap", "options": ["Opsi A", "Opsi B"], "correct": "0", "difficulty": "MOTS", "weight": 10, "indicator": "Materi terkait" }
-Catatan: 
-- "correct" untuk 'single'/'boolean' adalah index dari options (0,1,2..).
-- "correct" untuk 'short'/'essay'/'matching' adalah teks langsung dari kunci jawaban atau rubriknya.
-Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
+[
+  {
+    "type": "single|multiple|boolean|matching|short|essay",
+    "text": "Pertanyaan lengkap tanpa nomor urut di depannya",
+    "options": ["Teks Opsi A", "Teks Opsi B", "Teks Opsi C", "Teks Opsi D"],
+    "correct": "0",
+    "difficulty": "LOTS|MOTS|HOTS",
+    "weight": 10,
+    "indicator": "Indikator kompetensi singkat sesuai isi soal"
+  }
+]
+Aturan Penting:
+- Jangan sertakan huruf "A.", "B.", "C.", "D." di dalam isi teks array "options".
+- "correct" untuk 'single' adalah index angka dalam string ("0" untuk A, "1" untuk B, "2" untuk C, "3" untuk D, "4" untuk E). Jika pada naskah belum tertulis kunci jawaban, tentukan jawaban yang paling tepat secara keilmuan!
+- "correct" untuk 'multiple' (PG Kompleks) adalah daftar index dipisah koma (misal "0,2").
+- "correct" untuk 'boolean' (Benar/Salah) adalah "0" jika Benar atau "1" jika Salah, dengan options ["Benar", "Salah"].
+- "correct" untuk 'matching' adalah pasangan berformat "Premis Kiri | Pasangan Kanan\\nPremis 2 | Pasangan 2".
+- "correct" untuk 'short'/'essay' adalah kunci jawaban singkat atau rubrik penilaiannya.
+- Outputkan HANYA JSON Array murni tanpa tag markdown \`\`\`json dan tanpa penjelasan tambahan!`;
 
-                    const modelToUse = effectiveAiModel || "gemini-1.5-flash";
-                    let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${effectiveApiKey}`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: promptText }, { inlineData: { mimeType, data: base64Data } }] }]
-                        })
+                    const docContents = await aiService.buildDocumentImportContents(rawFile, promptText);
+                    const { text: responseText, usedModel } = await aiService.generateContentSmart({
+                        apiKey: keyToUse,
+                        preferredModel: effectiveAiModel,
+                        contents: docContents
                     });
-                    let data = await res.json();
 
-                    if (!res.ok && modelToUse !== 'gemini-1.5-flash') {
-                        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveApiKey}`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                contents: [{ parts: [{ text: promptText }, { inlineData: { mimeType, data: base64Data } }] }]
-                            })
-                        });
-                        data = await res.json();
+                    const parsedArray = parseAiJsonArray(responseText);
+                    const normalized = normalizeExtractedQuestions(parsedArray);
+
+                    if (normalized.length === 0) {
+                        throw new Error("AI tidak menemukan butir soal yang dapat diekstrak di dalam file ini. Pastikan dokumen berisi teks soal yang jelas.");
                     }
 
-                    if (!res.ok) throw new Error(data.error?.message || "Gagal dari API Gemini");
-
-                    let responseText = data.candidates[0].content.parts[0].text;
-                    responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-
-                    const parsedArray = JSON.parse(responseText);
-                    const newQuestions = parsedArray.map((m, idx) => {
-                        let t = String(m.type || m.tipe || 'single').toLowerCase().trim();
-                        if (t.includes('short') || t.includes('isian')) t = 'short';
-                        else if (t.includes('essay') || t.includes('uraian')) t = 'essay';
-                        else if (t.includes('match') || t.includes('jodoh')) t = 'matching';
-                        else if (t.includes('bool') || t.includes('salah')) t = 'boolean';
-                        else if (t.includes('multi') || t.includes('kompleks')) t = 'multiple';
-                        else t = 'single';
-
-                        const opts = m.options || m.opsi || m.pilihan || m.jawaban_pilihan || [];
-                        const corr = m.correct ?? m.jawaban ?? m.kunci ?? m.kunci_jawaban ?? m.answer ?? "0";
-                        const txt = m.text || m.pertanyaan || m.soal || "Soal tidak valid";
-                        const ind = m.indicator || m.indikator || "";
-                        const dif = m.difficulty || m.kesulitan || m.level || "MOTS";
-
-                        return {
-                            ...m,
-                            type: t,
-                            options: opts,
-                            correct: corr,
-                            text: txt,
-                            indicator: ind,
-                            difficulty: dif,
-                            id: Date.now() + idx,
-                            subjectId: subId,
-                            semester: activeSemester,
-                            academicYear: activeAcademicYear,
-                            schoolId: curSchoolId,
-                            weight: Number(m.weight || m.bobot) || 10
-                        };
-                    });
+                    const baseTs = Date.now();
+                    const newQuestions = normalized.map((m, idx) => ({
+                        ...m,
+                        id: baseTs + idx,
+                        subjectId: subId,
+                        semester: activeSemester,
+                        academicYear: activeAcademicYear,
+                        schoolId: curSchoolId
+                    }));
 
                     setQuestions(prev => { const next = [...prev, ...newQuestions]; updateGlobalState({ questions: next }); return next; });
-                    showToast(`AI berhasil mengekstrak ${newQuestions.length} soal presisi dari dokumen!`, "success");
+                    const msg = `AI (${usedModel}) berhasil mengekstrak ${newQuestions.length} butir soal ke Bank Soal!`;
+                    showToast(msg, "success");
+                    return { success: true, count: newQuestions.length, message: msg };
                 } catch (err) {
                     console.error(err);
                     showToast("AI Gagal mengekstrak soal: " + err.message, "error");
+                    return { success: false, error: err.message };
                 } finally {
                     setAiLoading(false);
                 }
             }
-        } else {
-            showToast(`Import ${type} dari file ${fileName} berhasil disimulasikan.`, "success");
         }
+        return { success: false, error: "Format file belum dipilih atau tidak sesuai." };
     };
 
     const isAiWizardFormValid = aiParams.subject && aiParams.topic && !aiLoading && Object.values(aiParams.counts).reduce((a, b) => a + Number(b), 0) > 0;
@@ -3416,7 +3436,7 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
             <div className="fixed top-6 right-6 z-[999] flex flex-col gap-3">{toasts.map(t => <Toast key={t.id} {...t} onClose={() => removeToast(t.id)} />)}</div>
 
             <ConfirmModal isOpen={deleteConfig.isOpen} onClose={() => setDeleteConfig({ isOpen: false, type: '', id: null })} onConfirm={confirmDelete} title="Konfirmasi Hapus" message="Data yang dihapus tidak bisa dikembalikan." />
-            <ImportModal isOpen={importModalConfig.isOpen} type={importModalConfig.type} showToast={showToast} onClose={() => setImportModalConfig({ isOpen: false, type: '' })} onImport={processImport} apiKey={effectiveApiKey} aiModel={effectiveAiModel || "gemini-1.5-flash"} />
+            <ImportModal isOpen={importModalConfig.isOpen} type={importModalConfig.type} showToast={showToast} onClose={() => setImportModalConfig({ isOpen: false, type: '' })} onImport={processImport} apiKey={effectiveApiKey} aiModel={effectiveAiModel || DEFAULT_AI_MODEL} onSaveInlineApiKey={handleQuickSaveApiKey} />
 
             {/* AI WIZARD OVERLAY */}
             {aiWizardOpen && (
@@ -3477,9 +3497,10 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                             ))
                                                         ) : (
                                                             <>
+                                                                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Direkomendasikan)</option>
                                                                 <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                                                                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                                                                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                                                                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                                                                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                                                             </>
                                                         )}
                                                     </select>
@@ -3519,10 +3540,10 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                                             <button
                                                                 type="button"
                                                                 onClick={() => {
-                                                                    const updatedTeacher = { ...currentUser, apiKey: '', aiModel: schoolData.aiModel || 'gemini-1.5-flash', availableAiModels: [] };
+                                                                    const updatedTeacher = { ...currentUser, apiKey: '', aiModel: currentActiveSchool.aiModel || DEFAULT_AI_MODEL, availableAiModels: [] };
                                                                     setCurrentUser(updatedTeacher);
                                                                     setTeachers(prev => {
-                                                                        const next = prev.map(t => t.id === currentUser.id ? { ...t, apiKey: '', aiModel: schoolData.aiModel || 'gemini-1.5-flash', availableAiModels: [] } : t);
+                                                                        const next = prev.map(t => t.id === currentUser.id ? { ...t, apiKey: '', aiModel: currentActiveSchool.aiModel || DEFAULT_AI_MODEL, availableAiModels: [] } : t);
                                                                         updateGlobalState({ teachers: next });
                                                                         return next;
                                                                     });
@@ -3543,51 +3564,96 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                             )}
                                         </div>
                                     ) : (
-                                        <div className="bg-gradient-to-r from-purple-50 via-fuchsia-50 to-pink-50 p-4 rounded-2xl border border-purple-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xs">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                                                    <BrainCircuit size={20} />
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700">Versi Model AI</span>
-                                                        <span className="bg-purple-100 text-purple-800 text-[9px] font-bold px-2 py-0.5 rounded-full">Mode Otomatis</span>
+                                        <div className="bg-gradient-to-r from-purple-50 via-fuchsia-50 to-pink-50 p-4 rounded-2xl border border-purple-200 shadow-xs space-y-3">
+                                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                                                        <BrainCircuit size={20} />
                                                     </div>
-                                                    <p className="text-sm font-bold text-slate-800 font-mono mt-0.5">{schoolData.aiModel || "gemini-1.5-flash"}</p>
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700">Versi Model AI</span>
+                                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${effectiveApiKey ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                                                                {effectiveApiKey ? 'API Key Aktif' : 'Belum Ada Key'}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-sm font-bold text-slate-800 font-mono mt-0.5">{effectiveAiModel}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 w-full sm:w-auto">
+                                                    <select
+                                                        value={effectiveAiModel}
+                                                        onChange={e => {
+                                                            const nm = e.target.value;
+                                                            const activeSId = getActiveSchoolId();
+                                                            setSchools(prev => {
+                                                                const next = prev.map(s => s.id === activeSId ? { ...s, aiModel: nm } : s);
+                                                                updateGlobalState({ schools: next });
+                                                                return next;
+                                                            });
+                                                            if (activeSId === 'sdn2palapi') {
+                                                                setSchoolData(p => { const next = { ...p, aiModel: nm }; updateGlobalState({ schoolData: next }); return next; });
+                                                            }
+                                                            showToast(`Model AI dialihkan ke ${nm}`, "success");
+                                                        }}
+                                                        className="p-2.5 text-xs border border-purple-200 rounded-xl bg-white font-mono font-semibold text-purple-900 outline-none w-full sm:w-auto shadow-xs"
+                                                    >
+                                                        {effectiveAvailableModels && effectiveAvailableModels.length > 0 ? (
+                                                            effectiveAvailableModels.map(m => (
+                                                                <option key={m.id} value={m.id}>{m.name} ({m.id})</option>
+                                                            ))
+                                                        ) : (
+                                                            <>
+                                                                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Direkomendasikan)</option>
+                                                                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                                                                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                                                                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                                            </>
+                                                        )}
+                                                    </select>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowTeacherKeyBox(!showTeacherKeyBox)}
+                                                        className="px-3 py-2.5 bg-white text-purple-700 border border-purple-200 rounded-xl hover:bg-purple-100 text-xs font-bold transition-colors shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
+                                                    >
+                                                        <Key size={14} />
+                                                        {showTeacherKeyBox ? 'Tutup' : (effectiveApiKey ? 'Ganti Key' : 'Input Key')}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDetectAiModels(effectiveApiKey)}
+                                                        title="Deteksi ulang model dari API Key"
+                                                        className="p-2.5 bg-white text-purple-700 border border-purple-200 rounded-xl hover:bg-purple-100 transition-colors shadow-xs cursor-pointer"
+                                                    >
+                                                        <RefreshCw size={14} className={isCheckingAiKey ? 'animate-spin' : ''} />
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                                                <select
-                                                    value={schoolData.aiModel || "gemini-1.5-flash"}
-                                                    onChange={e => {
-                                                        const nm = e.target.value;
-                                                        setSchoolData(p => { const next = { ...p, aiModel: nm }; updateGlobalState({ schoolData: next }); return next; });
-                                                        showToast(`Model AI dialihkan ke ${nm}`, "success");
-                                                    }}
-                                                    className="p-2.5 text-xs border border-purple-200 rounded-xl bg-white font-mono font-semibold text-purple-900 outline-none w-full sm:w-auto shadow-xs"
-                                                >
-                                                    {availableAiModels && availableAiModels.length > 0 ? (
-                                                        availableAiModels.map(m => (
-                                                            <option key={m.id} value={m.id}>{m.name} ({m.id})</option>
-                                                        ))
-                                                    ) : (
-                                                        <>
-                                                            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                                                            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                                                            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                                                            <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
-                                                        </>
-                                                    )}
-                                                </select>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDetectAiModels(schoolData.apiKey)}
-                                                    title="Deteksi ulang model dari API Key"
-                                                    className="p-2.5 bg-white text-purple-700 border border-purple-200 rounded-xl hover:bg-purple-100 transition-colors shadow-xs"
-                                                >
-                                                    <RefreshCw size={14} className={isCheckingAiKey ? 'animate-spin' : ''} />
-                                                </button>
-                                            </div>
+                                            {showTeacherKeyBox && (
+                                                <div className="pt-3 border-t border-purple-200/70 flex flex-col sm:flex-row gap-2 animate-fade-in">
+                                                    <input
+                                                        type="password"
+                                                        value={teacherApiKeyInput}
+                                                        onChange={e => setTeacherApiKeyInput(e.target.value)}
+                                                        placeholder="Tempel Google Gemini API Key di sini (AIzaSy...)"
+                                                        className="flex-1 p-2.5 text-xs font-mono border border-purple-300 rounded-xl bg-white outline-none focus:border-purple-500 shadow-xs"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        disabled={isCheckingAiKey || !teacherApiKeyInput.trim()}
+                                                        onClick={() => {
+                                                            handleQuickSaveApiKey(teacherApiKeyInput);
+                                                            handleDetectAiModels(teacherApiKeyInput);
+                                                            setShowTeacherKeyBox(false);
+                                                            setTeacherApiKeyInput('');
+                                                        }}
+                                                        className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                                                    >
+                                                        {isCheckingAiKey ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                                                        Simpan & Deteksi Model
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
@@ -6514,21 +6580,21 @@ Hanya outputkan JSON Array tanpa tag markdown \`\`\`json.`;
                                     </div>
                                     <select
                                         name="aiModel"
-                                        defaultValue={currentSchool.aiModel || "gemini-1.5-flash"}
+                                        defaultValue={sanitizeModelId(currentSchool.aiModel || DEFAULT_AI_MODEL)}
                                         className="w-full p-3.5 border border-slate-200 focus:border-fuchsia-400 rounded-xl bg-slate-50 font-mono font-medium text-slate-700 outline-none text-sm"
                                     >
-                                        {availableAiModels && availableAiModels.length > 0 ? (
-                                            availableAiModels.map(m => (
+                                        {effectiveAvailableModels && effectiveAvailableModels.length > 0 ? (
+                                            effectiveAvailableModels.map(m => (
                                                 <option key={m.id} value={m.id}>
                                                     {m.name} ({m.id}) {m.isFlash ? '⚡ Cepat & Ringan' : m.isPro ? '🧠 Analisis Tinggi' : ''}
                                                 </option>
                                             ))
                                         ) : (
                                             <>
-                                                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Generasi Terbaru - Direkomendasikan)</option>
-                                                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Sangat Cepat & Stabil)</option>
-                                                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Kemampuan Analisis Tinggi)</option>
-                                                <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
+                                                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Generasi Terbaru - Direkomendasikan)</option>
+                                                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Cepat & Stabil)</option>
+                                                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Super Cepat)</option>
+                                                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Kemampuan Analisis Tinggi)</option>
                                             </>
                                         )}
                                     </select>
